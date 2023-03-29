@@ -1,0 +1,938 @@
+﻿using Ilyfairy.DstServerQuery.LobbyJson;
+using Ilyfairy.DstServerQuery.Models;
+using Ilyfairy.DstServerQuery.Models.LobbyData;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
+
+namespace Ilyfairy.DstServerQuery;
+
+public class LobbyServerQueryer : IDisposable
+{
+    public void Dispose()
+    {
+        this.Result.Clear();
+        this.queryKey.Clear();
+        LobbyDetailDatas = null;
+        Result = null;
+    }
+
+    public ICollection<LobbyDetailsData> LobbyDetailDatas { get; private set; }
+    public List<LobbyDetailsData> Result { get; private set; }
+    /// <summary>
+    /// 查询的键值
+    /// </summary>
+    private readonly Dictionary<string, string> queryKey = new();
+
+    public string Rowid { get; set; } = null;
+    public bool IsDetails { get; set; } = false;
+    public int Page { get; set; } = 0;
+    public int PageCount { get; set; } = 100;
+    public int CurrentPageCount { get; set; }
+    public int AllQueryCount { get; set; }
+    public int MaxPage { get; set; }
+    public string ServerName { get; set; }
+    public bool IsRegex { get; set; } = false;
+    public string IP { get; set; }
+    public string Port { get; set; }
+    public string Connected { get; set; }
+    public bool? IsDedicated { get; set; }
+    public string HostKleiId { get; set; }
+    public bool? IsMods { get; set; } = null;
+    public string PlatformString { get; set; }
+    public bool? IsPvp { get; set; } = null;
+    public bool IsPlayerId { get; set; } = false;
+    public string PlayerName { get; set; }
+    public bool IsSortDescending { get; set; }
+    public int SortType { get; set; } = 1;
+    public long? Version { get; set; }
+    public bool? IsPassword { get; set; }
+    public bool? IsOfficial { get; set; }
+    public DateTime LastUpdate { get; set; }
+
+    private string json;
+    public string Json
+    {
+        get
+        {
+            if (json == null)
+            {
+                JsonObject jsonString;
+                if (IsDetails)
+                {
+                    jsonString = Create<LobbyDetailsData>();
+                }
+                else if (PlayerName is not null)
+                {
+                    jsonString = Create<LobbyBriefDataPlayers>();
+                }
+                else
+                {
+                    jsonString = Create<LobbyBriefData>();
+                }
+                json = jsonString.ToJsonString(DstJsonConverter.Options);
+            }
+            return json;
+        }
+    }
+
+
+    public LobbyServerQueryer(ICollection<LobbyDetailsData> lobbyDetailDatas, IEnumerable<KeyValuePair<string, string>> queryKey, DateTime lastUpdate)
+    {
+        LastUpdate = lastUpdate;
+        LobbyDetailDatas = lobbyDetailDatas;
+        foreach (var item in queryKey)
+        {
+            this.queryKey[item.Key.ToLower()] = item.Value;
+        }
+    }
+
+
+    public void Query()
+    {
+        Result = LobbyDetailDatas.ToList();
+        RowIdProc();
+        IsDetailsProc();
+
+        IsRegexProc();
+        ServerNameProc();
+
+        IPProc();
+        PortProc();
+        ConnectProc();
+        IsDedicatedProc();
+        HostKleiIdProc();
+        IsModsProc();
+        PlatformProc();
+        PvpProc();
+        GameModeProc();
+
+        PlayerIsByIdProc();
+        PlayerNameProc();
+
+        VersionProc();
+        PasswordProc();
+        OfficialProc();
+        TagsProc();
+        DescProc();
+        PausedProc();
+        AllowNewPlayersProc();
+        DayProc();
+        OwnerNetidProc();
+        ModsNameProc();
+        ModsIdProc();
+
+        IsSortDescendingProc();
+        SortProc();
+
+        PageCountProc();
+        PageProc();
+
+        AllQueryCount = Result.Count;
+        Result = Result.Skip(Page * PageCount).Take(PageCount).ToList();
+        CurrentPageCount = Result.Count;
+    }
+
+    JsonObject Create<T>() where T : class
+    {
+        List<T> list = Result.Select(v => v as T).ToList();
+
+        JsonObject json = new();
+        json.Add("DateTime", DateTime.Now);
+        json.Add("LastUpdate", LastUpdate);
+        json.Add("Count", CurrentPageCount);
+        json.Add("AllCount", AllQueryCount);
+        json.Add("MaxPage", MaxPage);
+        json.Add("Page", Page);
+        json.Add("List", JsonValue.Create(list));
+
+        return json;
+    }
+
+    private string GetValue(params string[] keys)
+    {
+        foreach (var key in keys)
+        {
+            if (queryKey.TryGetValue(key.ToLower(), out var val))
+            {
+                return val;
+            }
+        }
+        return null;
+    }
+    private int? GetValueToInt(params string[] keys)
+    {
+        if (int.TryParse(GetValue(keys), out var val))
+        {
+            return val;
+        }
+        else
+        {
+            return null;
+        }
+    }
+    private long? GetValueToLong(params string[] keys)
+    {
+        if (long.TryParse(GetValue(keys), out var val))
+        {
+            return val;
+        }
+        else
+        {
+            return null;
+        }
+    }
+    private bool? GetValueToBool(params string[] keys)
+    {
+        if (bool.TryParse(GetValue(keys), out var val))
+        {
+            return val;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    private void ReAdd(IEnumerable<LobbyDetailsData> data)
+    {
+        var tmp = data.ToArray();
+        Result.Clear();
+        Result.AddRange(tmp);
+    }
+    /// <summary>
+    /// 是否是通过RowId查询
+    /// </summary>
+    private void RowIdProc()
+    {
+        if (GetValue("RowId") is string rowid)
+        {
+            Rowid = rowid;
+            var tmp = LobbyDetailDatas.Where(v => v.RowId == rowid).FirstOrDefault();
+            Result.Clear();
+            if (tmp is LobbyDetailsData data)
+            {
+                Result.Add(data);
+            }
+        }
+    }
+    /// <summary>
+    /// 是否返回详细信息
+    /// </summary>
+    private void IsDetailsProc()
+    {
+        if (GetValueToBool("Details", "IsDetails") is bool val)
+        {
+            IsDetails = val;
+        }
+    }
+    /// <summary>
+    /// 一页的个数
+    /// </summary>
+    private void PageCountProc()
+    {
+        if (GetValueToInt("PageCount") is int count)
+        {
+            PageCount = count;
+            if (PageCount <= 0) PageCount = 1;
+            if (PageCount > 1000) PageCount = 1000;
+        }
+    }
+    /// <summary>
+    /// 第多少页
+    /// </summary>
+    private void PageProc()
+    {
+        MaxPage = Result.Count / PageCount;
+        if (Result.Count / (double)PageCount % 1 > 0) MaxPage++;
+        MaxPage--;
+        if (GetValueToInt("Page") is int page)
+        {
+            Page = page;
+            if (Page < 0) Page = 0;
+            if (Page > MaxPage) Page = MaxPage;
+        }
+    }
+    /// <summary>
+    /// 服务器名称
+    /// </summary>
+    private void ServerNameProc()
+    {
+        if (GetValue("Name", "ServerName") is string serverName)
+        {
+            if (serverName.Length == 0) return;
+            ServerName = serverName;
+            LobbyDetailsData[] tmp;
+            if (IsRegex)
+            {
+                try
+                {
+                    tmp = Result.Where(v => Regex.IsMatch(v.Name, serverName)).ToArray();
+                }
+                catch (Exception)
+                {
+                    tmp = Array.Empty<LobbyDetailsData>();
+                }
+            }
+            else
+            {
+                tmp = Result.Where(v => v.Name.Contains(serverName, StringComparison.CurrentCultureIgnoreCase)).ToArray();
+            }
+            ReAdd(tmp);
+        }
+    }
+    /// <summary>
+    /// 搜索服务器名称是否使用正则
+    /// </summary>
+    private void IsRegexProc()
+    {
+        if (GetValueToBool("isregex") is bool isRegex)
+        {
+            IsRegex = isRegex;
+        }
+    }
+    /// <summary>
+    /// 服务器IP
+    /// </summary>
+    private void IPProc()
+    {
+        if (GetValue("ip") is string ip)
+        {
+            IP = ip;
+            var match = Regex.Match(ip, @"^((?:\d{1,3})|[*])[.]((?:\d{1,3})|[*])[.]((?:\d{1,3})|[*])[.]((?:\d{1,3})|[*])$");
+            if (match.Success)
+            {
+                var v1 = match.Groups[1].Value;
+                var v2 = match.Groups[2].Value;
+                var v3 = match.Groups[3].Value;
+                var v4 = match.Groups[4].Value;
+                var tmp = new List<LobbyDetailsData>();
+                foreach (var item in Result.ToList())
+                {
+                    if (Regex.Match(item.Address.IP, $@"^{(v1 == "*" ? "\\d{1,3}" : v1)}[.]{(v2 == "*" ? "\\d{1,3}" : v2)}[.]{(v3 == "*" ? "\\d{1,3}" : v3)}[.]{(v4 == "*" ? "\\d{1,3}" : v4)}$").Success)
+                    {
+                        tmp.Add(item);
+                    };
+                }
+                ReAdd(tmp);
+            }
+            else
+            {
+                Result.Clear();
+            }
+        }
+    }
+    /// <summary>
+    /// 服务器端口
+    /// </summary>
+    private void PortProc()
+    {
+        if (GetValue("port") is string port)
+        {
+            bool isNot = false;
+            if (port.StartsWith('!'))
+            {
+                isNot = true;
+                port = port[1..];
+            }
+
+            if (int.TryParse(port, out int val))
+            {
+                Port = port;
+                var tmp = new List<LobbyDetailsData>();
+                foreach (var item in Result)
+                {
+                    if (item.Port == val ^ isNot) tmp.Add(item);
+                }
+                Result.AddRange(tmp);
+            }
+        }
+
+    }
+    /// <summary>
+    /// 房间的玩家连接数
+    /// </summary>
+    private void ConnectProc()
+    {
+        if (GetValue("Connect", "Connected", "Connected") is string connected)
+        {
+            // > < = xx%
+            var oper = "";
+            if (connected.StartsWith(">="))
+            {
+                oper = ">=";
+            }
+            else if (connected.StartsWith("<="))
+            {
+                oper = "<=";
+            }
+            else if (connected.StartsWith("=="))
+            {
+                oper = "==";
+            }
+            else if (connected.StartsWith("="))
+            {
+                oper = "=";
+            }
+            else if (connected.StartsWith(">"))
+            {
+                oper = ">";
+            }
+            else if (connected.StartsWith("<"))
+            {
+                oper = "<";
+            }
+            var num = connected[oper.Length..];
+            bool isPer = false;
+            if (num.EndsWith('%'))
+            {
+                isPer = true;
+                num = num[0..^1];
+            }
+            if (oper is "" or "=")
+            {
+                oper = "==";
+            }
+
+            if (ushort.TryParse(num, out var n))
+            {
+                var tmp = new List<LobbyDetailsData>();
+                foreach (var item in Result)
+                {
+                    void Match(bool isAdd)
+                    {
+                        if (isAdd)
+                            tmp.Add(item);
+                    }
+                    switch (oper)
+                    {
+                        case "==":
+                            if (isPer)
+                                Match((double)item.Connected / item.MaxConnections == (n / 100.0));
+                            else
+                                Match(item.Connected == n);
+                            break;
+                        case ">":
+                            if (isPer)
+                                Match((double)item.Connected / item.MaxConnections > (n / 100.0));
+                            else
+                                Match(item.Connected > n);
+                            break;
+                        case "<":
+                            if (isPer)
+                                Match((double)item.Connected / item.MaxConnections < (n / 100.0));
+                            else
+                                Match(item.Connected < n);
+                            break;
+                        case ">=":
+                            if (isPer)
+                                Match((double)item.Connected / item.MaxConnections >= (n / 100.0));
+                            else
+                                Match(item.Connected >= n);
+                            break;
+                        case "<=":
+                            if (isPer)
+                                Match((double)item.Connected / item.MaxConnections <= (n / 100.0));
+                            else
+                                Match(item.Connected <= n);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                ReAdd(tmp);
+            }
+        }
+
+    }
+    /// <summary>
+    /// 是否是专用服务器
+    /// </summary>
+    private void IsDedicatedProc()
+    {
+        if (GetValueToBool("Dedicated", "Dedicated") is bool isDedicated)
+        {
+            IsDedicated = isDedicated;
+            var tmp = Result.Where(v => v.Dedicated == IsDedicated);
+            ReAdd(tmp);
+        }
+    }
+    /// <summary>
+    /// 房主KleiID
+    /// </summary>
+    private void HostKleiIdProc()
+    {
+        if (GetValue("Host", "HostId", "Host" , "KleiId", "HostKleiId") is string hostKleiId)
+        {
+            HostKleiId = hostKleiId;
+            var tmp = Result.Where(v => v.Host == HostKleiId);
+            ReAdd(tmp);
+        }
+    }
+    /// <summary>
+    /// 是否启用Mod
+    /// </summary>
+    private void IsModsProc()
+    {
+        if (GetValueToBool("Mods", "Mod", "IsMod", "Mods") is bool isMods)
+        {
+            var tmp = new List<LobbyDetailsData>();
+            foreach (var item in Result)
+            {
+                if (item.Mods == isMods)
+                {
+                    tmp.Add(item);
+                }
+            }
+            ReAdd(tmp);
+        }
+    }
+    /// <summary>
+    /// 平台
+    /// </summary>
+    private void PlatformProc()
+    {
+        if (GetValue("Platform") is string platform)
+        {
+            PlatformString = platform;
+            var tmp = new List<LobbyDetailsData>();
+            foreach (var item in Result)
+            {
+                switch (platform.ToLower())
+                {
+                    case "0" or "none": //未知
+                        if (item.Platform == Platform.None)
+                        {
+                            tmp.Add(item);
+                        }
+                        break;
+                    case "1" or "steam": //Steam
+                        if (item.Platform == Platform.Steam)
+                        {
+                            tmp.Add(item);
+                        }
+                        break;
+                    case "2" or "wegame": //WeGame
+                        if (item.Platform == Platform.WeGame || item.Platform == Platform.QQGame)
+                        {
+                            tmp.Add(item);
+                        }
+                        break;
+                    case "3" or "playstation": //PlayStation
+                        if (item.Platform == Platform.PlayStation)
+                        {
+                            tmp.Add(item);
+                        }
+                        break;
+                    case "4" or "xbox": //Xbox
+                        if (item.Platform == Platform.Xbox)
+                        {
+                            tmp.Add(item);
+                        }
+                        break;
+                    case "5" or "switch": //Xbox
+                        if (item.Platform == Platform.Switch)
+                        {
+                            tmp.Add(item);
+                        }
+                        break;
+                }
+            }
+            Result.Clear();
+            Result.AddRange(tmp);
+        }
+    }
+    /// <summary>
+    /// 是否是PVP
+    /// </summary>
+    private void PvpProc()
+    {
+        if (GetValueToBool("pvp","PVP") is bool pvp)
+        {
+            IsPvp = pvp;
+            var tmp = Result.Where(v => v.PVP == IsPvp);
+            ReAdd(tmp);
+        }
+    }
+    /// <summary>
+    /// 是否倒序排序
+    /// </summary>
+    private void IsSortDescendingProc()
+    {
+        if (GetValueToBool("IsSortDescending", "DescendingSort") is bool isSortDescending)
+        {
+            IsSortDescending = isSortDescending;
+        }
+    }
+    /// <summary>
+    /// 排序
+    /// </summary>
+    private void SortProc()
+    {
+        if (GetValueToInt("Sort", "SortType") is int sortType)
+        {
+            SortType = sortType;
+            //排序
+            switch (sortType)
+            {
+                case 1: //房间名排序
+                    if (IsSortDescending) Result = Result.OrderByDescending(v => v.Name).ToList();
+                    else Result = Result.OrderBy(v => v.Name).ToList();
+                    break;
+                case 2: //房间人数排序
+                    if (IsSortDescending) Result = Result.OrderByDescending(v => v.Connected).ToList();
+                    else Result = Result.OrderBy(v => v.Connected).ToList();
+                    break;
+                default: //默认
+                    if (IsSortDescending) Result = Result.OrderByDescending(v => v.Name.GetHashCode()).ToList();
+                    else Result = Result.OrderBy(v => v.Name.GetHashCode()).ToList();
+                    break;
+            }
+        }
+    }
+    /// <summary>
+    /// 是否通过玩家ID搜索玩家
+    /// </summary>
+    private void PlayerIsByIdProc()
+    {
+        if (GetValueToBool("PlayerIsById", "IsPlayerId") is bool val)
+        {
+            IsPlayerId = val;
+        }
+    }
+    /// <summary>
+    /// 搜索玩家
+    /// </summary>
+    private void PlayerNameProc()
+    {
+        if (GetValue("Player", "PlayerName") is string playerName)
+        {
+            PlayerName = playerName;
+            List<LobbyDetailsData> tmp = new();
+            foreach (var server in Result)
+            {
+                if (server.Players is null) break;
+                foreach (var player in server.Players)
+                {
+                    if (IsPlayerId)
+                    {
+                        if (player.NetId.ToString().Contains(playerName, StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            tmp.Add(server);
+                        }
+                    }
+                    else
+                    {
+                        if (player.Name.ToString().Contains(playerName, StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            tmp.Add(server);
+                        }
+                    }
+                }
+            }
+            ReAdd(tmp.ToHashSet());
+        }
+    }
+    /// <summary>
+    /// 版本过滤
+    /// </summary>
+    private void VersionProc()
+    {
+        if (GetValue("Version", "V", "Ver") is string version)
+        {
+            if (version.Contains("last") || version.Contains("new"))
+            {
+                Version = 0;
+            }
+            else if (long.TryParse(version, out var ver))
+            {
+                Version = ver;
+            }
+            if (version is not null)
+            {
+                var tmp = Result.Where(v => v.Version == Version);
+                ReAdd(tmp);
+            }
+        }
+    }
+    /// <summary>
+    /// 是否有密码
+    /// </summary>
+    private void PasswordProc()
+    {
+        if (GetValueToBool("Password") is bool isPassword)
+        {
+            IsPassword = isPassword;
+            var tmp = Result.Where(v => v.Password == isPassword);
+            ReAdd(tmp);
+        }
+    }
+    /// <summary>
+    /// 是否是Klei官方服务器
+    /// </summary>
+    private void OfficialProc()
+    {
+        if (GetValueToBool("IsOfficial", "Official") is bool official)
+        {
+            IsOfficial = official;
+            var tmp = Result.Where(v => v.KleiOfficial == official);
+            ReAdd(tmp);
+        }
+    }
+    /// <summary>
+    /// Tags筛选
+    /// </summary>
+    private void TagsProc()
+    {
+        if (GetValue("Tags", "Tag") is string tag)
+        {
+            if (tag.Contains(','))
+            {
+                var tags = tag.Split(',');
+                var tmp = Result.Where(v => v.Tags.Any(t => tags.Contains(t)));
+                ReAdd(tmp);
+            }
+            else
+            {
+                var tmp = Result.Where(v => v.Tags.Contains(tag));
+                ReAdd(tmp);
+            }
+        }
+    }
+    private void GameModeProc()
+    {
+        if (GetValue("GameMode","Mode") is string gamemode)
+        {
+            PlatformString = gamemode;
+            var tmp = new List<LobbyDetailsData>();
+            foreach (var item in Result)
+            {
+                switch (gamemode.ToLower())
+                {
+                    case "0" or "none": //未知
+                        if (item.Mode == GameMode.unknown)
+                        {
+                            tmp.Add(item);
+                        }
+                        break;
+                    case "1" or "survival": //
+                        if (item.Mode == GameMode.survival)
+                        {
+                            tmp.Add(item);
+                        }
+                        break;
+                    case "2" or "wilderness": //
+                        if (item.Mode == GameMode.wilderness)
+                        {
+                            tmp.Add(item);
+                        }
+                        break;
+                    case "3" or "endless": //
+                        if (item.Mode == GameMode.endless)
+                        {
+                            tmp.Add(item);
+                        }
+                        break;
+                    case "4" or "lavaarena": //
+                        if (item.Mode == GameMode.lavaarena)
+                        {
+                            tmp.Add(item);
+                        }
+                        break;
+                    case "5" or "quagmire": //
+                        if (item.Mode == GameMode.quagmire)
+                        {
+                            tmp.Add(item);
+                        }
+                        break;
+                }
+            }
+            Result.Clear();
+            Result.AddRange(tmp);
+        }
+    }
+    /// <summary>
+    /// 简介
+    /// </summary>
+    private void DescProc()
+    {
+        if (GetValue("Desc", "Describe") is string desc)
+        {
+            var tmp = Result.Where(v => v.Desc.Contains(desc));
+            ReAdd(tmp);
+        }
+    }
+    /// <summary>
+    /// 服务器是否暂停
+    /// </summary>
+    private void PausedProc()
+    {
+        if (GetValueToBool("Paused", "IsPaused") is bool isPaused)
+        {
+            var tmp = Result.Where(v => v.ServerPaused == isPaused);
+            ReAdd(tmp);
+        }
+    }
+    /// <summary>
+    /// 是否允许新玩家加入
+    /// </summary>
+    private void AllowNewPlayersProc()
+    {
+        if (GetValueToBool("AllowNewPlayer", "IsAllowNewPlayer", "IsAllowPlayer") is bool isAllowPlayer)
+        {
+            var tmp = Result.Where(v => v.ServerPaused == isAllowPlayer);
+            ReAdd(tmp);
+        }
+    }
+    /// <summary>
+    /// 天数查询
+    /// </summary>
+    private void DayProc()
+    {
+        if (GetValue("Day", "Days") is string day)
+        {
+            // > < = xx%
+            var oper = "";
+            if (day.StartsWith(">="))
+            {
+                oper = ">=";
+            }
+            else if (day.StartsWith("<="))
+            {
+                oper = "<=";
+            }
+            else if (day.StartsWith("=="))
+            {
+                oper = "==";
+            }
+            else if (day.StartsWith("="))
+            {
+                oper = "=";
+            }
+            else if (day.StartsWith(">"))
+            {
+                oper = ">";
+            }
+            else if (day.StartsWith("<"))
+            {
+                oper = "<";
+            }
+            var num = day[oper.Length..];
+
+            if (oper is "" or "=")
+            {
+                oper = "==";
+            }
+
+            if (ushort.TryParse(num, out var n))
+            {
+                var tmp = new List<LobbyDetailsData>();
+                foreach (var item in Result)
+                {
+                    if (item.DaysInfo is null) continue;
+                    void Match(bool isAdd)
+                    {
+                        if (isAdd)
+                            tmp.Add(item);
+                    }
+                    switch (oper)
+                    {
+                        case "==":
+                            Match(item.DaysInfo.Day == n);
+                            break;
+                        case ">":
+                            Match(item.DaysInfo.Day > n);
+                            break;
+                        case "<":
+                            Match(item.DaysInfo.Day < n);
+                            break;
+                        case ">=":
+                            Match(item.DaysInfo.Day >= n);
+                            break;
+                        case "<=":
+                            Match(item.DaysInfo.Day <= n);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                ReAdd(tmp);
+            }
+        }
+    }
+    /// <summary>
+    /// 房主的的Netid查询
+    /// </summary>
+    private void OwnerNetidProc()
+    {
+        if (GetValue("Netid", "OwnerNetid") is string ownerNetid)
+        {
+            var tmp = Result.Where(v => v.Desc.Contains(ownerNetid));
+            ReAdd(tmp);
+        }
+
+    }
+    /// <summary>
+    /// 查询指定Mod的房间
+    /// </summary>
+    private void ModsNameProc()
+    {
+        if (GetValue("ModName", "ModName") is string modName)
+        {
+            if (modName.Contains('|'))
+            {
+                var names = modName.Split('|');
+                var tmp = Result.Where(server => server.ModsInfo.Any(mod => names.Any(name => mod.Name.Contains(name, StringComparison.CurrentCultureIgnoreCase))));
+                ReAdd(tmp);
+            }
+            else
+            {
+                var tmp = Result.Where(v => v.Tags.Contains(modName));
+                ReAdd(tmp);
+            }
+        }
+    }
+    /// <summary>
+    /// 通过ModID查询指定的房间
+    /// </summary>
+    private void ModsIdProc()
+    {
+        if (GetValue("ModsId", "ModId") is string modId)
+        {
+            if (modId.Contains(','))
+            {
+                List<long> ids = new();
+                foreach (var item in modId.Split(','))
+                {
+                    if (long.TryParse(item, out var id))
+                    {
+                        ids.Add(id);
+                    }
+                }
+                var tmp = Result.Where(server => server.ModsInfo.Any(mod => ids.Any(id => id == mod.Id)));
+                ReAdd(tmp);
+            }
+            else if (modId.Contains('|'))
+            {
+                List<long> ids = new();
+                foreach (var item in modId.Split('|'))
+                {
+                    if (long.TryParse(item, out var id))
+                    {
+                        ids.Add(id);
+                    }
+                }
+                var tmp = Result.Where(server => server.ModsInfo.Any(mod => ids.Any(id => id == mod.Id)));
+                ReAdd(tmp);
+            }
+            else
+            {
+                if (long.TryParse(modId, out var id))
+                {
+                    var tmp = Result.Where(v => v.ModsInfo.Any(v => v.Id == id));
+                    ReAdd(tmp);
+                }
+            }
+        }
+    }
+}
+

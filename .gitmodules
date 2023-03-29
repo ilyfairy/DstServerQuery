@@ -1,0 +1,3 @@
+[submodule "DstDownloader"]
+	path = DstDownloader
+	url = https://github.com/ilyfairy/DstDownloader.git
