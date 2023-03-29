@@ -11,5 +11,5 @@
 
 ## 接口
 
-`api/server/version` 获取饥荒联机版最新版本号  
+`/api/server/version` 获取饥荒联机版最新版本号  
 `/api/list` 服务器列表  
