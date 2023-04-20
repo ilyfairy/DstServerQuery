@@ -47,7 +47,7 @@ public class LobbyDetailsManager : IDisposable
     public LobbyDetailsManager(RequestRoot rr)
     {
         OldUrlList = rr.OldList;
-        LobbyDownloader = new(rr.Token);
+        LobbyDownloader = new(rr.Token, rr.DstDetailsProxyUrl);
     }
 
     #region 方法
@@ -93,6 +93,8 @@ public class LobbyDetailsManager : IDisposable
             }
         });
 
+        //循环更新详细数据
+        _ = UpdatingLoop();
     }
 
     public void Dispose()
@@ -227,26 +229,23 @@ public class LobbyDetailsManager : IDisposable
         }
     }
 
-    private void UpdatingLoop()
+    private async Task UpdatingLoop()
     {
-        ParallelOptions opt = new()
-        {
-            MaxDegreeOfParallelism = 20,
-            CancellationToken = HttpTokenSource.Token,
-        };
+        await Task.Yield();
         while (Running)
         {
             var arr = ServerMap.Values;
             if (arr.Count == 0) continue;
             try
             {
-                Parallel.ForEachAsync(arr, opt, async (v, ct) =>
-                {
-                    await LobbyDownloader.UpdateToDetails(v, ct);
-                }).GetAwaiter().GetResult();
+                await LobbyDownloader.UpdateToDetails(arr.ToArray(), HttpTokenSource.Token);
+                logDownloadLoop.Info("所有详细信息已更新!!!!!");
+                await Task.Delay(1000, HttpTokenSource.Token);
             }
-            catch { }
-            logDownloadLoop.Info("所有详细信息已更新!!!!!");
+            catch
+            {
+
+            }
         }
     }
 

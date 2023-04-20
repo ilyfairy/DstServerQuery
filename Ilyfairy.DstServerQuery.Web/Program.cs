@@ -24,10 +24,12 @@ builder.Services.AddResponseCompression(); //启用压缩
 builder.Services.AddSingleton<Func<DstDbContext>>(() => new DstDbContext(new DbContextOptionsBuilder<DstDbContext>()
         .UseSqlServer(builder.Configuration.GetConnectionString("SqlServer")!).Options));
 builder.Services.AddSingleton(builder.Configuration.GetSection("Requests").Get<RequestRoot>()!);
-builder.Services.AddSingleton<LobbyDetailsManager>();
-builder.Services.AddSingleton<DstVersionGetter>();
-builder.Services.AddSingleton<HistoryCountManager>();
-builder.Services.AddSingleton<UserRequestRecordManager>();
+
+builder.Services.AddSingleton<LobbyDetailsManager>()
+    .AddSingleton<DstVersionGetter>()
+    .AddSingleton<HistoryCountManager>()
+    .AddSingleton<UserRequestRecordManager>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

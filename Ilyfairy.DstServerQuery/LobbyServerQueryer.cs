@@ -608,21 +608,24 @@ public class LobbyServerQueryer : IDisposable
         {
             PlayerName = playerName;
             List<LobbyDetailsData> tmp = new();
+            var playerCount = LobbyDetailDatas.Sum(v => v.Players?.Count ?? 0);
+            var resultPlayerCount = Result.Sum(v=>v.Players?.Count ?? 0);
+
             foreach (var server in Result)
             {
-                if (server.Players is null) break;
+                if (server.Players is null) continue;
                 foreach (var player in server.Players)
                 {
                     if (IsPlayerId)
                     {
-                        if (player.NetId.ToString().Contains(playerName, StringComparison.CurrentCultureIgnoreCase))
+                        if (player.NetId.ToString().Contains(playerName, StringComparison.OrdinalIgnoreCase))
                         {
                             tmp.Add(server);
                         }
                     }
                     else
                     {
-                        if (player.Name.ToString().Contains(playerName, StringComparison.CurrentCultureIgnoreCase))
+                        if (player.Name.ToString().Contains(playerName, StringComparison.OrdinalIgnoreCase))
                         {
                             tmp.Add(server);
                         }
