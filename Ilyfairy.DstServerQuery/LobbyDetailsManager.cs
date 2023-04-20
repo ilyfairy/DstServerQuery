@@ -314,10 +314,10 @@ public class LobbyDetailsManager : IDisposable
         {
             newInfo._Lock ??= new SemaphoreSlim(1, 1);
         }
-        await newInfo._Lock.WaitAsync();
+        await newInfo._Lock.WaitAsync(HttpTokenSource.Token);
         try
         {
-            if (!newInfo._IsDetails || (DateTime.Now - newInfo._LastUpdate) > TimeSpan.FromSeconds(15))
+            if (!newInfo._IsDetails || (DateTime.Now - newInfo._LastUpdate) > TimeSpan.FromSeconds(20))
             {
                 await LobbyDownloader.UpdateToDetails(newInfo, HttpTokenSource.Token);
             }
