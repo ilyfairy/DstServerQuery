@@ -24,4 +24,3 @@ POST https://api.com/path/{0}/{1}
 
 `/api/server/version` 获取饥荒联机版最新版本号  
 `/api/list` 服务器列表  
-`/api/details/{rowid}` 获取单个服务器的详细信息  
