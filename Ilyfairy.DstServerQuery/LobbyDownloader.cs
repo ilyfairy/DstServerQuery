@@ -186,7 +186,7 @@ namespace Ilyfairy.DstServerQuery
                         await Task.Yield();
                         var rowids = chunk.Select(v => v.RowId);
                         var body = JsonSerializer.Serialize(rowids);
-                        var url = string.Format(_dstDetailsProxyUrl, "new", $"v2-{region.Region}");
+                        var url = string.Format(_dstDetailsProxyUrl, $"v2-{region.Region}");
                         var r = await httpUpdate.PostAsync(url, new StringContent(body, null, MediaTypeNames.Application.Json), ct);
                         var json = await r.Content.ReadAsStringAsync(ct);
                         var get = JsonSerializer.Deserialize<GET<LobbyDetailsData>>(json, default(JsonSerializerOptions));
