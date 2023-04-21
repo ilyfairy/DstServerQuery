@@ -1,6 +1,7 @@
 ﻿using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Json;
@@ -20,12 +21,12 @@ namespace Ilyfairy.DstServerQuery
         private readonly HttpClient http;
         private readonly HttpClient httpUpdate;
         private readonly string _token;
-        private readonly string? _dstDetailsProxyUrl; // https://api.com/{0}/{1}/{2}/{3}
+        private readonly string[]? _dstDetailsProxyUrls; // https://api.com/{0}/{1}/{2}/{3}
 
         //通过区域和平台获取url (适用于新版数据)
         public Dictionary<RegionPlatform, RegionUrl> BriefsUrlMap { get; set; } = new();
 
-        public LobbyDownloader(string dstToken, string? dstDetailsProxyUrl = null)
+        public LobbyDownloader(string dstToken, string[]? dstDetailsProxyUrls = null)
         {
             _token = dstToken;
 
@@ -41,7 +42,7 @@ namespace Ilyfairy.DstServerQuery
 
             this.http = Create();
             this.httpUpdate = Create();
-            _dstDetailsProxyUrl = dstDetailsProxyUrl;
+            _dstDetailsProxyUrls = dstDetailsProxyUrls;
         }
 
         public async Task Initialize()
@@ -139,10 +140,13 @@ namespace Ilyfairy.DstServerQuery
 
         public async ValueTask<int> UpdateToDetails(LobbyDetailsData[] datas, CancellationToken cancellationToken = default)
         {
+            if(datas.Length == 0) return 0;
+            
             int updatedCount = 0;
             int requestCount = 0;
 
-            if (string.IsNullOrWhiteSpace(_dstDetailsProxyUrl))
+            var proxyUrl = GetProxyUrl();
+            if (string.IsNullOrWhiteSpace(proxyUrl))
             {
                 foreach (var item in datas)
                 {
@@ -168,43 +172,62 @@ namespace Ilyfairy.DstServerQuery
                     }
                 }).Where(v => v.Key != null);
 
-                var map = group.ToDictionary(v => v.Key, v => v.Cast<LobbyDetailsData>());
+                var regionMap = group.ToDictionary(v => v.Key!, v => v.Cast<LobbyDetailsData>());
 
-                foreach (var item in map)
+                List<KeyValuePair<RegionPlatform, LobbyDetailsData>> requests = new(regionMap.Sum(v => v.Value.Count()));
+                foreach (var region in regionMap)
                 {
-                    RegionPlatform region = item.Key!;
-                    var chunks = item.Value;
-                    var rowIdMap = chunks.ToDictionary(v => v.RowId);
-
-                    ParallelOptions opt = new()
+                    foreach (var data in region.Value)
                     {
-                        MaxDegreeOfParallelism = 16,
-                        CancellationToken = cancellationToken
-                    };
-                    await Parallel.ForEachAsync(chunks.Chunk(50), opt, async (chunk, ct) =>
-                    {
-                        await Task.Yield();
-                        var rowids = chunk.Select(v => v.RowId);
-                        var body = JsonSerializer.Serialize(rowids);
-                        var url = string.Format(_dstDetailsProxyUrl, $"v2-{region.Region}");
-                        var r = await httpUpdate.PostAsync(url, new StringContent(body, null, MediaTypeNames.Application.Json), ct);
-                        var json = await r.Content.ReadAsStringAsync(ct);
-                        var get = JsonSerializer.Deserialize<GET<LobbyDetailsData>>(json, default(JsonSerializerOptions));
-                        requestCount++;
-                        if (get is null || get.Data is null || !get.Data.Any()) return;
-                        foreach (var newData in get.Data)
-                        {
-                            if (rowIdMap.TryGetValue(newData.RowId, out var data))
-                            {
-                                updatedCount++;
-                                newData.CopyTo(data); //更新数据
-                                data._IsDetails = true; //变成详细数据
-                                data._LastUpdate = DateTime.Now;
-                            }
-                        }
-                    });
+                        requests.Add(new(region.Key, data));
+                    }
                 }
+                var rowIdMap = datas.ToDictionary(v => v.RowId);
 
+                ParallelOptions opt = new()
+                {
+                    MaxDegreeOfParallelism = 16,
+                    CancellationToken = cancellationToken
+                };
+                await Parallel.ForEachAsync(requests.Chunk(50), opt, async (chunk, ct) =>
+                {
+                    await Task.Yield();
+                    List<object> requestList = new();
+                    foreach (var item in chunk)
+                    {
+                        requestList.Add(new
+                        {
+                            RowId = item.Value.RowId,
+                            Region = item.Key.Region
+                        });
+                    }
+                    var body = JsonSerializer.Serialize(requestList);
+                    var url = _dstDetailsProxyUrls;
+                    HttpResponseMessage r;
+                    try
+                    {
+                        r = await httpUpdate.PostAsync(proxyUrl, new StringContent(body, null, MediaTypeNames.Application.Json), ct);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.Assert(false);
+                        return;
+                    }
+                    var json = await r.Content.ReadAsStringAsync(ct);
+                    var get = JsonSerializer.Deserialize<GET<LobbyDetailsData>>(json, default(JsonSerializerOptions));
+                    requestCount++;
+                    if (get is null || get.Data is null || !get.Data.Any()) return;
+                    foreach (var newData in get.Data)
+                    {
+                        if (rowIdMap.TryGetValue(newData.RowId, out var data))
+                        {
+                            updatedCount++;
+                            newData.CopyTo(data); //更新数据
+                            data._IsDetails = true; //标记为详细数据
+                            data._LastUpdate = DateTime.Now;
+                        }
+                    }
+                });
             }
             return updatedCount;
         }
@@ -233,6 +256,13 @@ namespace Ilyfairy.DstServerQuery
                 }
             }
             return datas;
+        }
+
+        public string? GetProxyUrl()
+        {
+            if (_dstDetailsProxyUrls == null) return null;
+            var rand = Random.Shared.Next() % _dstDetailsProxyUrls.Length;
+            return _dstDetailsProxyUrls[rand];
         }
 
     }

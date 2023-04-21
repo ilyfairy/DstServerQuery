@@ -47,7 +47,7 @@ public class LobbyDetailsManager : IDisposable
     public LobbyDetailsManager(RequestRoot rr)
     {
         OldUrlList = rr.OldList;
-        LobbyDownloader = new(rr.Token, rr.DstDetailsProxyUrl);
+        LobbyDownloader = new(rr.Token, rr.DstDetailsProxyUrls);
     }
 
     #region 方法
@@ -110,7 +110,6 @@ public class LobbyDetailsManager : IDisposable
     {
         while (Running)
         {
-            logDownloadLoop.Info("准备 Download");
             Dictionary<string, LobbyDetailsData> data;
             try
             {
@@ -231,21 +230,32 @@ public class LobbyDetailsManager : IDisposable
 
     private async Task UpdatingLoop()
     {
+        Stopwatch s = new();
         await Task.Yield();
         while (Running)
         {
+            s.Restart();
             var arr = ServerMap.Values;
-            if (arr.Count == 0) continue;
+            if (arr.Count == 0)
+            {
+                await Task.Delay(20000, HttpTokenSource.Token);
+            }
             try
             {
-                await LobbyDownloader.UpdateToDetails(arr.ToArray(), HttpTokenSource.Token);
-                logDownloadLoop.Info("所有详细信息已更新!!!!!");
-                await Task.Delay(1000, HttpTokenSource.Token);
+                var count = await LobbyDownloader.UpdateToDetails(arr.ToArray(), HttpTokenSource.Token);
+                if(count <= 0)
+                {
+                    logDownloadLoop.Info("@所有详细信息更新失败!");
+                }
+                else
+                {
+                    logDownloadLoop.Info("@所有详细信息已更新!!!!!");
+                }
+                await Task.Delay(20000, HttpTokenSource.Token);
             }
-            catch
-            {
-
-            }
+            catch { }
+            s.Stop();
+            logDownloadLoop.Info($"更新详细信息耗时: {s.ElapsedMilliseconds}ms");
         }
     }
 

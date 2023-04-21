@@ -18,9 +18,7 @@
 ### 代理
 DstDetailsProxyUrl 是一个批量请求详细数据的代理服务器的Url  
 它相当于是`https://lobby-v2-cdn.klei.com`代理版本, 请自己搭建代理服务器  
-POST https://api.com/path/{1}  
-`{0}` 是Region将被传入`us-east-1` `ap-east-1`等  
-`body` 将会传入一个rowid的数组  
+`body`将会传入类似`[{"RowId":"KU_XXXXXXXX","Region":"v2-ap-east-1"}]`的列表
 
 ## 接口
 
