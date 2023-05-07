@@ -17,11 +17,11 @@ namespace Ilyfairy.DstServerQuery.EntityFrameworkCore
     /// </summary>
     public class HistoryCountManager
     {
-        private readonly Func<DstDbContext> dbContext;
+        private readonly Func<DstDbContext>? dbContext;
         private readonly Logger logger = LogManager.GetLogger("DstServerQuery.HistoryCountManager");
-        private readonly Queue<ServerCountInfo> cache = new(10000);
+        private readonly Queue<ServerCountInfo> cache = new(10100);
 
-        public HistoryCountManager(Func<DstDbContext> dbContext)
+        public HistoryCountManager(Func<DstDbContext>? dbContext)
         {
             this.dbContext = dbContext;
             try
@@ -39,6 +39,7 @@ namespace Ilyfairy.DstServerQuery.EntityFrameworkCore
         /// </summary>
         private void Initialize()
         {
+            if (dbContext is null) return;
             using var db = dbContext();
             var day3 = DateTime.Now - TimeSpan.FromDays(3); //三天前
             var r = db.ServerHistoryCountInfos.Where(v => v.UpdateDate > day3);
@@ -51,6 +52,7 @@ namespace Ilyfairy.DstServerQuery.EntityFrameworkCore
 
         public bool Add(ServerCountInfo info)
         {
+            if (dbContext is null) return false;
             using var db = dbContext();
             var r = db.ServerHistoryCountInfos.Add(info);
             try

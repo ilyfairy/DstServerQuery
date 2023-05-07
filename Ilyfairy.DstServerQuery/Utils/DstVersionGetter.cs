@@ -31,12 +31,12 @@ public class DstVersionGetter
                     using DstDownloader dst = new();
                     currentDst = dst;
                     bool ok = false;
-                    CancellationTokenSource cts = new();
+                    TokenSource = new();
 
                     //等待Login,设置超时时间
                     _ = Task.Run(async () =>
                     {
-                        await Task.Delay(TimeSpan.FromSeconds(60), cts.Token); //60秒超时
+                        await Task.Delay(TimeSpan.FromSeconds(60), TokenSource.Token); //60秒超时
                         if (ok) return;
                         dst.Dispose();
                         log.Info("饥荒版本获取失败");
@@ -50,7 +50,7 @@ public class DstVersionGetter
                         {
                             this.Version = version.Value;
                             ok = true;
-                            cts.Cancel();
+                            TokenSource.Cancel();
                             log.Info("饥荒版本获取成功: {0}", version);
                         }
                         else

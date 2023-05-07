@@ -5,7 +5,6 @@ namespace Ilyfairy.DstServerQuery.Models
 {
     public class DstDbContext : DbContext
     {
-        public DbSet<UserRequestRecord> UserRequestRecords { get; set; }
         public DbSet<ServerCountInfo> ServerHistoryCountInfos { get; set; }
 
         public DstDbContext(DbContextOptions options) : base(options)

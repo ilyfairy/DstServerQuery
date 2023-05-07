@@ -243,7 +243,7 @@ public class LobbyDetailsManager : IDisposable
             try
             {
                 var count = await LobbyDownloader.UpdateToDetails(arr.ToArray(), HttpTokenSource.Token);
-                if(count <= 0)
+                if(count <= 0 && arr.Count != 0)
                 {
                     logDownloadLoop.Info("@所有详细信息更新失败!");
                 }

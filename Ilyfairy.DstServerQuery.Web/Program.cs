@@ -3,7 +3,6 @@ using Ilyfairy.DstServerQuery;
 using Ilyfairy.DstServerQuery.EntityFrameworkCore;
 using Ilyfairy.DstServerQuery.LobbyJson;
 using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Models.Entities;
 using Ilyfairy.DstServerQuery.Models.Requests;
 using Ilyfairy.DstServerQuery.Utils;
 using Microsoft.EntityFrameworkCore;
@@ -20,18 +19,27 @@ builder.Services.AddControllers().AddJsonOptions(opt =>
     opt.JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
 });
 builder.Services.AddResponseCompression(); //启用压缩
-//builder.Services.AddSqlServer<DstDbContext>(builder.Configuration.GetConnectionString("SqlServer")!);
-builder.Services.AddSingleton<Func<DstDbContext>>(() => new DstDbContext(new DbContextOptionsBuilder<DstDbContext>()
-        .UseSqlServer(builder.Configuration.GetConnectionString("SqlServer")!).Options));
-builder.Services.AddSingleton(builder.Configuration.GetSection("Requests").Get<RequestRoot>()!);
 
+//builder.Services.AddSqlServer<DstDbContext>(builder.Configuration.GetConnectionString("SqlServer")!);
+if (builder.Configuration.GetConnectionString("SqlServer") is string sqlServer)
+{
+    builder.Services.AddSingleton(new HistoryCountManager(() => new DstDbContext(new DbContextOptionsBuilder<DstDbContext>()
+            .UseSqlServer(sqlServer).Options)));
+}
+else
+{
+    builder.Services.AddSingleton(new HistoryCountManager(null));
+    LogManager.GetLogger("Initialize").Warn("没有使用SqlServer");
+}
+
+builder.Services.AddSingleton(builder.Configuration.GetSection("Requests").Get<RequestRoot>()!);
 builder.Services.AddSingleton<LobbyDetailsManager>()
-    .AddSingleton<DstVersionGetter>()
-    .AddSingleton<HistoryCountManager>()
-    .AddSingleton<UserRequestRecordManager>();
+    .AddSingleton<DstVersionGetter>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddCors(v => v.AddDefaultPolicy(v => v.AllowAnyOrigin()));
 
 CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("zh-cn");
 
@@ -87,38 +95,14 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseResponseCompression();
-var log = LogManager.GetLogger("Web.Middleware");
 
 app.Use(async (context, next) =>
 {
     if (!app.Services.GetService<LobbyDetailsManager>()!.Running)
     {
+        context.Response.StatusCode = 500;
         return;
     }
-
-    context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
-    context.Response.Headers.Add("Access-Control-Allow-Methods", "*");
-    context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild");
-    await next();
-});
-
-app.Use(async (context, next) =>
-{
-    var lobbyManager = app.Services.GetService<LobbyDetailsManager>()!;
-    var userRequestRecordManager = app.Services.GetService<UserRequestRecordManager>()!;
-
-    UserRequestRecord request = new()
-    {
-        Path = $"{context.Request.Path}{context.Request.QueryString}",
-        IP = context.Request.Headers["X-Forwarded-For"].FirstOrDefault(),
-        DateTime = DateTime.Now,
-        UserAgent = context.Request.Headers["User-Agent"].ToString(),
-    };
-    
-#if !DEBUG
-    userRequestRecordManager?.AddRequestRecord(request);
-#endif
-
     await next();
 });
 
