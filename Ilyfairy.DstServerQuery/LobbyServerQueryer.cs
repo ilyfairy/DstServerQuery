@@ -120,6 +120,7 @@ public class LobbyServerQueryer : IDisposable
         OwnerNetidProc();
         ModsNameProc();
         ModsIdProc();
+        CountryProc();
 
         IsSortDescendingProc();
         SortProc();
@@ -935,6 +936,15 @@ public class LobbyServerQueryer : IDisposable
                     ReAdd(tmp);
                 }
             }
+        }
+    }
+
+    private void CountryProc()
+    {
+        if (GetValue("Country") is string country)
+        {
+            var tmp = Result.Where(v => string.Equals(v.Country, country, StringComparison.OrdinalIgnoreCase));
+            ReAdd(tmp);
         }
     }
 }
