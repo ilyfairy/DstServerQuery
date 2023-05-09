@@ -1,59 +1,38 @@
 ﻿using Ilyfairy.DstServerQuery.LobbyJson;
 using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace Ilyfairy.DstServerQuery;
 
-public class LobbyServerQueryer : IDisposable
+public class LobbyServerQueryer
 {
-    public void Dispose()
-    {
-        this.Result.Clear();
-        this.queryKey.Clear();
-        LobbyDetailDatas = null;
-        Result = null;
-    }
-
     public ICollection<LobbyDetailsData> LobbyDetailDatas { get; private set; }
-    public List<LobbyDetailsData> Result { get; private set; }
+    public List<LobbyDetailsData>? Result { get; private set; }
     /// <summary>
     /// 查询的键值
     /// </summary>
-    private readonly Dictionary<string, string> queryKey = new();
+    private readonly Dictionary<string, string> queryKeyValue = new(StringComparer.OrdinalIgnoreCase);
 
-    public string Rowid { get; set; } = null;
     public bool IsDetails { get; set; } = false;
     public int Page { get; set; } = 0;
     public int PageCount { get; set; } = 100;
     public int CurrentPageCount { get; set; }
     public int AllQueryCount { get; set; }
     public int MaxPage { get; set; }
-    public string ServerName { get; set; }
     public bool IsRegex { get; set; } = false;
-    public string IP { get; set; }
-    public string Port { get; set; }
-    public string Connected { get; set; }
-    public bool? IsDedicated { get; set; }
-    public string HostKleiId { get; set; }
-    public bool? IsMods { get; set; } = null;
-    public string PlatformString { get; set; }
-    public bool? IsPvp { get; set; } = null;
     public bool IsPlayerId { get; set; } = false;
-    public string PlayerName { get; set; }
+    public bool IsPlayerQuery { get; set; }
     public bool IsSortDescending { get; set; }
-    public int SortType { get; set; } = 1;
-    public long? Version { get; set; }
-    public bool? IsPassword { get; set; }
-    public bool? IsOfficial { get; set; }
     public DateTime LastUpdate { get; set; }
 
     public HashSet<string>? PropertiesRemove { get; set; }
 
-    private string json;
-    public string Json
+    private string? json;
+    public string? Json
     {
         get
         {
@@ -64,7 +43,7 @@ public class LobbyServerQueryer : IDisposable
                 {
                     jsonString = CreateJson<LobbyDetailsData>();
                 }
-                else if (PlayerName is not null)
+                else if (IsPlayerQuery)
                 {
                     jsonString = CreateJson<LobbyBriefDataPlayers>();
                 }
@@ -85,7 +64,7 @@ public class LobbyServerQueryer : IDisposable
         LobbyDetailDatas = lobbyDetailDatas;
         foreach (var item in queryKey)
         {
-            this.queryKey[item.Key.ToLower()] = item.Value;
+            this.queryKeyValue[item.Key] = item.Value;
         }
     }
 
@@ -140,7 +119,7 @@ public class LobbyServerQueryer : IDisposable
 
     private JsonObject CreateJson<T>() where T : LobbyBriefData
     {
-        List<T> list = Result.Select(v => v as T).ToList();
+        List<T> list = Result.Select(v => (v as T)!).ToList();
 
         JsonObject json = new();
         json.Add("DateTime", DateTime.Now);
@@ -149,6 +128,7 @@ public class LobbyServerQueryer : IDisposable
         json.Add("AllCount", AllQueryCount);
         json.Add("MaxPage", MaxPage);
         json.Add("Page", Page);
+
         if (PropertiesRemove == null || PropertiesRemove.Count == 0)
         {
             json.Add("List", JsonValue.Create(list));
@@ -172,11 +152,11 @@ public class LobbyServerQueryer : IDisposable
         return json;
     }
 
-    private string GetValue(params string[] keys)
+    private string? GetValue(params string[] keys)
     {
         foreach (var key in keys)
         {
-            if (queryKey.TryGetValue(key.ToLower(), out var val))
+            if (queryKeyValue.TryGetValue(key, out var val))
             {
                 return val;
             }
@@ -230,7 +210,6 @@ public class LobbyServerQueryer : IDisposable
     {
         if (GetValue("RowId") is string rowid)
         {
-            Rowid = rowid;
             var tmp = LobbyDetailDatas.Where(v => v.RowId == rowid).FirstOrDefault();
             Result.Clear();
             if (tmp is LobbyDetailsData data)
@@ -284,7 +263,6 @@ public class LobbyServerQueryer : IDisposable
         if (GetValue("Name", "ServerName") is string serverName)
         {
             if (serverName.Length == 0) return;
-            ServerName = serverName;
             LobbyDetailsData[] tmp;
             if (IsRegex)
             {
@@ -321,7 +299,6 @@ public class LobbyServerQueryer : IDisposable
     {
         if (GetValue("ip") is string ip)
         {
-            IP = ip;
             var match = Regex.Match(ip, @"^((?:\d{1,3})|[*])[.]((?:\d{1,3})|[*])[.]((?:\d{1,3})|[*])[.]((?:\d{1,3})|[*])$");
             if (match.Success)
             {
@@ -361,7 +338,6 @@ public class LobbyServerQueryer : IDisposable
 
             if (int.TryParse(port, out int val))
             {
-                Port = port;
                 var tmp = new List<LobbyDetailsData>();
                 foreach (var item in Result)
                 {
@@ -473,10 +449,9 @@ public class LobbyServerQueryer : IDisposable
     /// </summary>
     private void IsDedicatedProc()
     {
-        if (GetValueToBool("Dedicated", "Dedicated") is bool isDedicated)
+        if (GetValueToBool("Dedicated", "IsDedicated") is bool isDedicated)
         {
-            IsDedicated = isDedicated;
-            var tmp = Result.Where(v => v.Dedicated == IsDedicated);
+            var tmp = Result.Where(v => v.Dedicated == isDedicated);
             ReAdd(tmp);
         }
     }
@@ -487,8 +462,7 @@ public class LobbyServerQueryer : IDisposable
     {
         if (GetValue("Host", "HostId", "Host", "KleiId", "HostKleiId") is string hostKleiId)
         {
-            HostKleiId = hostKleiId;
-            var tmp = Result.Where(v => v.Host == HostKleiId);
+            var tmp = Result.Where(v => v.Host == hostKleiId);
             ReAdd(tmp);
         }
     }
@@ -517,7 +491,6 @@ public class LobbyServerQueryer : IDisposable
     {
         if (GetValue("Platform") is string platform)
         {
-            PlatformString = platform;
             var tmp = new List<LobbyDetailsData>();
             foreach (var item in Result)
             {
@@ -536,7 +509,7 @@ public class LobbyServerQueryer : IDisposable
                         }
                         break;
                     case "2" or "wegame": //WeGame
-                        if (item.Platform == Platform.WeGame || item.Platform == Platform.QQGame)
+                        if (item.Platform is Platform.WeGame or Platform.QQGame)
                         {
                             tmp.Add(item);
                         }
@@ -570,10 +543,9 @@ public class LobbyServerQueryer : IDisposable
     /// </summary>
     private void PvpProc()
     {
-        if (GetValueToBool("pvp", "PVP") is bool pvp)
+        if (GetValueToBool("pvp", "ispvp") is bool pvp)
         {
-            IsPvp = pvp;
-            var tmp = Result.Where(v => v.PVP == IsPvp);
+            var tmp = Result.Where(v => v.PVP == pvp);
             ReAdd(tmp);
         }
     }
@@ -594,7 +566,6 @@ public class LobbyServerQueryer : IDisposable
     {
         if (GetValueToInt("Sort", "SortType") is int sortType)
         {
-            SortType = sortType;
             //排序
             switch (sortType)
             {
@@ -630,7 +601,7 @@ public class LobbyServerQueryer : IDisposable
     {
         if (GetValue("Player", "PlayerName") is string playerName)
         {
-            PlayerName = playerName;
+            IsPlayerQuery = true;
             List<LobbyDetailsData> tmp = new();
             var playerCount = LobbyDetailDatas.Sum(v => v.Players?.Count ?? 0);
             var resultPlayerCount = Result.Sum(v => v.Players?.Count ?? 0);
@@ -666,6 +637,7 @@ public class LobbyServerQueryer : IDisposable
     {
         if (GetValue("Version", "V", "Ver") is string version)
         {
+            long? Version = null;
             if (version.Contains("last") || version.Contains("new"))
             {
                 Version = 0;
@@ -688,7 +660,6 @@ public class LobbyServerQueryer : IDisposable
     {
         if (GetValueToBool("Password", "IsPassword") is bool isPassword)
         {
-            IsPassword = isPassword;
             var tmp = Result.Where(v => v.Password == isPassword);
             ReAdd(tmp);
         }
@@ -700,7 +671,6 @@ public class LobbyServerQueryer : IDisposable
     {
         if (GetValueToBool("IsOfficial", "Official") is bool official)
         {
-            IsOfficial = official;
             var tmp = Result.Where(v => v.KleiOfficial == official);
             ReAdd(tmp);
         }
@@ -729,7 +699,6 @@ public class LobbyServerQueryer : IDisposable
     {
         if (GetValue("GameMode", "Mode") is string gamemode)
         {
-            PlatformString = gamemode;
             var tmp = new List<LobbyDetailsData>();
             foreach (var item in Result)
             {
