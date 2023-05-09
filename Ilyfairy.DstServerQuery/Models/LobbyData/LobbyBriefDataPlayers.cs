@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.Models.LobbyData;
 
-public class LobbyBriefDataPlayers : LobbyBriefData
+public class LobbyBriefsDataPlayers : LobbyBriefsData
 {
     [JsonPropertyName("players")]
     [JsonConverter(typeof(PlayersInfoConverter))] // NOTE:自定义转换

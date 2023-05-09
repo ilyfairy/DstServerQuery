@@ -18,8 +18,8 @@ public static class DstJsonConverter
         Options.Converters.Add(new IntentConverter());
         Options.Converters.Add(new SeasonConverter());
         Options.Converters.Add(new JsonStringEnumConverter());
-        Options.Converters.Add(new CustomNameConverter<LobbyBriefData>());
-        Options.Converters.Add(new CustomNameConverter<LobbyBriefDataPlayers>());
+        Options.Converters.Add(new CustomNameConverter<LobbyBriefsData>());
+        Options.Converters.Add(new CustomNameConverter<LobbyBriefsDataPlayers>());
         Options.Converters.Add(new CustomNameConverter<LobbyDetailsData>());
         Options.Converters.Add(new IPAddressInfoConverter());
         Options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;

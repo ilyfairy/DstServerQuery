@@ -45,11 +45,11 @@ public class LobbyServerQueryer
                 }
                 else if (IsPlayerQuery)
                 {
-                    jsonString = CreateJson<LobbyBriefDataPlayers>();
+                    jsonString = CreateJson<LobbyBriefsDataPlayers>();
                 }
                 else
                 {
-                    jsonString = CreateJson<LobbyBriefData>();
+                    jsonString = CreateJson<LobbyBriefsData>();
                 }
                 json = jsonString.ToJsonString(DstJsonConverter.Options);
             }
@@ -117,7 +117,7 @@ public class LobbyServerQueryer
         CurrentPageCount = Result.Count;
     }
 
-    private JsonObject CreateJson<T>() where T : LobbyBriefData
+    private JsonObject CreateJson<T>() where T : LobbyBriefsData
     {
         List<T> list = Result.Select(v => (v as T)!).ToList();
 

@@ -6,7 +6,7 @@ namespace Ilyfairy.DstServerQuery.Models.LobbyData;
 /// <summary>
 /// 单个服务器列表详细信息
 /// </summary>
-public class LobbyDetailsData : LobbyBriefDataPlayers
+public class LobbyDetailsData : LobbyBriefsDataPlayers
 {
     [JsonPropertyName("__lastPing")]
     public long LastPing { get; set; } //上次与大厅通信时间

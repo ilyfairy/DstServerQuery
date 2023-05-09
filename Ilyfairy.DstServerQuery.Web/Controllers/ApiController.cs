@@ -83,7 +83,7 @@ public partial class ApiController : Controller
     {
         var queryKey = Request.Query.Select(v => new KeyValuePair<string, string>(v.Key, v.Value.FirstOrDefault())).ToList();
 
-        using LobbyServerQueryer queryer = new(lobbyDetailsManager.GetCurrentDetails(), queryKey, lobbyDetailsManager.LastUpdate);
+        LobbyServerQueryer queryer = new(lobbyDetailsManager.GetCurrentDetails(), queryKey, lobbyDetailsManager.LastUpdate);
         queryer.Query();
 
         string query = string.Join("&", queryKey.Select(v => $"{v.Key}={v.Value}"));

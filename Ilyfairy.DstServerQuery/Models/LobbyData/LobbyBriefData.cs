@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.Models.LobbyData;
 
-public class LobbyBriefData : IDisposable
+public class LobbyBriefsData : IDisposable
 {
     internal bool _IsDetails;
     internal string? _Region;
@@ -98,7 +98,7 @@ public class LobbyBriefData : IDisposable
         _Lock?.Dispose();
     }
 
-    ~LobbyBriefData()
+    ~LobbyBriefsData()
     {
         Dispose();
     }

@@ -145,7 +145,7 @@ public class LobbyDetailsManager : IDisposable
             //重复的
             foreach (var rowId in currentRowIds.Intersect(newRowIds))
             {
-                (data[rowId] as LobbyBriefData).CopyTo(ServerMap[rowId]);
+                (data[rowId] as LobbyBriefsData).CopyTo(ServerMap[rowId]);
             }
 
             //新增的
