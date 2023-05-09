@@ -1,6 +1,7 @@
 ﻿using Ilyfairy.DstServerQuery.LobbyJson;
 using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
@@ -49,6 +50,8 @@ public class LobbyServerQueryer : IDisposable
     public bool? IsOfficial { get; set; }
     public DateTime LastUpdate { get; set; }
 
+    public HashSet<string>? PropertiesRemove { get; set; }
+
     private string json;
     public string Json
     {
@@ -59,15 +62,15 @@ public class LobbyServerQueryer : IDisposable
                 JsonObject jsonString;
                 if (IsDetails)
                 {
-                    jsonString = Create<LobbyDetailsData>();
+                    jsonString = CreateJson<LobbyDetailsData>();
                 }
                 else if (PlayerName is not null)
                 {
-                    jsonString = Create<LobbyBriefDataPlayers>();
+                    jsonString = CreateJson<LobbyBriefDataPlayers>();
                 }
                 else
                 {
-                    jsonString = Create<LobbyBriefData>();
+                    jsonString = CreateJson<LobbyBriefData>();
                 }
                 json = jsonString.ToJsonString(DstJsonConverter.Options);
             }
@@ -128,12 +131,14 @@ public class LobbyServerQueryer : IDisposable
         PageCountProc();
         PageProc();
 
+        PropertiesRemoveProc();
+
         AllQueryCount = Result.Count;
         Result = Result.Skip(Page * PageCount).Take(PageCount).ToList();
         CurrentPageCount = Result.Count;
     }
 
-    JsonObject Create<T>() where T : class
+    private JsonObject CreateJson<T>() where T : LobbyBriefData
     {
         List<T> list = Result.Select(v => v as T).ToList();
 
@@ -144,7 +149,25 @@ public class LobbyServerQueryer : IDisposable
         json.Add("AllCount", AllQueryCount);
         json.Add("MaxPage", MaxPage);
         json.Add("Page", Page);
-        json.Add("List", JsonValue.Create(list));
+        if (PropertiesRemove == null || PropertiesRemove.Count == 0)
+        {
+            json.Add("List", JsonValue.Create(list));
+        }
+        else
+        {
+            JsonArray array = new();
+            foreach (var item in list)
+            {
+                var obj = JsonSerializer.SerializeToNode(item, DstJsonConverter.Options)?.AsObject();
+                if (obj is null) continue;
+                foreach (var property in PropertiesRemove)
+                {
+                    obj.Remove(property);
+                }
+                array.Add(obj);
+            }
+            json.Add("List", array);
+        }
 
         return json;
     }
@@ -462,7 +485,7 @@ public class LobbyServerQueryer : IDisposable
     /// </summary>
     private void HostKleiIdProc()
     {
-        if (GetValue("Host", "HostId", "Host" , "KleiId", "HostKleiId") is string hostKleiId)
+        if (GetValue("Host", "HostId", "Host", "KleiId", "HostKleiId") is string hostKleiId)
         {
             HostKleiId = hostKleiId;
             var tmp = Result.Where(v => v.Host == HostKleiId);
@@ -547,7 +570,7 @@ public class LobbyServerQueryer : IDisposable
     /// </summary>
     private void PvpProc()
     {
-        if (GetValueToBool("pvp","PVP") is bool pvp)
+        if (GetValueToBool("pvp", "PVP") is bool pvp)
         {
             IsPvp = pvp;
             var tmp = Result.Where(v => v.PVP == IsPvp);
@@ -610,7 +633,7 @@ public class LobbyServerQueryer : IDisposable
             PlayerName = playerName;
             List<LobbyDetailsData> tmp = new();
             var playerCount = LobbyDetailDatas.Sum(v => v.Players?.Count ?? 0);
-            var resultPlayerCount = Result.Sum(v=>v.Players?.Count ?? 0);
+            var resultPlayerCount = Result.Sum(v => v.Players?.Count ?? 0);
 
             foreach (var server in Result)
             {
@@ -663,7 +686,7 @@ public class LobbyServerQueryer : IDisposable
     /// </summary>
     private void PasswordProc()
     {
-        if (GetValueToBool("Password") is bool isPassword)
+        if (GetValueToBool("Password", "IsPassword") is bool isPassword)
         {
             IsPassword = isPassword;
             var tmp = Result.Where(v => v.Password == isPassword);
@@ -704,7 +727,7 @@ public class LobbyServerQueryer : IDisposable
     }
     private void GameModeProc()
     {
-        if (GetValue("GameMode","Mode") is string gamemode)
+        if (GetValue("GameMode", "Mode") is string gamemode)
         {
             PlatformString = gamemode;
             var tmp = new List<LobbyDetailsData>();
@@ -945,6 +968,20 @@ public class LobbyServerQueryer : IDisposable
         {
             var tmp = Result.Where(v => string.Equals(v.Country, country, StringComparison.OrdinalIgnoreCase));
             ReAdd(tmp);
+        }
+    }
+
+    private void PropertiesRemoveProc()
+    {
+        if (GetValue("PropertiesRemove", "KeyRemove") is string properties)
+        {
+            var split = properties.Split('|', StringSplitOptions.RemoveEmptyEntries);
+            if (split.Length <= 0) return;
+            PropertiesRemove = new();
+            foreach (var item in split)
+            {
+                PropertiesRemove.Add(item);
+            }
         }
     }
 }

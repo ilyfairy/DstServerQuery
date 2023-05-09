@@ -210,7 +210,10 @@ namespace Ilyfairy.DstServerQuery
                     }
                     catch (Exception e)
                     {
-                        Debug.Assert(false);
+                        if (!e.Message.Contains("SSL"))
+                        {
+                            Debug.Assert(false);
+                        }
                         return;
                     }
                     var json = await r.Content.ReadAsStringAsync(ct);
