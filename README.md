@@ -14,6 +14,9 @@
 
 配置文件是[appsettings.json](Ilyfairy.DstServerQuery.Web/appsettings.json)
 
+### Token
+需要到找klei去申请一个token, 否则是不能获取详细信息的, 比如玩家信息
+
 ### 代理(可选)
 DstDetailsProxyUrl 是一个批量请求详细数据的代理服务器的Url  
 它相当于是`https://lobby-v2-cdn.klei.com`代理版本, 请自己搭建代理服务器  

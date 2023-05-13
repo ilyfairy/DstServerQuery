@@ -39,10 +39,8 @@ builder.Services.AddSingleton<LobbyDetailsManager>()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddCors(v => v.AddDefaultPolicy(v => v.AllowAnyOrigin()));
-
-CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("zh-cn");
-
+CultureInfo.CurrentCulture = new CultureInfo("zh-cn");
+ 
 var app = builder.Build();
 
 app.Lifetime.ApplicationStarted.Register(async () =>
@@ -98,6 +96,8 @@ app.UseResponseCompression();
 
 app.Use(async (context, next) =>
 {
+    context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+    context.Response.Headers.Add("Access-Control-Allow-Methods", "*");
     if (!app.Services.GetService<LobbyDetailsManager>()!.Running)
     {
         context.Response.StatusCode = 500;
