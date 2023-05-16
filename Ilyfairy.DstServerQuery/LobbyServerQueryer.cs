@@ -2,6 +2,7 @@
 using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -933,6 +934,8 @@ public class LobbyServerQueryer
             }
         }
     }
+
+    private readonly Season[] seasons = Enum.GetValues<Season>();
     /// <summary>
     /// 季节过滤
     /// </summary>
@@ -941,22 +944,26 @@ public class LobbyServerQueryer
         if (GetQueryValue("season", "季节") is string seasonString)
         {
             Season? season = null;
-            if (seasonString == "秋" || string.Equals(seasonString, "autumn", StringComparison.OrdinalIgnoreCase))
+            foreach (var item in seasons)
             {
-                season = Season.autumn;
+                if(string.Equals(item.ToString(),seasonString, StringComparison.OrdinalIgnoreCase))
+                {
+                    season = item;
+                }
             }
-            if (seasonString == "冬" || string.Equals(seasonString, "winter", StringComparison.OrdinalIgnoreCase))
+
+            if(season != null)
             {
-                season = Season.winter;
+                season = seasonString switch
+                {
+                    "春" => Season.spring,
+                    "夏" => Season.summer,
+                    "秋" => Season.autumn,
+                    "冬" => Season.winter,
+                    _ => null
+                };
             }
-            if (seasonString == "春" || string.Equals(seasonString, "spring", StringComparison.OrdinalIgnoreCase))
-            {
-                season = Season.spring;
-            }
-            if (seasonString == "夏" || string.Equals(seasonString, "summer", StringComparison.OrdinalIgnoreCase))
-            {
-                season = Season.summer;
-            }
+
             if (season == null) return;
             var tmp = Result.Where(v => v.Season == season.Value);
             ReAdd(tmp);
