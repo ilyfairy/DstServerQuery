@@ -11,7 +11,7 @@ namespace Ilyfairy.DstServerQuery;
 public class LobbyServerQueryer
 {
     public ICollection<LobbyDetailsData> LobbyDetailDatas { get; private set; }
-    public List<LobbyDetailsData>? Result { get; private set; }
+    public List<LobbyDetailsData> Result { get; private set; }
     /// <summary>
     /// 查询的键值
     /// </summary>
@@ -62,6 +62,7 @@ public class LobbyServerQueryer
     {
         LastUpdate = lastUpdate;
         LobbyDetailDatas = lobbyDetailDatas;
+        Result = LobbyDetailDatas.ToList();
         foreach (var item in queryKey)
         {
             this.queryKeyValue[item.Key] = item.Value;
@@ -71,7 +72,8 @@ public class LobbyServerQueryer
 
     public void Query()
     {
-        Result = LobbyDetailDatas.ToList();
+        if (json != null) return;
+
         RowIdProc();
         IsDetailsProc();
 
@@ -103,6 +105,7 @@ public class LobbyServerQueryer
         ModsNameProc();
         ModsIdProc();
         CountryProc();
+        SeasonProc();
 
         IsSortDescendingProc();
         SortProc();
@@ -152,7 +155,7 @@ public class LobbyServerQueryer
         return json;
     }
 
-    private string? GetValue(params string[] keys)
+    private string? GetQueryValue(params string[] keys)
     {
         foreach (var key in keys)
         {
@@ -163,9 +166,9 @@ public class LobbyServerQueryer
         }
         return null;
     }
-    private int? GetValueToInt(params string[] keys)
+    private int? GetQueryValueToInt(params string[] keys)
     {
-        if (int.TryParse(GetValue(keys), out var val))
+        if (int.TryParse(GetQueryValue(keys), out var val))
         {
             return val;
         }
@@ -176,7 +179,7 @@ public class LobbyServerQueryer
     }
     private long? GetValueToLong(params string[] keys)
     {
-        if (long.TryParse(GetValue(keys), out var val))
+        if (long.TryParse(GetQueryValue(keys), out var val))
         {
             return val;
         }
@@ -185,9 +188,9 @@ public class LobbyServerQueryer
             return null;
         }
     }
-    private bool? GetValueToBool(params string[] keys)
+    private bool? GetQueryValueToBool(params string[] keys)
     {
-        if (bool.TryParse(GetValue(keys), out var val))
+        if (bool.TryParse(GetQueryValue(keys), out var val))
         {
             return val;
         }
@@ -208,7 +211,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void RowIdProc()
     {
-        if (GetValue("RowId") is string rowid)
+        if (GetQueryValue("RowId") is string rowid)
         {
             var tmp = LobbyDetailDatas.Where(v => v.RowId == rowid).FirstOrDefault();
             Result.Clear();
@@ -223,7 +226,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void IsDetailsProc()
     {
-        if (GetValueToBool("Details", "IsDetails") is bool val)
+        if (GetQueryValueToBool("Details", "IsDetails") is bool val)
         {
             IsDetails = val;
         }
@@ -233,7 +236,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void PageCountProc()
     {
-        if (GetValueToInt("PageCount") is int count)
+        if (GetQueryValueToInt("PageCount") is int count)
         {
             PageCount = count;
             if (PageCount <= 0) PageCount = 1;
@@ -248,7 +251,7 @@ public class LobbyServerQueryer
         MaxPage = Result.Count / PageCount;
         if (Result.Count / (double)PageCount % 1 > 0) MaxPage++;
         MaxPage--;
-        if (GetValueToInt("Page") is int page)
+        if (GetQueryValueToInt("Page") is int page)
         {
             Page = page;
             if (Page < 0) Page = 0;
@@ -260,7 +263,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void ServerNameProc()
     {
-        if (GetValue("Name", "ServerName") is string serverName)
+        if (GetQueryValue("Name", "ServerName") is string serverName)
         {
             if (serverName.Length == 0) return;
             LobbyDetailsData[] tmp;
@@ -287,7 +290,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void IsRegexProc()
     {
-        if (GetValueToBool("isregex") is bool isRegex)
+        if (GetQueryValueToBool("isregex") is bool isRegex)
         {
             IsRegex = isRegex;
         }
@@ -297,7 +300,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void IPProc()
     {
-        if (GetValue("ip") is string ip)
+        if (GetQueryValue("ip") is string ip)
         {
             var match = Regex.Match(ip, @"^((?:\d{1,3})|[*])[.]((?:\d{1,3})|[*])[.]((?:\d{1,3})|[*])[.]((?:\d{1,3})|[*])$");
             if (match.Success)
@@ -327,7 +330,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void PortProc()
     {
-        if (GetValue("port") is string port)
+        if (GetQueryValue("port") is string port)
         {
             bool isNot = false;
             if (port.StartsWith('!'))
@@ -353,7 +356,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void ConnectProc()
     {
-        if (GetValue("Connect", "Connected", "Connected") is string connected)
+        if (GetQueryValue("Connect", "Connected", "Connected") is string connected)
         {
             // > < = xx%
             var oper = "";
@@ -449,7 +452,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void IsDedicatedProc()
     {
-        if (GetValueToBool("Dedicated", "IsDedicated") is bool isDedicated)
+        if (GetQueryValueToBool("Dedicated", "IsDedicated") is bool isDedicated)
         {
             var tmp = Result.Where(v => v.Dedicated == isDedicated);
             ReAdd(tmp);
@@ -460,7 +463,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void HostKleiIdProc()
     {
-        if (GetValue("Host", "HostId", "Host", "KleiId", "HostKleiId") is string hostKleiId)
+        if (GetQueryValue("Host", "HostId", "Host", "KleiId", "HostKleiId") is string hostKleiId)
         {
             var tmp = Result.Where(v => v.Host == hostKleiId);
             ReAdd(tmp);
@@ -471,7 +474,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void IsModsProc()
     {
-        if (GetValueToBool("Mods", "Mod", "IsMod", "Mods") is bool isMods)
+        if (GetQueryValueToBool("Mods", "Mod", "IsMod", "Mods") is bool isMods)
         {
             var tmp = new List<LobbyDetailsData>();
             foreach (var item in Result)
@@ -489,7 +492,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void PlatformProc()
     {
-        if (GetValue("Platform") is string platform)
+        if (GetQueryValue("Platform") is string platform)
         {
             var tmp = new List<LobbyDetailsData>();
             foreach (var item in Result)
@@ -543,7 +546,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void PvpProc()
     {
-        if (GetValueToBool("pvp", "ispvp") is bool pvp)
+        if (GetQueryValueToBool("pvp", "ispvp") is bool pvp)
         {
             var tmp = Result.Where(v => v.PVP == pvp);
             ReAdd(tmp);
@@ -554,7 +557,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void IsSortDescendingProc()
     {
-        if (GetValueToBool("IsSortDescending", "DescendingSort") is bool isSortDescending)
+        if (GetQueryValueToBool("IsSortDescending", "DescendingSort") is bool isSortDescending)
         {
             IsSortDescending = isSortDescending;
         }
@@ -564,7 +567,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void SortProc()
     {
-        if (GetValueToInt("Sort", "SortType") is int sortType)
+        if (GetQueryValueToInt("Sort", "SortType") is int sortType)
         {
             //排序
             switch (sortType)
@@ -589,7 +592,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void PlayerIsByIdProc()
     {
-        if (GetValueToBool("PlayerIsById", "IsPlayerId") is bool val)
+        if (GetQueryValueToBool("PlayerIsById", "IsPlayerId") is bool val)
         {
             IsPlayerId = val;
         }
@@ -599,7 +602,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void PlayerNameProc()
     {
-        if (GetValue("Player", "PlayerName") is string playerName)
+        if (GetQueryValue("Player", "PlayerName") is string playerName)
         {
             IsPlayerQuery = true;
             List<LobbyDetailsData> tmp = new();
@@ -635,7 +638,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void VersionProc()
     {
-        if (GetValue("Version", "V", "Ver") is string version)
+        if (GetQueryValue("Version", "V", "Ver") is string version)
         {
             long? Version = null;
             if (version.Contains("last") || version.Contains("new"))
@@ -658,7 +661,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void PasswordProc()
     {
-        if (GetValueToBool("Password", "IsPassword") is bool isPassword)
+        if (GetQueryValueToBool("Password", "IsPassword") is bool isPassword)
         {
             var tmp = Result.Where(v => v.Password == isPassword);
             ReAdd(tmp);
@@ -669,7 +672,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void OfficialProc()
     {
-        if (GetValueToBool("IsOfficial", "Official") is bool official)
+        if (GetQueryValueToBool("IsOfficial", "Official") is bool official)
         {
             var tmp = Result.Where(v => v.KleiOfficial == official);
             ReAdd(tmp);
@@ -680,7 +683,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void TagsProc()
     {
-        if (GetValue("Tags", "Tag") is string tag)
+        if (GetQueryValue("Tags", "Tag") is string tag)
         {
             if (tag.Contains(','))
             {
@@ -697,7 +700,7 @@ public class LobbyServerQueryer
     }
     private void GameModeProc()
     {
-        if (GetValue("GameMode", "Mode") is string gamemode)
+        if (GetQueryValue("GameMode", "Mode") is string gamemode)
         {
             var tmp = new List<LobbyDetailsData>();
             foreach (var item in Result)
@@ -751,7 +754,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void DescProc()
     {
-        if (GetValue("Desc", "Describe") is string desc)
+        if (GetQueryValue("Desc", "Describe") is string desc)
         {
             var tmp = Result.Where(v => v.Desc.Contains(desc));
             ReAdd(tmp);
@@ -762,7 +765,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void PausedProc()
     {
-        if (GetValueToBool("Paused", "IsPaused") is bool isPaused)
+        if (GetQueryValueToBool("Paused", "IsPaused") is bool isPaused)
         {
             var tmp = Result.Where(v => v.ServerPaused == isPaused);
             ReAdd(tmp);
@@ -773,7 +776,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void AllowNewPlayersProc()
     {
-        if (GetValueToBool("AllowNewPlayer", "IsAllowNewPlayer", "IsAllowPlayer") is bool isAllowPlayer)
+        if (GetQueryValueToBool("AllowNewPlayer", "IsAllowNewPlayer", "IsAllowPlayer") is bool isAllowPlayer)
         {
             var tmp = Result.Where(v => v.ServerPaused == isAllowPlayer);
             ReAdd(tmp);
@@ -784,7 +787,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void DayProc()
     {
-        if (GetValue("Day", "Days") is string day)
+        if (GetQueryValue("Day", "Days") is string day)
         {
             // > < = xx%
             var oper = "";
@@ -860,7 +863,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void OwnerNetidProc()
     {
-        if (GetValue("Netid", "OwnerNetid") is string ownerNetid)
+        if (GetQueryValue("Netid", "OwnerNetid") is string ownerNetid)
         {
             var tmp = Result.Where(v => v.Desc.Contains(ownerNetid));
             ReAdd(tmp);
@@ -872,7 +875,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void ModsNameProc()
     {
-        if (GetValue("ModName", "ModName") is string modName)
+        if (GetQueryValue("ModName", "ModName") is string modName)
         {
             if (modName.Contains('|'))
             {
@@ -892,7 +895,7 @@ public class LobbyServerQueryer
     /// </summary>
     private void ModsIdProc()
     {
-        if (GetValue("ModsId", "ModId") is string modId)
+        if (GetQueryValue("ModsId", "ModId") is string modId)
         {
             if (modId.Contains(','))
             {
@@ -930,10 +933,39 @@ public class LobbyServerQueryer
             }
         }
     }
+    /// <summary>
+    /// 季节过滤
+    /// </summary>
+    private void SeasonProc()
+    {
+        if (GetQueryValue("season", "季节") is string seasonString)
+        {
+            Season? season = null;
+            if (seasonString == "秋" || string.Equals(seasonString, "autumn", StringComparison.OrdinalIgnoreCase))
+            {
+                season = Season.autumn;
+            }
+            if (seasonString == "冬" || string.Equals(seasonString, "winter", StringComparison.OrdinalIgnoreCase))
+            {
+                season = Season.winter;
+            }
+            if (seasonString == "春" || string.Equals(seasonString, "spring", StringComparison.OrdinalIgnoreCase))
+            {
+                season = Season.spring;
+            }
+            if (seasonString == "夏" || string.Equals(seasonString, "summer", StringComparison.OrdinalIgnoreCase))
+            {
+                season = Season.summer;
+            }
+            if (season == null) return;
+            var tmp = Result.Where(v => v.Season == season.Value);
+            ReAdd(tmp);
+        }
+    }
 
     private void CountryProc()
     {
-        if (GetValue("Country") is string country)
+        if (GetQueryValue("Country") is string country)
         {
             var tmp = Result.Where(v => string.Equals(v.Country, country, StringComparison.OrdinalIgnoreCase));
             ReAdd(tmp);
@@ -942,7 +974,7 @@ public class LobbyServerQueryer
 
     private void PropertiesRemoveProc()
     {
-        if (GetValue("PropertiesRemove", "KeyRemove") is string properties)
+        if (GetQueryValue("PropertiesRemove", "KeyRemove") is string properties)
         {
             var split = properties.Split('|', StringSplitOptions.RemoveEmptyEntries);
             if (split.Length <= 0) return;
