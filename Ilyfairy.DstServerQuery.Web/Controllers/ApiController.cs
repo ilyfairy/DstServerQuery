@@ -54,7 +54,7 @@ public partial class ApiController : Controller
     /// <param name="id"></param>
     /// <returns></returns>
     [HttpPost("api/details/{id?}")]
-    public async Task<IActionResult> GetDetails(string id)
+    public async Task<IActionResult> GetDetails(string id, [FromQuery] bool forceUpdate = false)
     {
         var log = LogManager.GetLogger("Web.Api.Details");
         if (string.IsNullOrWhiteSpace(id))
@@ -63,7 +63,9 @@ public partial class ApiController : Controller
             return Content(@"{""msg"":""error""}", "application/json"); //参数为空
         }
 
-        LobbyDetailsData? info = await lobbyDetailsManager.GetDetailByRowId(id);
+        CancellationTokenSource cts = new();
+        cts.CancelAfter(10000);
+        LobbyDetailsData? info = await lobbyDetailsManager.GetDetailByRowIdAsync(id, forceUpdate, cts.Token);
 
         if (info == null)
         {

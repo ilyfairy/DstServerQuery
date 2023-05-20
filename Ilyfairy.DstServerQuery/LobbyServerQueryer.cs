@@ -946,23 +946,21 @@ public class LobbyServerQueryer
             Season? season = null;
             foreach (var item in seasons)
             {
-                if(string.Equals(item.ToString(),seasonString, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(item.ToString(), seasonString, StringComparison.OrdinalIgnoreCase))
                 {
                     season = item;
+                    break;
                 }
             }
 
-            if(season != null)
-            {
-                season = seasonString switch
+            season ??= seasonString switch
                 {
-                    "春" => Season.spring,
-                    "夏" => Season.summer,
-                    "秋" => Season.autumn,
-                    "冬" => Season.winter,
+                    "春" or "春天" => Season.spring,
+                    "夏" or "夏天" => Season.summer,
+                    "秋" or "秋天" => Season.autumn,
+                    "冬" or "冬天" => Season.winter,
                     _ => null
                 };
-            }
 
             if (season == null) return;
             var tmp = Result.Where(v => v.Season == season.Value);

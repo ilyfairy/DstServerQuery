@@ -310,34 +310,36 @@ public class LobbyDetailsManager : IDisposable
     /// <summary>
     /// 通过RowId获取房间详细信息
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="rowid"></param>
     /// <returns></returns>
-    public async Task<LobbyDetailsData?> GetDetailByRowId(string id)
+public async Task<LobbyDetailsData?> GetDetailByRowIdAsync(string rowid, bool forceUpdate, CancellationToken cancellationToken)
+{
+    if (OldServerMap.TryGetValue(rowid, out var oldInfo))
     {
-        if (OldServerMap.TryGetValue(id, out var oldInfo))
-        {
-            return oldInfo;
-        }
-        var newInfo = ServerMap.GetValueOrDefault(id);
-        if (newInfo is null) return null;
-        lock (newInfo)
-        {
-            newInfo._Lock ??= new SemaphoreSlim(1, 1);
-        }
-        await newInfo._Lock.WaitAsync(HttpTokenSource.Token);
-        try
-        {
-            if (!newInfo._IsDetails || (DateTime.Now - newInfo._LastUpdate) > TimeSpan.FromSeconds(20))
-            {
-                await LobbyDownloader.UpdateToDetails(newInfo, HttpTokenSource.Token);
-            }
-        }
-        finally
-        {
-            newInfo._Lock.Release();
-        }
-        return newInfo;
+        return oldInfo;
     }
+    var newInfo = ServerMap.GetValueOrDefault(rowid);
+    if (newInfo is null) return null;
+    //Interlocked.Exchange()
+    lock (newInfo)
+    {
+        newInfo._Lock ??= new SemaphoreSlim(1, 1);
+    }
+    try
+    {
+        var token = CancellationTokenSource.CreateLinkedTokenSource(HttpTokenSource.Token, cancellationToken).Token;
+        await newInfo._Lock.WaitAsync(token);
+        if (forceUpdate || !newInfo._IsDetails || (DateTime.Now - newInfo._LastUpdate) > TimeSpan.FromSeconds(20))
+        {
+            await LobbyDownloader.UpdateToDetails(newInfo, HttpTokenSource.Token);
+        }
+    }
+    finally
+    {
+        newInfo._Lock.Release();
+    }
+    return newInfo;
+}
 
     #endregion
 
