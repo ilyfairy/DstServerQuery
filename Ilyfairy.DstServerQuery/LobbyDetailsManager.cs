@@ -64,7 +64,7 @@ public class LobbyDetailsManager : IDisposable
 
         logDownloadLoop.Info("开始DownloadLoop Task");
         sw.Restart();
-        
+
         //循环获取旧版服务器数据
         _ = Task.Run(async () =>
         {
@@ -243,7 +243,7 @@ public class LobbyDetailsManager : IDisposable
             try
             {
                 var count = await LobbyDownloader.UpdateToDetails(arr.ToArray(), HttpTokenSource.Token);
-                if(count <= 0 && arr.Count != 0)
+                if (count <= 0 && arr.Count != 0)
                 {
                     logDownloadLoop.Info("@所有详细信息更新失败!");
                 }
@@ -312,34 +312,34 @@ public class LobbyDetailsManager : IDisposable
     /// </summary>
     /// <param name="rowid"></param>
     /// <returns></returns>
-public async Task<LobbyDetailsData?> GetDetailByRowIdAsync(string rowid, bool forceUpdate, CancellationToken cancellationToken)
-{
-    if (OldServerMap.TryGetValue(rowid, out var oldInfo))
+    public async Task<LobbyDetailsData?> GetDetailByRowIdAsync(string rowid, bool forceUpdate, CancellationToken cancellationToken)
     {
-        return oldInfo;
-    }
-    var newInfo = ServerMap.GetValueOrDefault(rowid);
-    if (newInfo is null) return null;
-    //Interlocked.Exchange()
-    lock (newInfo)
-    {
-        newInfo._Lock ??= new SemaphoreSlim(1, 1);
-    }
-    try
-    {
-        var token = CancellationTokenSource.CreateLinkedTokenSource(HttpTokenSource.Token, cancellationToken).Token;
-        await newInfo._Lock.WaitAsync(token);
-        if (forceUpdate || !newInfo._IsDetails || (DateTime.Now - newInfo._LastUpdate) > TimeSpan.FromSeconds(20))
+        if (OldServerMap.TryGetValue(rowid, out var oldInfo))
         {
-            await LobbyDownloader.UpdateToDetails(newInfo, HttpTokenSource.Token);
+            return oldInfo;
         }
+        var newInfo = ServerMap.GetValueOrDefault(rowid);
+        if (newInfo is null) return null;
+        //Interlocked.Exchange()
+        lock (newInfo)
+        {
+            newInfo._Lock ??= new SemaphoreSlim(1, 1);
+        }
+        try
+        {
+            var token = CancellationTokenSource.CreateLinkedTokenSource(HttpTokenSource.Token, cancellationToken).Token;
+            await newInfo._Lock.WaitAsync(token);
+            if (forceUpdate || !newInfo._IsDetails || (DateTime.Now - newInfo._LastUpdate) > TimeSpan.FromSeconds(20))
+            {
+                await LobbyDownloader.UpdateToDetails(newInfo, HttpTokenSource.Token);
+            }
+        }
+        finally
+        {
+            newInfo._Lock.Release();
+        }
+        return newInfo;
     }
-    finally
-    {
-        newInfo._Lock.Release();
-    }
-    return newInfo;
-}
 
     #endregion
 
