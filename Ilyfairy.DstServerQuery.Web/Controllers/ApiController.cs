@@ -53,10 +53,10 @@ public partial class ApiController : Controller
     /// <summary>
     /// 通过RowId获取详细数据
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id"></param>   
     /// <returns></returns>
     [HttpPost("api/details/{id?}")]
-    public async Task<IActionResult> GetDetails(string id, [FromQuery] bool forceUpdate = false)
+    public async Task<IActionResult> GetDetails([FromRoute]string id, [FromQuery] bool forceUpdate = false)
     {
         var log = LogManager.GetLogger("Web.Api.Details");
         if (string.IsNullOrWhiteSpace(id))

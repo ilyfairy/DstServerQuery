@@ -1,5 +1,5 @@
 ﻿using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Utils;
+using Ilyfairy.DstServerQuery.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;

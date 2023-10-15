@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Ilyfairy.DstServerQuery.Utils;
+namespace Ilyfairy.DstServerQuery.Services;
 
 public class GeoIPService
 {
@@ -23,13 +23,12 @@ public class GeoIPService
         {
             Console.WriteLine(e.Message);
         }
-
     }
 
     public bool TryCity(string ip, out CityResponse? city)
     {
         city = null;
-        if(GeoIP is null) return false;
+        if (GeoIP is null) return false;
         return GeoIP.TryCity(ip, out city);
     }
 

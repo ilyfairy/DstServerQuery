@@ -104,7 +104,15 @@ namespace Ilyfairy.DstServerQuery
             HttpRequestMessage msg = new(HttpMethod.Post, url);
             msg.Content = new StringContent(body, null, MediaTypeNames.Application.Json);
             var r = await http.SendAsync(msg, cancellationToken);
-            var get = await r.Content.ReadFromJsonAsync<GET<LobbyDetailsData>>();
+            GET<LobbyDetailsData>? get;
+            try
+            {
+                get = await r.Content.ReadFromJsonAsync<GET<LobbyDetailsData>>(dstJsonOptions.DeserializerOptions, cancellationToken);
+            }
+            catch (Exception e)
+            {
+                return new();
+            }
             if (get is null || get.Data is null) return new();
             foreach (var item in get.Data)
             {
@@ -131,7 +139,7 @@ namespace Ilyfairy.DstServerQuery
                 """;
 
             var r = await httpUpdate.PostAsync(url.DetailsUrl, new StringContent(body, null, MediaTypeNames.Application.Json), cancellationToken);
-            var get = await r.Content.ReadFromJsonAsync<GET<LobbyDetailsData>>(default(JsonSerializerOptions), cancellationToken);
+            var get = await r.Content.ReadFromJsonAsync<GET<LobbyDetailsData>>(dstJsonOptions.DeserializerOptions, cancellationToken);
             if (get is null || get.Data is null || !get.Data.Any()) return 0;
             var newData = get.Data.First();
             newData.CopyTo(data); //更新数据
@@ -214,12 +222,12 @@ namespace Ilyfairy.DstServerQuery
                     {
                         if (!e.Message.Contains("SSL"))
                         {
-                            Debug.Assert(false);
+                            //Debug.Assert(false);
                         }
                         return;
                     }
                     var json = await r.Content.ReadAsStringAsync(ct);
-                    var get = JsonSerializer.Deserialize<GET<LobbyDetailsData>>(json, default(JsonSerializerOptions));
+                    var get = JsonSerializer.Deserialize<GET<LobbyDetailsData>>(json, dstJsonOptions.DeserializerOptions);
                     requestCount++;
                     if (get is null || get.Data is null || !get.Data.Any()) return;
                     foreach (var newData in get.Data)
