@@ -8,7 +8,7 @@ public class LobbyBriefsDataPlayers : LobbyBriefsData
     [JsonPropertyName("players")]
     [JsonConverter(typeof(PlayersInfoConverter))] // NOTE:自定义转换
     [JsonPropertyOrder(-99)]
-    public List<LobbyPlayerInfo> Players { get; set; } //玩家信息
+    public List<LobbyPlayerInfo>? Players { get; set; } //玩家信息
 
 
     public new void CopyTo(LobbyDetailsData dest)

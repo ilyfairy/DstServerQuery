@@ -16,7 +16,7 @@ public class LobbyBriefsData : IDisposable
     public string Name { get; set; } //房间名称
 
     [JsonPropertyName("__addr")]
-    [JsonConverter(typeof(IPAddressInfoConverter))]
+    //[JsonConverter(typeof(IPAddressInfoConverter))]
     public IPAddressInfo Address { get; set; } //ip地址
 
     [JsonPropertyName("port")]

@@ -2,13 +2,8 @@
 using Ilyfairy.DstServerQuery.Models.Entities;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Ilyfairy.DstServerQuery.EntityFrameworkCore
 {
@@ -17,13 +12,13 @@ namespace Ilyfairy.DstServerQuery.EntityFrameworkCore
     /// </summary>
     public class HistoryCountManager
     {
-        private readonly Func<DstDbContext>? dbContext;
         private readonly Logger logger = LogManager.GetLogger("DstServerQuery.HistoryCountManager");
         private readonly Queue<ServerCountInfo> cache = new(10100);
+        private readonly IServiceScopeFactory serviceScopeFactory;
 
-        public HistoryCountManager(Func<DstDbContext>? dbContext)
+        public HistoryCountManager(IServiceScopeFactory serviceScopeFactory)
         {
-            this.dbContext = dbContext;
+            this.serviceScopeFactory = serviceScopeFactory;
             try
             {
                 Initialize();
@@ -39,10 +34,11 @@ namespace Ilyfairy.DstServerQuery.EntityFrameworkCore
         /// </summary>
         private void Initialize()
         {
-            if (dbContext is null) return;
-            using var db = dbContext();
+            using var scope = serviceScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
+
             var day3 = DateTime.Now - TimeSpan.FromDays(3); //三天前
-            var r = db.ServerHistoryCountInfos.Where(v => v.UpdateDate > day3);
+            var r = dbContext.ServerHistoryCountInfos.Where(v => v.UpdateDate > day3).ToArray();
             foreach (var item in r)
             {
                 cache.Enqueue(item);
@@ -52,12 +48,13 @@ namespace Ilyfairy.DstServerQuery.EntityFrameworkCore
 
         public bool Add(ServerCountInfo info)
         {
-            if (dbContext is null) return false;
-            using var db = dbContext();
-            var r = db.ServerHistoryCountInfos.Add(info);
+            using var scope = serviceScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
+
+            var r = dbContext.ServerHistoryCountInfos.Add(info);
             try
             {
-                db.SaveChanges();
+                dbContext.SaveChanges();
             }
             catch (Exception)
             {
@@ -65,7 +62,7 @@ namespace Ilyfairy.DstServerQuery.EntityFrameworkCore
             }
             cache.Enqueue(info);
 
-            if(cache.Count > 10000)
+            if (cache.Count > 10000)
             {
                 for (int i = 0; i < 10; i++)
                 {
@@ -73,11 +70,15 @@ namespace Ilyfairy.DstServerQuery.EntityFrameworkCore
                 }
             }
 
-            return r.State == EntityState.Added;
+            return r.State == EntityState.Added; // 修改是否成功
         }
 
+        // data to info
         public bool Add(ICollection<LobbyDetailsData> data, DateTime updateTime)
         {
+            using var scope = serviceScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
+
             ServerCountInfo countInfo = new();
             countInfo.UpdateDate = updateTime;
             countInfo.AllServerCount = data.Count;
@@ -94,6 +95,7 @@ namespace Ilyfairy.DstServerQuery.EntityFrameworkCore
             countInfo.PlayStationPlayerCount = data.Where(v => v.Platform == Platform.PlayStation).Select(p => p.Connected).Sum();
             countInfo.XboxPlayerCount = data.Where(v => v.Platform == Platform.Xbox).Select(p => p.Connected).Sum();
             countInfo.SwitchPlayerCount = data.Where(v => v.Platform == Platform.Switch).Select(p => p.Connected).Sum();
+
             return Add(countInfo);
         }
 
@@ -101,9 +103,9 @@ namespace Ilyfairy.DstServerQuery.EntityFrameworkCore
         /// 获取缓存的服务器历史数量信息
         /// </summary>
         /// <returns></returns>
-        public List<ServerCountInfo> GetServerHistory()
+        public ServerCountInfo[] GetServerHistory()
         {
-            return cache.ToList();
+            return cache.ToArray();
         }
     }
 }

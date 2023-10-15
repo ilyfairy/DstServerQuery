@@ -1,4 +1,5 @@
-﻿using Ilyfairy.DstServerQuery.Models;
+﻿using Ilyfairy.DstServerQuery.LobbyJson;
+using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -20,14 +21,16 @@ namespace Ilyfairy.DstServerQuery
 
         private readonly HttpClient http;
         private readonly HttpClient httpUpdate;
+        private readonly DstJsonOptions dstJsonOptions;
         private readonly string _token;
         private readonly string[]? _dstDetailsProxyUrls; // https://api.com/{0}/{1}/{2}/{3}
 
         //通过区域和平台获取url (适用于新版数据)
         public Dictionary<RegionPlatform, RegionUrl> BriefsUrlMap { get; set; } = new();
 
-        public LobbyDownloader(string dstToken, string[]? dstDetailsProxyUrls = null)
+        public LobbyDownloader(DstJsonOptions dstJsonOptions, string dstToken, string[]? dstDetailsProxyUrls = null)
         {
+            this.dstJsonOptions = dstJsonOptions;
             _token = dstToken;
 
             static HttpClient Create()
@@ -71,7 +74,6 @@ namespace Ilyfairy.DstServerQuery
         //GET请求
         private async Task<List<LobbyDetailsData>> DownloadBriefs(string url, CancellationToken cancellationToken = default)
         {
-
             var response = await http.SendAsync(new(HttpMethod.Get, url), HttpCompletionOption.ResponseContentRead, cancellationToken);
             var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
 
@@ -79,7 +81,7 @@ namespace Ilyfairy.DstServerQuery
             await stream.CopyToAsync(ms, cancellationToken);
             ms.Position = 0;
 
-            var get = JsonSerializer.Deserialize<GET<LobbyDetailsData>>(ms, default(JsonSerializerOptions));
+            var get = JsonSerializer.Deserialize<GET<LobbyDetailsData>>(ms, dstJsonOptions.DeserializerOptions);
             if (get?.Data is null) return new();
 
             foreach (var item in get.Data)

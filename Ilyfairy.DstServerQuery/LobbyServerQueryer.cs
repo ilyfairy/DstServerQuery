@@ -32,33 +32,6 @@ public class LobbyServerQueryer
 
     public HashSet<string>? PropertiesRemove { get; set; }
 
-    private string? json;
-    public string? Json
-    {
-        get
-        {
-            if (json == null)
-            {
-                JsonObject jsonString;
-                if (IsDetails)
-                {
-                    jsonString = CreateJson<LobbyDetailsData>();
-                }
-                else if (IsPlayerQuery)
-                {
-                    jsonString = CreateJson<LobbyBriefsDataPlayers>();
-                }
-                else
-                {
-                    jsonString = CreateJson<LobbyBriefsData>();
-                }
-                json = jsonString.ToJsonString(DstJsonConverter.Options);
-            }
-            return json;
-        }
-    }
-
-
     public LobbyServerQueryer(ICollection<LobbyDetailsData> lobbyDetailDatas, IEnumerable<KeyValuePair<string, string>> queryKey, DateTime lastUpdate)
     {
         LastUpdate = lastUpdate;
@@ -70,11 +43,27 @@ public class LobbyServerQueryer
         }
     }
 
+    public string ToJson(JsonSerializerOptions? jsonSerializerOptions = null)
+    {
+        JsonObject jsonString;
+        if (IsDetails)
+        {
+            jsonString = CreateJson<LobbyDetailsData>(jsonSerializerOptions);
+        }
+        else if (IsPlayerQuery)
+        {
+            jsonString = CreateJson<LobbyBriefsDataPlayers>(jsonSerializerOptions);
+        }
+        else
+        {
+            jsonString = CreateJson<LobbyBriefsData>(jsonSerializerOptions);
+        }
+        return jsonString.ToJsonString(jsonSerializerOptions);
+    }
+
 
     public void Query()
     {
-        if (json != null) return;
-
         RowIdProc();
         IsDetailsProc();
 
@@ -121,7 +110,7 @@ public class LobbyServerQueryer
         CurrentPageCount = Result.Count;
     }
 
-    private JsonObject CreateJson<T>() where T : LobbyBriefsData
+    private JsonObject CreateJson<T>(JsonSerializerOptions? jsonSerializerOptions = null) where T : LobbyBriefsData
     {
         List<T> list = Result.Select(v => (v as T)!).ToList();
 
@@ -142,7 +131,7 @@ public class LobbyServerQueryer
             JsonArray array = new();
             foreach (var item in list)
             {
-                var obj = JsonSerializer.SerializeToNode(item, DstJsonConverter.Options)?.AsObject();
+                var obj = JsonSerializer.SerializeToNode(item, jsonSerializerOptions)?.AsObject();
                 if (obj is null) continue;
                 foreach (var property in PropertiesRemove)
                 {

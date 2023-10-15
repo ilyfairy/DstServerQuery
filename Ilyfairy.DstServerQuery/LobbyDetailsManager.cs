@@ -5,6 +5,7 @@ using Ilyfairy.DstServerQuery.Utils;
 using System.Collections.Concurrent;
 using Ilyfairy.DstServerQuery.Models.Requests;
 using System.Collections.Immutable;
+using Ilyfairy.DstServerQuery.LobbyJson;
 
 namespace Ilyfairy.DstServerQuery;
 
@@ -39,15 +40,17 @@ public class LobbyDetailsManager : IDisposable
 
     #region Logger
     private readonly Logger logDownloadLoop = LogManager.GetLogger("QueryManager.DownloadLoop");
+    private readonly DstJsonOptions dstJsonOptions;
     #endregion
 
     public event DstDataUpdatedHandler? Updated;
 
     //参数是依赖注入
-    public LobbyDetailsManager(RequestRoot rr)
+    public LobbyDetailsManager(RequestRoot rr, DstJsonOptions dstJsonOptions)
     {
         OldUrlList = rr.OldList;
-        LobbyDownloader = new(rr.Token, rr.DstDetailsProxyUrls);
+        LobbyDownloader = new LobbyDownloader(dstJsonOptions, rr.Token, rr.DstDetailsProxyUrls);
+        this.dstJsonOptions = dstJsonOptions;
     }
 
     #region 方法
@@ -56,10 +59,6 @@ public class LobbyDetailsManager : IDisposable
     {
         Running = true;
         ServerMap = new();
-        if (GeoIPManager.GeoIP is null)
-        {
-            GeoIPManager.Initialize();
-        }
         await LobbyDownloader.Initialize();
 
         logDownloadLoop.Info("开始DownloadLoop Task");

@@ -13,6 +13,12 @@ namespace Ilyfairy.DstServerQuery.LobbyJson.Converter;
 
 public class IPAddressInfoConverter : JsonConverter<IPAddressInfo>
 {
+    private readonly GeoIPService ipService;
+    public IPAddressInfoConverter(GeoIPService geoIPService)
+    {
+        ipService = geoIPService;
+    }
+
     public override IPAddressInfo? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.String)
@@ -21,14 +27,14 @@ public class IPAddressInfoConverter : JsonConverter<IPAddressInfo>
             return null;
         }
 
-        IPAddressInfo info = new();
         string? ip = reader.GetString();
         if (reader.TokenType != JsonTokenType.String || string.IsNullOrWhiteSpace(ip)) return null;
 
+        IPAddressInfo info = new();
         info.IP = ip.Trim();
         try
         {
-            if (GeoIPManager.GeoIP?.TryCity(info.IP, out var city) == true)
+            if (ipService.TryCity(info.IP, out var city))
             {
                 info.Country = city?.Country;
             }

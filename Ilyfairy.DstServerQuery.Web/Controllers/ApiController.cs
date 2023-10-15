@@ -19,13 +19,15 @@ public partial class ApiController : Controller
     private readonly DstVersionGetter dstVersion;
     private readonly LobbyDetailsManager lobbyDetailsManager;
     private readonly HistoryCountManager historyCountManager;
+    private readonly DstJsonOptions dstJsonOptions;
 
     //版本获取, 大厅服务器管理器, 大厅服务器历史房间数量管理器
-    public ApiController(DstVersionGetter versionGetter, LobbyDetailsManager lobbyDetailsManager, HistoryCountManager historyCountManager)
+    public ApiController(DstVersionGetter versionGetter, LobbyDetailsManager lobbyDetailsManager, HistoryCountManager historyCountManager, DstJsonOptions dstJsonOptions)
     {
         dstVersion = versionGetter;
         this.lobbyDetailsManager = lobbyDetailsManager;
         this.historyCountManager = historyCountManager;
+        this.dstJsonOptions = dstJsonOptions;
     }
 
     /// <summary>
@@ -73,7 +75,7 @@ public partial class ApiController : Controller
             return Content(@"{""msg"":""not found""}", "application/json"); //找不到该房间
         }
         log.Info("找到服务器 RowId:{0} Name:{1}", id, info.Name);
-        return Content(JsonSerializer.Serialize(info, DstJsonConverter.Options), MediaTypeNames.Application.Json);
+        return Content(JsonSerializer.Serialize(info, dstJsonOptions.SerializerOptions), MediaTypeNames.Application.Json);
     }
 
     /// <summary>
@@ -91,7 +93,7 @@ public partial class ApiController : Controller
         string query = string.Join("&", queryKey.Select(v => $"{v.Key}={v.Value}"));
         log.Info("查询服务器 Count:{0} Query:{1}", queryer.Result.Count, query);
 
-        return Content(queryer.Json, "application/json");
+        return Content(queryer.ToJson(dstJsonOptions.SerializerOptions), "application/json");
     }
 
 
@@ -114,7 +116,7 @@ public partial class ApiController : Controller
 
         List<ServerCountInfo> result = new();
         long last = 0;
-        for (int i = history.Count; i-- > 0;)
+        for (int i = history.Length; i-- > 0;)
         {
             var item = history[i];
             try
@@ -132,7 +134,7 @@ public partial class ApiController : Controller
             catch { }
         }
         result.Reverse();
-        return Json(result, DstJsonConverter.Options);
+        return Json(result, dstJsonOptions.SerializerOptions);
     }
 
     /// <summary>

@@ -8,24 +8,25 @@ using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.LobbyJson;
 
-public static class DstJsonConverter
+public class DstJsonOptions
 {
-    static DstJsonConverter()
+    public DstJsonOptions()
     {
-        Options = new();
-        Options.Converters.Add(new DateTimeJsonConverter());
-        Options.Converters.Add(new ModeConverter());
-        Options.Converters.Add(new IntentConverter());
-        Options.Converters.Add(new SeasonConverter());
-        Options.Converters.Add(new JsonStringEnumConverter());
-        Options.Converters.Add(new CustomNameConverter<LobbyBriefsData>());
-        Options.Converters.Add(new CustomNameConverter<LobbyBriefsDataPlayers>());
-        Options.Converters.Add(new CustomNameConverter<LobbyDetailsData>());
-        Options.Converters.Add(new IPAddressInfoConverter());
-        Options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        SerializerOptions.Converters.Add(new DateTimeJsonConverter());
+        SerializerOptions.Converters.Add(new ModeConverter());
+        SerializerOptions.Converters.Add(new IntentConverter());
+        SerializerOptions.Converters.Add(new SeasonConverter());
+        SerializerOptions.Converters.Add(new CustomNameConverter<LobbyBriefsData>());
+        SerializerOptions.Converters.Add(new CustomNameConverter<LobbyBriefsDataPlayers>());
+        SerializerOptions.Converters.Add(new CustomNameConverter<LobbyDetailsData>());
+
+        DeserializerOptions.Converters.Add(new JsonStringEnumConverter());
+        SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     }
 
-    public static JsonSerializerOptions Options { private set; get; }
+    public JsonSerializerOptions SerializerOptions { get; private set; } = new();
+    public JsonSerializerOptions DeserializerOptions { private set; get; } = new();
 
 }
 

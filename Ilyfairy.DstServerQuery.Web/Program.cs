@@ -2,6 +2,7 @@
 using Ilyfairy.DstServerQuery;
 using Ilyfairy.DstServerQuery.EntityFrameworkCore;
 using Ilyfairy.DstServerQuery.LobbyJson;
+using Ilyfairy.DstServerQuery.LobbyJson.Converter;
 using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.Requests;
 using Ilyfairy.DstServerQuery.Utils;
@@ -18,41 +19,63 @@ builder.Services.AddControllers().AddJsonOptions(opt =>
 {
     opt.JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
 });
-builder.Services.AddResponseCompression(); //启用压缩
 
-//builder.Services.AddSqlServer<DstDbContext>(builder.Configuration.GetConnectionString("SqlServer")!);
-if (builder.Configuration.GetConnectionString("SqlServer") is string sqlServer)
+//DbContext
+if (builder.Configuration.GetConnectionString("SqlServer") is string sqlServerConnection && !string.IsNullOrWhiteSpace(sqlServerConnection))
 {
-    builder.Services.AddSingleton(new HistoryCountManager(() => new DstDbContext(new DbContextOptionsBuilder<DstDbContext>()
-            .UseSqlServer(sqlServer).Options)));
+    builder.Services.AddSqlServer<DstDbContext>(sqlServerConnection);
 }
 else
 {
-    builder.Services.AddSingleton(new HistoryCountManager(null));
-    LogManager.GetLogger("Initialize").Warn("没有使用SqlServer");
+    LogManager.GetLogger("Initialize").Warn("没有检测到SqlServer连接字符串, 将使用内存数据库");
+    builder.Services.AddDbContext<DstDbContext>(options =>
+    {
+        options.UseInMemoryDatabase("Dst");
+    });
 }
 
+builder.Services.AddResponseCompression(); //启用压缩
+builder.Services.AddSingleton<HistoryCountManager>();
 builder.Services.AddSingleton(builder.Configuration.GetSection("Requests").Get<RequestRoot>()!);
-builder.Services.AddSingleton<LobbyDetailsManager>()
-    .AddSingleton<DstVersionGetter>();
+builder.Services.AddSingleton<LobbyDetailsManager>();
+builder.Services.AddSingleton<LobbyDetailsManager>();
+builder.Services.AddSingleton<DstVersionGetter>();
+builder.Services.AddSingleton<GeoIPService>();
+builder.Services.AddSingleton<DstJsonOptions>();
 
+//Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-CultureInfo.CurrentCulture = new CultureInfo("zh-cn");
+CultureInfo.CurrentCulture = new CultureInfo("zh-CN");
  
 var app = builder.Build();
 
 app.Lifetime.ApplicationStarted.Register(async () =>
 {
-    var webLog = LogManager.GetLogger("Lifetime");
-    var lobbyManager = app.Services.GetService<LobbyDetailsManager>()!;
-    var dstManager = app.Services.GetService<DstVersionGetter>()!;
-    var historyCountManager = app.Services.GetService<HistoryCountManager>()!;
+    //创建数据库表
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
+    await dbContext.Database.EnsureCreatedAsync();
 
-    var reqs = app.Services.GetService<RequestRoot>()!;
+    //初始化
+    var webLog = LogManager.GetLogger("Lifetime");
+    var lobbyManager = app.Services.GetRequiredService<LobbyDetailsManager>();
+    var dstManager = app.Services.GetRequiredService<DstVersionGetter>();
+    var historyCountManager = app.Services.GetRequiredService<HistoryCountManager>();
+    //var reqs = app.Services.GetRequiredService<RequestRoot>();
+    var geoIPService = app.Services.GetRequiredService<GeoIPService>();
+    var dstJsonConverter = app.Services.GetRequiredService<DstJsonOptions>();
+
 
     DepotDownloader.SteamConfig.SetApiUrl(app.Configuration.GetValue<string>("SteampoweredApiProxy") ?? "https://api.steampowered.com/");
+
+    if (app.Configuration.GetValue<string>("GeoLite2Path") is string geoLite2Path)
+    {
+        geoIPService.Initialize(geoLite2Path);
+    }
+    dstJsonConverter.DeserializerOptions.Converters.Add(new IPAddressInfoConverter(geoIPService));
+    dstJsonConverter.SerializerOptions.Converters.Add(new IPAddressInfoConverter(geoIPService));
 
     //服务器更新回调
     lobbyManager.Updated += (sender, e) =>
@@ -86,10 +109,6 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    if (app.Configuration.GetValue<string>("GeoLite2DebugPath") is string geoLite2DebugPath)
-    {
-        GeoIPManager.Initialize(geoLite2DebugPath);
-    }
 }
 
 app.UseResponseCompression();
