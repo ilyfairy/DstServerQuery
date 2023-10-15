@@ -56,7 +56,7 @@ public partial class ApiController : Controller
     /// <param name="id"></param>   
     /// <returns></returns>
     [HttpPost("api/details/{id?}")]
-    public async Task<IActionResult> GetDetails([FromRoute]string id, [FromQuery] bool forceUpdate = false)
+    public async Task<IActionResult> GetDetails([FromRoute] string id, [FromQuery] bool forceUpdate = false)
     {
         var log = LogManager.GetLogger("Web.Api.Details");
         if (string.IsNullOrWhiteSpace(id))
@@ -66,7 +66,7 @@ public partial class ApiController : Controller
         }
 
         CancellationTokenSource cts = new();
-        cts.CancelAfter(10000);
+        cts.CancelAfter(15000);
         LobbyDetailsData? info = await lobbyDetailsManager.GetDetailByRowIdAsync(id, forceUpdate, cts.Token);
 
         if (info == null)

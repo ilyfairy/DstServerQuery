@@ -90,7 +90,7 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     await lobbyManager.Start();
     webLog.Info("<Start>");
 
-    dstManager.Start(app.Configuration.GetValue<long>("DstDefaultVersion"));
+    dstManager.Start(app.Configuration.GetValue<long?>("DstDefaultVersion"));
 });
 
 app.Lifetime.ApplicationStopped.Register(() =>

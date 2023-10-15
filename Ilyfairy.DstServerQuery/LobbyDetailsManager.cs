@@ -322,7 +322,7 @@ public class LobbyDetailsManager : IDisposable
         //Interlocked.Exchange()
         lock (newInfo)
         {
-            newInfo._Lock ??= new SemaphoreSlim(0, 1);
+            newInfo._Lock ??= new SemaphoreSlim(1);
         }
         try
         {

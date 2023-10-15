@@ -125,10 +125,15 @@ namespace Ilyfairy.DstServerQuery
         //POST请求
         public async ValueTask<int> UpdateToDetails(LobbyDetailsData data, CancellationToken cancellationToken = default)
         {
-            // https://lobby-v2-cdn.klei.com/{Region}-{Platform}.json.gz
-            if (!BriefsUrlMap.TryGetValue(new(data._Region, data._LobbyPlatform), out var url)) return 0;
-            //var request = new RestRequest(url.details, Method.Post);
-            string body = $$$"""
+            var url = GetProxyUrl();
+            string body;
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                // https://lobby-v2-cdn.klei.com/{Region}-{Platform}.json.gz
+                if (!BriefsUrlMap.TryGetValue(new(data._Region, data._LobbyPlatform), out var regionUrl)) return 0;
+                url = regionUrl.DetailsUrl;
+                //var request = new RestRequest(url.details, Method.Post);
+                body = $$$"""
                 {
                     "__gameId": "DontStarveTogether",
                     "__token": "{{{_token}}}",
@@ -137,10 +142,22 @@ namespace Ilyfairy.DstServerQuery
                     }
                 }
                 """;
+            }
+            else
+            {
+                List<object> requestList = new();
+                requestList.Add(new
+                {
+                    RowId = data.RowId,
+                    Region = data._Region
+                });
+                body = JsonSerializer.Serialize(requestList);
+            }
 
-            var r = await httpUpdate.PostAsync(url.DetailsUrl, new StringContent(body, null, MediaTypeNames.Application.Json), cancellationToken);
+            var r = await httpUpdate.PostAsync(url, new StringContent(body, null, MediaTypeNames.Application.Json), cancellationToken);
             var get = await r.Content.ReadFromJsonAsync<GET<LobbyDetailsData>>(dstJsonOptions.DeserializerOptions, cancellationToken);
             if (get is null || get.Data is null || !get.Data.Any()) return 0;
+
             var newData = get.Data.First();
             newData.CopyTo(data); //更新数据
             data._IsDetails = true; //变成详细数据
@@ -201,7 +218,6 @@ namespace Ilyfairy.DstServerQuery
                 };
                 await Parallel.ForEachAsync(requests.Chunk(50), opt, async (chunk, ct) =>
                 {
-                    await Task.Yield();
                     List<object> requestList = new();
                     foreach (var item in chunk)
                     {
@@ -212,7 +228,7 @@ namespace Ilyfairy.DstServerQuery
                         });
                     }
                     var body = JsonSerializer.Serialize(requestList);
-                    var url = _dstDetailsProxyUrls;
+                    //var url = _dstDetailsProxyUrls;
                     HttpResponseMessage r;
                     try
                     {

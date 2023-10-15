@@ -11,13 +11,13 @@ namespace Ilyfairy.DstServerQuery.Utils;
 
 public class DstVersionGetter
 {
-    public long Version { get; private set; }
+    public long? Version { get; private set; }
     public CancellationTokenSource? TokenSource { get; private set; }
     private bool running = true;
     private DstDownloader? currentDst;
     private readonly Logger log = LogManager.GetLogger("DstVersionGetter");
 
-    public void Start(long defaultVersion = 0)
+    public void Start(long? defaultVersion = null)
     {
         Version = defaultVersion;
         log.Info($"饥荒初始版本为 {defaultVersion}");

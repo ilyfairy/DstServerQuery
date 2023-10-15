@@ -12,11 +12,12 @@ public class DstJsonOptions
 {
     public DstJsonOptions()
     {
-        SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        //SerializerOptions.Converters.Add(new JsonStringEnumConverter());
         SerializerOptions.Converters.Add(new DateTimeJsonConverter());
         SerializerOptions.Converters.Add(new ModeConverter());
         SerializerOptions.Converters.Add(new IntentConverter());
         SerializerOptions.Converters.Add(new SeasonConverter());
+        SerializerOptions.Converters.Add(new PlatformConverter());
         SerializerOptions.Converters.Add(new CustomNameConverter<LobbyBriefsData>());
         SerializerOptions.Converters.Add(new CustomNameConverter<LobbyBriefsDataPlayers>());
         SerializerOptions.Converters.Add(new CustomNameConverter<LobbyDetailsData>());
@@ -103,8 +104,8 @@ public class PlatformConverter : JsonConverter<Platform>
         }
         else
         {
-            var str = DstEnumText.Instance.TryGetValueOrDefault(value, "未知");
-            writer.WriteStringValue(str);
+            //var str = DstEnumText.Instance.TryGetValueOrDefault(value, "未知");
+            writer.WriteStringValue(value.ToString());
         }
     }
 }
