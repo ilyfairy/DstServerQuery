@@ -56,7 +56,7 @@ public partial class ApiController : Controller
     /// <param name="id"></param>   
     /// <returns></returns>
     [HttpPost("api/details/{id?}")]
-    public async Task<IActionResult> GetDetails([FromRoute] string id, [FromQuery] bool forceUpdate = false)
+    public async Task<IActionResult> GetDetails(string id, [FromQuery] bool forceUpdate = false)
     {
         var log = LogManager.GetLogger("Web.Api.Details");
         if (string.IsNullOrWhiteSpace(id))

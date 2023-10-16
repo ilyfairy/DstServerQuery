@@ -44,13 +44,32 @@ builder.Services.AddSingleton<DstVersionGetter>();
 builder.Services.AddSingleton<GeoIPService>();
 builder.Services.AddSingleton<DstJsonOptions>();
 
+//配置跨域请求
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CORS", policyBuilder =>
+        {
+            //string[] origins = builder.Configuration.GetSection("CORS:Origins").Get<string[]>() ?? Array.Empty<string>();
+
+            policyBuilder
+                .AllowCredentials()
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .SetIsOriginAllowed(_ => true);
+        });
+});
+
+
 //Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 CultureInfo.CurrentCulture = new CultureInfo("zh-CN");
- 
+
 var app = builder.Build();
+
+app.UseCors("CORS");
+app.UseResponseCompression();
 
 app.Lifetime.ApplicationStarted.Register(async () =>
 {
@@ -112,12 +131,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseResponseCompression();
 
 app.Use(async (context, next) =>
 {
-    context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
-    context.Response.Headers.Add("Access-Control-Allow-Methods", "*");
+    //context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+    //context.Response.Headers.Add("Access-Control-Allow-Methods", "*");
+    //context.Response.Headers.Add("Access-Control-Allow-Headers", "*");
+    //context.Response.Headers.Add("Access-Control-Allow-Credentials", "false");
     if (!app.Services.GetService<LobbyDetailsManager>()!.Running)
     {
         context.Response.StatusCode = 500;
