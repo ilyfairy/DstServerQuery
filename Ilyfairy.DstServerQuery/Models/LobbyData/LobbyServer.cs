@@ -1,9 +1,15 @@
 ﻿using Ilyfairy.DstServerQuery.LobbyJson.Converter;
+using Ilyfairy.DstServerQuery.LobbyJson.Converters;
+using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
+using Ilyfairy.DstServerQuery.Models.LobbyData.Units;
 using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.Models.LobbyData;
 
-public class LobbyBriefsData : IDisposable
+/// <summary>
+/// 简略信息, 用于反序列化
+/// </summary>
+public class LobbyServer : ILobbyServerV1, ILobbyServerV2
 {
     internal bool _IsDetails;
     internal string? _Region;
@@ -17,7 +23,7 @@ public class LobbyBriefsData : IDisposable
 
     [JsonPropertyName("__addr")]
     //[JsonConverter(typeof(IPAddressInfoConverter))]
-    public IPAddressInfo Address { get; set; } //ip地址
+    public IPAddressInfo Address { get; set; } //ip地址信息
 
     [JsonPropertyName("port")]
     public int Port { get; set; } //端口
@@ -29,38 +35,38 @@ public class LobbyBriefsData : IDisposable
     public int Connected { get; set; } //在线玩家个数
 
     [JsonPropertyName("dedicated")]
-    public bool Dedicated { get; set; } //是否是专用服务器
+    public bool IsDedicated { get; set; } //是否是专用服务器
 
     [JsonPropertyName("host")]
     public string Host { get; set; } //房主KleiID
 
     [JsonPropertyName("intent")]
-    [JsonConverter(typeof(EnumConverter<IntentionType>))]
+    [JsonConverter(typeof(IntentConverter))]
     public IntentionType Intent { get; set; } //风格
 
     [JsonPropertyName("maxconnections")]
     public int MaxConnections { get; set; } //最大玩家限制
 
     [JsonPropertyName("mode")]
-    [JsonConverter(typeof(EnumConverter<GameMode>))]
+    [JsonConverter(typeof(ModeConverter))]
     public GameMode Mode { get; set; } //模式
 
     [JsonPropertyName("mods")]
-    public bool Mods { get; set; } //是否开启mod
+    public bool IsMods { get; set; } //是否开启mod
 
     [JsonPropertyName("password")]
-    public bool Password { get; set; } //是否需要密码
+    public bool IsPassword { get; set; } //是否需要密码
 
     [JsonPropertyName("platform")]
-    [JsonConverter(typeof(EnumConverter<Platform>))]
+    //[JsonConverter(typeof(EnumConverter<Platform>))]
     public Platform Platform { get; set; } //平台信息
 
     [JsonPropertyName("season")]
-    [JsonConverter(typeof(EnumConverter<Season>))]
+    [JsonConverter(typeof(SeasonConverter))]
     public Season Season { get; set; } //季节
 
     [JsonPropertyName("pvp")]
-    public bool PVP { get; set; } //是否启用pvp
+    public bool IsPvp { get; set; } //是否启用pvp
 
     [JsonPropertyName("v")]
     public int Version { get; set; } //版本
@@ -68,10 +74,12 @@ public class LobbyBriefsData : IDisposable
     [JsonPropertyName("session")]
     public string Session { get; set; } //会话id
 
-    public string? Country => Address?.Country?.IsoCode;
+    //V1专用
+    [JsonIgnore]
+    public string? Country => Address?.IsoCode;
 
 
-    public void CopyTo(LobbyDetailsData dest)
+    public void CopyTo(LobbyServerDetailed dest)
     {
         if (dest is null) return;
         dest.Name = this.Name;
@@ -79,27 +87,18 @@ public class LobbyBriefsData : IDisposable
         dest.Port = this.Port;
         dest.RowId = this.RowId;
         dest.Connected = this.Connected;
-        dest.Dedicated = this.Dedicated;
+        dest.IsDedicated = this.IsDedicated;
         dest.Host = this.Host;
         dest.Intent = this.Intent;
         dest.MaxConnections = this.MaxConnections;
         dest.Mode = this.Mode;
-        dest.Mods = this.Mods;
-        dest.Password = this.Password;
+        dest.IsMods = this.IsMods;
+        dest.IsPassword = this.IsPassword;
         dest.Platform = this.Platform;
         dest.Season = this.Season;
-        dest.PVP = this.PVP;
+        dest.IsPvp = this.IsPvp;
         dest.Version = this.Version;
         dest.Session = this.Session;
     }
 
-    public void Dispose()
-    {
-        _Lock?.Dispose();
-    }
-
-    ~LobbyBriefsData()
-    {
-        Dispose();
-    }
 }

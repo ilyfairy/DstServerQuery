@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Ilyfairy.DstServerQuery.Models;
+using Ilyfairy.DstServerQuery.Models.LobbyData.Units;
 
 namespace Ilyfairy.DstServerQuery.Utils;
 
@@ -40,18 +41,6 @@ public class DstEnumText : Dictionary<Enum, string>
         { DropEverythingOnDespawn.@default, "总是" },
         { DropEverythingOnDespawn.always, "所有" },
 
-        { IntentionType.unknown, "未知" },
-        { IntentionType.relaxed, "轻松" },
-        { IntentionType.endless, "无尽" },
-        { IntentionType.survival, "生存" },
-        { IntentionType.wilderness, "荒野" },
-        { IntentionType.lightsout, "暗无天日" },
-        { IntentionType.cooperative, "合作" },
-        { IntentionType.ooperative, "合作" },
-        { IntentionType.social, "社交" },
-        { IntentionType.madness, "疯狂" },
-        { IntentionType.competitive, "竞争" },
-        { IntentionType.oceanfishing, "海钓" },
 
         { Behaviour.never, "无" },
         { Behaviour.@default, "默认" },
@@ -93,13 +82,7 @@ public class DstEnumText : Dictionary<Enum, string>
         { SeasonalDuration.verylongseason, "极长" },
         { SeasonalDuration.random, "随机" },
 
-        { Season.autumn, "秋" },
-        { Season.winter, "冬" },
-        { Season.spring, "春" },
-        { Season.summer, "夏" },
-        { Season.autumnOrspring, "春活秋" },
-        { Season.winterOrsummer, "冬季或夏季" },
-        { Season.autumnOrwinterOrspringOrsummer, "随机" },
+      
 
         { TaskSet.@default, "联机版" },
         { TaskSet.classic, "经典" },
@@ -138,20 +121,9 @@ public class DstEnumText : Dictionary<Enum, string>
         { PrefabswapsStart.@default, "默认" },
         { PrefabswapsStart.highly_random, "非常随机" },
 
-        { GameMode.unknown, "未知" },
-        { GameMode.survival, "生存" },
-        { GameMode.wilderness, "荒野" },
-        { GameMode.endless, "无尽" },
-        { GameMode.lavaarena, "熔炉" },
-        { GameMode.quagmire, "暴食" },
-        { GameMode.starving_floor, "StarvingFloor" },
-        { GameMode.smashup, "Smashup" }
     }).Value;   
 
-    private DstEnumText()
-    {
-
-    }
+    private DstEnumText() { }
 
     public new string this[Enum e]
     {
@@ -169,5 +141,43 @@ public class DstEnumText : Dictionary<Enum, string>
         if (TryGetValue(e, out var value))
             return value;
         return defaultValue;
+    }
+
+
+    private readonly Dictionary<string, string> stringEnum = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "unknown", "未知" },
+        { "survival", "生存" },
+        { "wilderness", "荒野" },
+        { "endless", "无尽" },
+        { "lavaarena", "熔炉" },
+        { "quagmire", "暴食" },
+        { "starving_floor", "StarvingFloor" },
+        { "smashup", "Smashup" },
+        { "autumn", "秋" },
+        { "winter", "冬" },
+        { "spring", "春" },
+        { "summer", "夏" },
+        { "autumnOrspring", "春活秋" },
+        { "winterOrsummer", "冬季或夏季" },
+        { "autumnOrwinterOrspringOrsummer", "随机" },
+        
+        { "relaxed", "轻松" },
+        { "lightsout", "暗无天日" },
+        { "cooperative", "合作" },
+        { "ooperative", "合作" },
+        { "social", "社交" },
+        { "madness", "疯狂" },
+        { "competitive", "竞争" },
+        { "oceanfishing", "海钓" },
+    };
+
+    public string GetFromString(string str, string @default)
+    {
+        if (stringEnum.TryGetValue(str, out var value))
+        {
+            return value;
+        }
+        return @default;
     }
 }

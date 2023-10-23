@@ -12,6 +12,8 @@ public enum Platform
     QQGame = 0x08,
     Xbox = 0x10,
     Switch = 0x20,
+
+    PS4Official = 19,
 }
 
 

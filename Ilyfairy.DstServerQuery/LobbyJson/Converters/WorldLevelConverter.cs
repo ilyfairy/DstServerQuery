@@ -12,5 +12,8 @@ public class WorldLevelConverter : JsonConverter<object>
         return null;
     }
 
-    public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options) => throw new NotSupportedException();
+    public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
+    {
+        writer.WriteNullValue();
+    }
 }

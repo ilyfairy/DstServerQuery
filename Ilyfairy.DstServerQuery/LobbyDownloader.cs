@@ -2,11 +2,14 @@
 using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
 using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.Mime;
+using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -25,8 +28,8 @@ namespace Ilyfairy.DstServerQuery
         private readonly string _token;
         private readonly string[]? _dstDetailsProxyUrls; // https://api.com/{0}/{1}/{2}/{3}
 
-        //通过区域和平台获取url (适用于新版数据)
-        public Dictionary<RegionPlatform, RegionUrl> BriefsUrlMap { get; set; } = new();
+        //通过区域和平台获取url
+        public Dictionary<RegionPlatform, RegionUrl> RegionPlatformMap { get; set; } = new();
 
         public LobbyDownloader(DstJsonOptions dstJsonOptions, string dstToken, string[]? dstDetailsProxyUrls = null)
         {
@@ -62,8 +65,8 @@ namespace Ilyfairy.DstServerQuery
             {
                 foreach (var platform in platforms)
                 {
-                    BriefsUrlMap[new(region, Enum.Parse<LobbyPlatform>(platform))] =
-                        new (
+                    RegionPlatformMap[new(region, Enum.Parse<LobbyPlatform>(platform))] =
+                        new(
                             $"https://lobby-v2-cdn.klei.com/{region}-{platform}.json.gz",
                             $"https://lobby-v2-{region}.klei.com/lobby/read"
                         );
@@ -72,17 +75,12 @@ namespace Ilyfairy.DstServerQuery
         }
 
         //GET请求
-        private async Task<List<LobbyDetailsData>> DownloadBriefs(string url, CancellationToken cancellationToken = default)
+        private async Task<LobbyServerDetailed[]> DownloadBriefs(string url, CancellationToken cancellationToken = default)
         {
             var response = await http.SendAsync(new(HttpMethod.Get, url), HttpCompletionOption.ResponseContentRead, cancellationToken);
-            var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            var get = await response.Content.ReadFromJsonAsync<GET<LobbyServerDetailed>>(dstJsonOptions.DeserializerOptions, cancellationToken);
 
-            MemoryStream ms = new();
-            await stream.CopyToAsync(ms, cancellationToken);
-            ms.Position = 0;
-
-            var get = JsonSerializer.Deserialize<GET<LobbyDetailsData>>(ms, dstJsonOptions.DeserializerOptions);
-            if (get?.Data is null) return new();
+            if (get?.Data is null) return Array.Empty<LobbyServerDetailed>();
 
             foreach (var item in get.Data)
             {
@@ -92,7 +90,7 @@ namespace Ilyfairy.DstServerQuery
         }
 
         //POST请求
-        public async Task<List<LobbyDetailsData>> DownloadDetails(string url, CancellationToken cancellationToken = default)
+        public async Task<LobbyServerDetailed[]> DownloadDetails(string url, CancellationToken cancellationToken = default)
         {
             var body = $$$"""
                 {
@@ -103,17 +101,17 @@ namespace Ilyfairy.DstServerQuery
                 """;
             HttpRequestMessage msg = new(HttpMethod.Post, url);
             msg.Content = new StringContent(body, null, MediaTypeNames.Application.Json);
-            var r = await http.SendAsync(msg, cancellationToken);
-            GET<LobbyDetailsData>? get;
+            var r = await http.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            GET<LobbyServerDetailed>? get;
             try
             {
-                get = await r.Content.ReadFromJsonAsync<GET<LobbyDetailsData>>(dstJsonOptions.DeserializerOptions, cancellationToken);
+                get = await r.Content.ReadFromJsonAsync<GET<LobbyServerDetailed>>(dstJsonOptions.DeserializerOptions, cancellationToken);
             }
             catch (Exception e)
             {
-                return new();
+                return Array.Empty<LobbyServerDetailed>();
             }
-            if (get is null || get.Data is null) return new();
+            if (get is null || get.Data is null) return Array.Empty<LobbyServerDetailed>();
             foreach (var item in get.Data)
             {
                 item._IsDetails = true;
@@ -123,17 +121,18 @@ namespace Ilyfairy.DstServerQuery
         }
 
         //POST请求
-        public async ValueTask<int> UpdateToDetails(LobbyDetailsData data, CancellationToken cancellationToken = default)
+        public async ValueTask<int> UpdateToDetails(LobbyServerDetailed data, CancellationToken cancellationToken = default)
         {
             var url = GetProxyUrl();
-            string body;
+            HttpContent body;
             if (string.IsNullOrWhiteSpace(url))
             {
                 // https://lobby-v2-cdn.klei.com/{Region}-{Platform}.json.gz
-                if (!BriefsUrlMap.TryGetValue(new(data._Region, data._LobbyPlatform), out var regionUrl)) return 0;
+                if (data._Region == null) return 0;
+                if (!RegionPlatformMap.TryGetValue(new(data._Region, data._LobbyPlatform), out var regionUrl)) return 0;
                 url = regionUrl.DetailsUrl;
                 //var request = new RestRequest(url.details, Method.Post);
-                body = $$$"""
+                string str = $$$"""
                 {
                     "__gameId": "DontStarveTogether",
                     "__token": "{{{_token}}}",
@@ -142,20 +141,20 @@ namespace Ilyfairy.DstServerQuery
                     }
                 }
                 """;
+                body = new StringContent(str, Encoding.UTF8, MediaTypeNames.Application.Json);
             }
             else
             {
-                List<object> requestList = new();
-                requestList.Add(new
+                object[] requestList = [new
                 {
                     RowId = data.RowId,
                     Region = data._Region
-                });
-                body = JsonSerializer.Serialize(requestList);
+                }];
+                body = JsonContent.Create(requestList, null, JsonSerializerOptions.Default);
             }
 
-            var r = await httpUpdate.PostAsync(url, new StringContent(body, null, MediaTypeNames.Application.Json), cancellationToken);
-            var get = await r.Content.ReadFromJsonAsync<GET<LobbyDetailsData>>(dstJsonOptions.DeserializerOptions, cancellationToken);
+            var r = await httpUpdate.PostAsync(url, body, cancellationToken);
+            var get = await r.Content.ReadFromJsonAsync<GET<LobbyServerDetailed>>(dstJsonOptions.DeserializerOptions, cancellationToken);
             if (get is null || get.Data is null || !get.Data.Any()) return 0;
 
             var newData = get.Data.First();
@@ -165,17 +164,17 @@ namespace Ilyfairy.DstServerQuery
             return 1;
         }
 
-        public async ValueTask<int> UpdateToDetails(LobbyDetailsData[] datas, CancellationToken cancellationToken = default)
+        public async ValueTask<int> UpdateToDetails(ICollection<LobbyServerDetailed> servers, CancellationToken cancellationToken = default)
         {
-            if(datas.Length == 0) return 0;
-            
+            if (servers.Count == 0) return 0;
+
             int updatedCount = 0;
             int requestCount = 0;
 
             var proxyUrl = GetProxyUrl();
             if (string.IsNullOrWhiteSpace(proxyUrl))
             {
-                foreach (var item in datas)
+                foreach (var item in servers)
                 {
                     requestCount++;
                     if (await UpdateToDetails(item, cancellationToken) > 0)
@@ -186,30 +185,20 @@ namespace Ilyfairy.DstServerQuery
             }
             else
             {
-                var group = datas.GroupBy(v =>
-                {
-                    var region = new RegionPlatform(v._Region, v._LobbyPlatform);
-                    if (BriefsUrlMap.TryGetValue(region, out var url))
-                    {
-                        return region;
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }).Where(v => v.Key != null);
+                List<KeyValuePair<RegionPlatform, LobbyServerDetailed>> requests = new(servers.Count);
 
-                var regionMap = group.ToDictionary(v => v.Key!, v => v.Cast<LobbyDetailsData>());
-
-                List<KeyValuePair<RegionPlatform, LobbyDetailsData>> requests = new(regionMap.Sum(v => v.Value.Count()));
-                foreach (var region in regionMap)
+                foreach (var item in servers)
                 {
-                    foreach (var data in region.Value)
+                    if (item._Region is null) continue;
+
+                    var region = new RegionPlatform(item._Region, item._LobbyPlatform);
+                    if (RegionPlatformMap.ContainsKey(region))
                     {
-                        requests.Add(new(region.Key, data));
+                        requests.Add(new KeyValuePair<RegionPlatform, LobbyServerDetailed>(region, item));
                     }
                 }
-                var rowIdMap = datas.ToDictionary(v => v.RowId);
+
+                var rowIdMap = servers.ToDictionary(v => v.RowId);
 
                 ParallelOptions opt = new()
                 {
@@ -221,18 +210,19 @@ namespace Ilyfairy.DstServerQuery
                     List<object> requestList = new();
                     foreach (var item in chunk)
                     {
+                        //输入 [{RowId:xxx,Region:xxx}]
                         requestList.Add(new
                         {
                             RowId = item.Value.RowId,
                             Region = item.Key.Region
                         });
                     }
-                    var body = JsonSerializer.Serialize(requestList);
-                    //var url = _dstDetailsProxyUrls;
+
                     HttpResponseMessage r;
                     try
                     {
-                        r = await httpUpdate.PostAsync(proxyUrl, new StringContent(body, null, MediaTypeNames.Application.Json), ct);
+                        var content = JsonContent.Create(requestList, null, JsonSerializerOptions.Default);
+                        r = await httpUpdate.PostAsync(proxyUrl, content, ct);
                     }
                     catch (Exception e)
                     {
@@ -242,10 +232,9 @@ namespace Ilyfairy.DstServerQuery
                         }
                         return;
                     }
-                    var json = await r.Content.ReadAsStringAsync(ct);
-                    var get = JsonSerializer.Deserialize<GET<LobbyDetailsData>>(json, dstJsonOptions.DeserializerOptions);
+                    var get = await r.Content.ReadFromJsonAsync<GET<LobbyServerDetailed>>(dstJsonOptions.DeserializerOptions, ct);
                     requestCount++;
-                    if (get is null || get.Data is null || !get.Data.Any()) return;
+                    if (get is null || get.Data is null) return;
                     foreach (var newData in get.Data)
                     {
                         if (rowIdMap.TryGetValue(newData.RowId, out var data))
@@ -261,10 +250,9 @@ namespace Ilyfairy.DstServerQuery
             return updatedCount;
         }
 
-        public async Task<List<LobbyDetailsData>> DownloadAllBriefs(CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<LobbyServerDetailed> DownloadAllBriefs([EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            ConcurrentBag<List<LobbyDetailsData>> list = new();
-            foreach (var map in BriefsUrlMap)
+            foreach (var map in RegionPlatformMap)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var r = await DownloadBriefs(map.Value.BriefsUrl, cancellationToken);
@@ -273,23 +261,14 @@ namespace Ilyfairy.DstServerQuery
                     item._Region = map.Key.Region;
                     item._LobbyPlatform = map.Key.Platform;
                     item._LastUpdate = DateTime.Now;
-                }
-                list.Add(r);
-            }
-            List<LobbyDetailsData> datas = new(list.Sum(v => v.Count));
-            foreach (var region in list)
-            {
-                foreach (var item in region)
-                {
-                    datas.Add(item);
+                    yield return item;
                 }
             }
-            return datas;
         }
 
         public string? GetProxyUrl()
         {
-            if (_dstDetailsProxyUrls == null) return null;
+            if (_dstDetailsProxyUrls is null or { Length: 0 }) return null;
             var rand = Random.Shared.Next() % _dstDetailsProxyUrls.Length;
             return _dstDetailsProxyUrls[rand];
         }

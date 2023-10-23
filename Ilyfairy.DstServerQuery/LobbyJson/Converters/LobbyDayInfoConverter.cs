@@ -37,7 +37,7 @@ public partial class LobbyDayInfoConverter : JsonConverter<LobbyDayInfo>
 
     public override void Write(Utf8JsonWriter writer, LobbyDayInfo value, JsonSerializerOptions options)
     {
-        throw new NotSupportedException();
+        JsonSerializer.Serialize(writer, value);
     }
 
     [GeneratedRegex("return \\{ day=(\\d+), dayselapsedinseason=(\\d+), daysleftinseason=(\\d+) \\}")]

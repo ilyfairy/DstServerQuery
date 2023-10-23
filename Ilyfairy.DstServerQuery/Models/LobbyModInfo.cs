@@ -3,7 +3,7 @@
 /// <summary>
 /// 大厅Mod信息
 /// </summary>
-public class LobbyModInfo
+public record LobbyModInfo
 {
     public long Id { get; set; }
     public string Name { get; set; }

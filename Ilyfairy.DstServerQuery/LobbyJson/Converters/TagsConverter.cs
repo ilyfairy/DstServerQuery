@@ -19,6 +19,6 @@ public class TagsConverter : JsonConverter<string[]>
 
     public override void Write(Utf8JsonWriter writer, string[] value, JsonSerializerOptions options)
     {
-        throw new NotSupportedException();
+        JsonSerializer.Serialize(writer, value);
     }
 }

@@ -120,63 +120,7 @@ public enum DropEverythingOnDespawn
     /// </summary>
     always,
 }
-/// <summary>
-/// 游戏风格
-/// </summary>
-public enum IntentionType
-{
-    /// <summary>
-    /// 未知
-    /// </summary>
-    unknown,
 
-    /// <summary>
-    /// 轻松
-    /// </summary>
-    relaxed,
-    /// <summary>
-    /// 无尽
-    /// </summary>
-    endless,
-    /// <summary>
-    /// 生存
-    /// </summary>
-    survival,
-    /// <summary>
-    /// 荒野
-    /// </summary>
-    wilderness,
-    /// <summary>
-    /// 暗无天日
-    /// </summary>
-    lightsout,
-
-    /// <summary>
-    /// 合作
-    /// </summary>
-    cooperative,
-    /// <summary>
-    /// 合作
-    /// </summary>
-    ooperative,
-    /// <summary>
-    /// 社交
-    /// </summary>
-    social,
-    /// <summary>
-    /// 疯狂
-    /// </summary>
-    madness,
-    /// <summary>
-    /// 竞争
-    /// </summary>
-    competitive,
-
-    /// <summary>
-    /// 海钓
-    /// </summary>
-    oceanfishing,
-}
 /// <summary>
 /// 行为
 /// </summary>
@@ -348,40 +292,6 @@ public enum SeasonalDuration
     /// 随机
     /// </summary>
     random,
-}
-/// <summary>
-/// 季节
-/// </summary>
-public enum Season
-{
-    /// <summary>
-    /// 默认, 秋
-    /// </summary>
-    autumn,
-    /// <summary>
-    /// 冬
-    /// </summary>
-    winter,
-    /// <summary>
-    /// 春
-    /// </summary>
-    spring,
-    /// <summary>
-    /// 夏
-    /// </summary>
-    summer,
-    /// <summary>
-    /// 春或秋
-    /// </summary>
-    autumnOrspring,
-    /// <summary>
-    /// 冬季或夏季
-    /// </summary>
-    winterOrsummer,
-    /// <summary>
-    /// 随机
-    /// </summary>
-    autumnOrwinterOrspringOrsummer
 }
 /// <summary>
 /// 生物群落

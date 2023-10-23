@@ -6,9 +6,11 @@ using Ilyfairy.DstServerQuery.LobbyJson.Converter;
 using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.Requests;
 using Ilyfairy.DstServerQuery.Services;
-using Ilyfairy.DstServerQuery.Utils;
+using Ilyfairy.DstServerQuery.Web;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using NLog;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,10 +18,6 @@ if (File.Exists("secrets.json"))
 {
     builder.Configuration.AddJsonFile("secrets.json");
 }
-builder.Services.AddControllers().AddJsonOptions(opt =>
-{
-    opt.JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
-});
 
 //DbContext
 if (builder.Configuration.GetConnectionString("SqlServer") is string sqlServerConnection && !string.IsNullOrWhiteSpace(sqlServerConnection))
@@ -40,7 +38,7 @@ builder.Services.AddSingleton<HistoryCountManager>();
 builder.Services.AddSingleton(builder.Configuration.GetSection("Requests").Get<RequestRoot>()!);
 builder.Services.AddSingleton<LobbyDetailsManager>();
 builder.Services.AddSingleton<LobbyDetailsManager>();
-builder.Services.AddSingleton<DstVersionGetter>();
+builder.Services.AddSingleton<DstVersionService>();
 builder.Services.AddSingleton<GeoIPService>();
 builder.Services.AddSingleton<DstJsonOptions>();
 
@@ -59,6 +57,28 @@ builder.Services.AddCors(options =>
         });
 });
 
+//版本管理
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0); // 默认api版本
+    options.AssumeDefaultVersionWhenUnspecified = true; // 没有指定版本时, 使用默认版本
+    options.ReportApiVersions = true;
+}).AddApiExplorer(options =>
+{
+    options.SubstituteApiVersionInUrl = true;
+    options.GroupNameFormat = "'v'V"; // v{版本}
+});
+
+builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
+
+//添加控制器
+builder.Services.AddControllers()
+    .AddJsonOptions(opt =>
+{
+    //默认Json序列化选项
+    opt.JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
+    opt.JsonSerializerOptions.PropertyNamingPolicy = null;
+});
 
 //Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -71,6 +91,7 @@ var app = builder.Build();
 app.UseCors("CORS");
 app.UseResponseCompression();
 
+
 app.Lifetime.ApplicationStarted.Register(async () =>
 {
     //创建数据库表
@@ -81,15 +102,16 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     //初始化
     var webLog = LogManager.GetLogger("Lifetime");
     var lobbyManager = app.Services.GetRequiredService<LobbyDetailsManager>();
-    var dstManager = app.Services.GetRequiredService<DstVersionGetter>();
+    var dstManager = app.Services.GetRequiredService<DstVersionService>();
     var historyCountManager = app.Services.GetRequiredService<HistoryCountManager>();
     //var reqs = app.Services.GetRequiredService<RequestRoot>();
     var geoIPService = app.Services.GetRequiredService<GeoIPService>();
     var dstJsonConverter = app.Services.GetRequiredService<DstJsonOptions>();
 
-
+    //设置Steam代理api
     DepotDownloader.SteamConfig.SetApiUrl(app.Configuration.GetValue<string>("SteampoweredApiProxy") ?? "https://api.steampowered.com/");
 
+    //配置GeoIP
     if (app.Configuration.GetValue<string>("GeoLite2Path") is string geoLite2Path)
     {
         geoIPService.Initialize(geoLite2Path);
@@ -100,26 +122,28 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     //服务器更新回调
     lobbyManager.Updated += (sender, e) =>
     {
-        if (!e.IsDownloadCompleted || e.Data.Count == 0) return;
+        if (e.Data.Count == 0) return;
         var data = e.Data;
-        historyCountManager.Add(data, e.UpdatedDateTime);
-        GC.Collect();
+        if (e.IsDetailed)
+        {
+            historyCountManager.Add(data, e.UpdatedDateTime);
+        }
     };
 
     await lobbyManager.Start();
     webLog.Info("<Start>");
 
-    dstManager.Start(app.Configuration.GetValue<long?>("DstDefaultVersion"));
+    dstManager.RunAsync(app.Configuration.GetValue<long?>("DstDefaultVersion"));
 });
 
 app.Lifetime.ApplicationStopped.Register(() =>
 {
-    var webLog = LogManager.GetLogger("Web");
+    var webLog = LogManager.GetLogger("Lifetime");
     webLog.Info("<Shutdowning>");
 
     var lobbyManager = app.Services.GetService<LobbyDetailsManager>()!;
-    var dstVersion = app.Services.GetService<DstVersionGetter>()!;
-    dstVersion.Abort();
+    var dstVersion = app.Services.GetService<DstVersionService>()!;
+    dstVersion.Dispose();
     lobbyManager.Dispose();
     webLog.Info("<Shutdown>");
     LogManager.Shutdown();
@@ -128,21 +152,24 @@ app.Lifetime.ApplicationStopped.Register(() =>
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options => 
+    {
+        foreach (var description in app.DescribeApiVersions())
+        {
+            var url = $"/swagger/{description.GroupName}/swagger.json";
+            var name = description.GroupName.ToUpperInvariant();
+            options.SwaggerEndpoint(url, name);
+        }
+    });
 }
-
 
 app.Use(async (context, next) =>
 {
-    //context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
-    //context.Response.Headers.Add("Access-Control-Allow-Methods", "*");
-    //context.Response.Headers.Add("Access-Control-Allow-Headers", "*");
-    //context.Response.Headers.Add("Access-Control-Allow-Credentials", "false");
-    if (!app.Services.GetService<LobbyDetailsManager>()!.Running)
-    {
-        context.Response.StatusCode = 500;
-        return;
-    }
+    //if (!app.Services.GetRequiredService<LobbyDetailsManager>().Running)
+    //{
+    //    context.Response.StatusCode = 500;
+    //    return;
+    //}
     await next();
 });
 

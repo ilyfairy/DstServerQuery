@@ -1,13 +1,20 @@
 ﻿using Ilyfairy.DstServerQuery.LobbyJson.Converter;
+using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
 using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.Models.LobbyData;
 
 /// <summary>
-/// 单个服务器列表详细信息
+/// 单个服务器列表详细信息, 用于反序列化
 /// </summary>
-public class LobbyDetailsData : LobbyBriefsDataPlayers
+public class LobbyServerDetailed : LobbyServer, ILobbyServerWithPlayerV1, ILobbyServerDetailedV1, ILobbyServerWithPlayerV2, ILobbyServerDetailedV2
 {
+    [JsonPropertyName("players")]
+    [JsonConverter(typeof(PlayersInfoConverter))] // NOTE:自定义转换
+    public LobbyPlayerInfo[] Players { get; set; } = []; //玩家信息
+
+
+
     [JsonPropertyName("__lastPing")]
     public long LastPing { get; set; } //上次与大厅通信时间
 
@@ -28,7 +35,7 @@ public class LobbyDetailsData : LobbyBriefsDataPlayers
     public bool ClanOnly { get; set; } //仅限steam群组成员加入
 
     [JsonPropertyName("fo")]
-    public bool Fo { get; set; } //是否仅限好友加入
+    public bool IsFo { get; set; } //是否仅限好友加入
 
     [JsonPropertyName("guid")]
     public string Guid { get; set; } //GUID
@@ -37,7 +44,7 @@ public class LobbyDetailsData : LobbyBriefsDataPlayers
     public bool ClientHosted { get; set; } //是否是客户端主机
 
     [JsonPropertyName("ownernetid")]
-    public string OwnerNetId { get; set; } //steamid
+    public string? OwnerNetId { get; set; } //steamid
 
     [JsonPropertyName("tags")]
     [JsonConverter(typeof(TagsConverter))] // NOTE:自定义转换
@@ -47,7 +54,7 @@ public class LobbyDetailsData : LobbyBriefsDataPlayers
     public bool LanOnly { get; set; } //是否仅局域网
 
     [JsonPropertyName("desc")]
-    public string Desc { get; set; } //房间描述
+    public string? Description { get; set; } //房间描述
 
     [JsonPropertyName("tick")]
     public int Tick { get; set; } //Tick
@@ -65,19 +72,19 @@ public class LobbyDetailsData : LobbyBriefsDataPlayers
     public bool Event { get; set; }
 
     [JsonPropertyName("valvecloudserver")]
-    public bool ValveCloudServer { get; set; }
+    public bool IsValveCloudServer { get; set; }
 
     [JsonPropertyName("valvepopid")]
-    public string ValvePopId { get; set; }
+    public string? ValvePopId { get; set; }
 
     [JsonPropertyName("valveroutinginfo")]
-    public string ValveRoutingInfo { get; set; }
+    public string? ValveRoutingInfo { get; set; }
 
     [JsonPropertyName("kleiofficial")]
-    public bool KleiOfficial { get; set; } //是否是官方服务器
+    public bool IsKleiOfficial { get; set; } //是否是官方服务器
 
     [JsonPropertyName("serverpaused")]
-    public bool ServerPaused { get; set; } //世界是否暂停
+    public bool IsServerPaused { get; set; } //世界是否暂停
 
     [JsonPropertyName("data")]
     [JsonConverter(typeof(LobbyDayInfoConverter))] // NOTE:自定义转换
@@ -95,14 +102,14 @@ public class LobbyDetailsData : LobbyBriefsDataPlayers
     public string SteamRoom { get; set; }
 
     [JsonPropertyName("Users")]
-    public object Users { get; set; } //始终为null
+    public object? Users { get; set; } //始终为null
 
     [JsonPropertyName("mods_info")]
     [JsonConverter(typeof(LobbyModInfoConverter))] // NOTE:自定义转换
-    public List<LobbyModInfo> ModsInfo { get; set; } //mod信息
+    public LobbyModInfo[]? ModsInfo { get; set; } //mod信息
 
 
-    public new void CopyTo(LobbyDetailsData dest)
+    public new void CopyTo(LobbyServerDetailed dest)
     {
         if (dest is null) return;
         dest.Name = this.Name;
@@ -110,16 +117,16 @@ public class LobbyDetailsData : LobbyBriefsDataPlayers
         dest.Port = this.Port;
         dest.RowId = this.RowId;
         dest.Connected = this.Connected;
-        dest.Dedicated = this.Dedicated;
+        dest.IsDedicated = this.IsDedicated;
         dest.Host = this.Host;
         dest.Intent = this.Intent;
         dest.MaxConnections = this.MaxConnections;
         dest.Mode = this.Mode;
-        dest.Mods = this.Mods;
-        dest.Password = this.Password;
+        dest.IsMods = this.IsMods;
+        dest.IsPassword = this.IsPassword;
         dest.Platform = this.Platform;
         dest.Season = this.Season;
-        dest.PVP = this.PVP;
+        dest.IsPvp = this.IsPvp;
         dest.Version = this.Version;
         dest.Session = this.Session;
 
@@ -130,23 +137,23 @@ public class LobbyDetailsData : LobbyBriefsDataPlayers
         dest.Slaves = this.Slaves;
         dest.Secondaries = this.Secondaries;
         dest.ClanOnly = this.ClanOnly;
-        dest.Fo = this.Fo;
+        dest.IsFo = this.IsFo;
         dest.Guid = this.Guid;
         dest.ClientHosted = this.ClientHosted;
         dest.OwnerNetId = this.OwnerNetId;
         dest.Tags = this.Tags;
         dest.LanOnly = this.LanOnly;
-        dest.Desc = this.Desc;
+        dest.Description = this.Description;
         dest.Tick = this.Tick;
         dest.ClientModsOff = this.ClientModsOff;
         dest.Nat = this.Nat;
         dest.AllowNewPlayers = this.AllowNewPlayers;
         dest.Event = this.Event;
-        dest.ValveCloudServer = this.ValveCloudServer;
+        dest.IsValveCloudServer = this.IsValveCloudServer;
         dest.ValvePopId = this.ValvePopId;
         dest.ValveRoutingInfo = this.ValveRoutingInfo;
-        dest.KleiOfficial = this.KleiOfficial;
-        dest.ServerPaused = this.ServerPaused;
+        dest.IsKleiOfficial = this.IsKleiOfficial;
+        dest.IsServerPaused = this.IsServerPaused;
         dest.DaysInfo = this.DaysInfo;
         dest.WorldGen = this.WorldGen;
         dest.SteamId = this.SteamId;

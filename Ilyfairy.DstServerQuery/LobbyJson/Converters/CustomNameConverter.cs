@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Ilyfairy.DstServerQuery.LobbyJson.Converters;
 
 /// <summary>
-/// 自定义序列化名称转换器, 仅允许序列化
+/// 自定义名称序列化转换器, 仅允许序列化
 /// </summary>
 /// <typeparam name="T"></typeparam>
 public class CustomNameConverter<T> : JsonConverter<T>

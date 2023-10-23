@@ -23,6 +23,6 @@ public class WorldGenConverter : JsonConverter<object>
 
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
     {
-        throw new NotSupportedException();
+        writer.WriteNullValue();
     }
 }

@@ -5,28 +5,28 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace Ilyfairy.DstServerQuery.LobbyJson.Converter;
-public partial class LobbyModInfoConverter : JsonConverter<List<LobbyModInfo>>
+public partial class LobbyModInfoConverter : JsonConverter<LobbyModInfo[]>
 {
-    public override List<LobbyModInfo>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override LobbyModInfo[]? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartArray)
         {
-            return new();
+            return null;
         }
 
         List<string> mods = new(16);
         try
         {
-            foreach (var item in JsonNode.Parse(ref reader)?.AsArray())
+            foreach (var item in JsonNode.Parse(ref reader)?.AsArray() ?? throw new())
             {
-                if (item is null) return new();
+                if (item is null) return null;
                 mods.Add(item.ToString());
             }
         }
         catch (Exception)
         {
             Console.WriteLine("ModJson解析异常");
-            return new();
+            return null;
         }
         
         List<LobbyModInfo> infos = new(mods.Count / 5 + 1);
@@ -62,12 +62,12 @@ public partial class LobbyModInfoConverter : JsonConverter<List<LobbyModInfo>>
         {
             //Console.WriteLine("moditem不是5的倍数");
         }
-        return infos;
+        return infos.ToArray();
     }
 
-    public override void Write(Utf8JsonWriter writer, List<LobbyModInfo> value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, LobbyModInfo[] value, JsonSerializerOptions options)
     {
-        throw new NotSupportedException();
+        JsonSerializer.Serialize(writer, value);
     }
 
     [GeneratedRegex("workshop\\-(\\d+)")]

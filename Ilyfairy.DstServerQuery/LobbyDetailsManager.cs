@@ -16,12 +16,10 @@ public class LobbyDetailsManager : IDisposable
 {
 
     #region 属性字段
-    public ConcurrentDictionary<string, LobbyDetailsData> ServerMap { get; private set; } = new(2, 40000); //会被更新
-    public Dictionary<string, LobbyDetailsData> OldServerMap { get; private set; } = new(); //会被替换
-    private ICollection<LobbyDetailsData> ServerMapCache = Array.Empty<LobbyDetailsData>();
+    public ConcurrentDictionary<string, LobbyServerDetailed> ServerMap { get; } = new(2, 40000);
+    private ICollection<LobbyServerDetailed> serverCache = Array.Empty<LobbyServerDetailed>();
     public bool Running { get; private set; }
     public LobbyDownloader LobbyDownloader { get; private set; }
-    public string[] OldUrlList { get; private set; }
 
     /// <summary>
     /// 最后更新时间
@@ -40,7 +38,6 @@ public class LobbyDetailsManager : IDisposable
 
     #region Logger
     private readonly Logger logDownloadLoop = LogManager.GetLogger("QueryManager.DownloadLoop");
-    private readonly DstJsonOptions dstJsonOptions;
     #endregion
 
     public event DstDataUpdatedHandler? Updated;
@@ -48,9 +45,7 @@ public class LobbyDetailsManager : IDisposable
     //参数是依赖注入
     public LobbyDetailsManager(RequestRoot rr, DstJsonOptions dstJsonOptions)
     {
-        OldUrlList = rr.OldList;
         LobbyDownloader = new LobbyDownloader(dstJsonOptions, rr.Token, rr.DstDetailsProxyUrls);
-        this.dstJsonOptions = dstJsonOptions;
     }
 
     #region 方法
@@ -58,25 +53,10 @@ public class LobbyDetailsManager : IDisposable
     public async Task Start()
     {
         Running = true;
-        ServerMap = new();
         await LobbyDownloader.Initialize();
 
         logDownloadLoop.Info("开始DownloadLoop Task");
         sw.Restart();
-
-        //循环获取旧版服务器数据
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                await OldRequestLoop();
-            }
-            catch (Exception e)
-            {
-                Running = false;
-                Console.WriteLine($"OldDownloadLoopException: {e.Message}");
-            }
-        });
 
         //循环获取新版服务器数据
         _ = Task.Run(async () =>
@@ -109,7 +89,7 @@ public class LobbyDetailsManager : IDisposable
     {
         while (Running)
         {
-            Dictionary<string, LobbyDetailsData> data;
+            Dictionary<string, LobbyServerDetailed> data;
             try
             {
                 // TODO: Download
@@ -117,13 +97,15 @@ public class LobbyDetailsManager : IDisposable
                 CancellationTokenSource cts = new();
                 cts.CancelAfter(TimeSpan.FromMinutes(2));
                 logDownloadLoop.Info("开始 Download");
-                var r = await LobbyDownloader.DownloadAllBriefs(CancellationTokenSource.CreateLinkedTokenSource(cts.Token, HttpTokenSource.Token).Token);
 
-                logDownloadLoop.Info("已获取所有Briefs数据");
-                foreach (var item in r)
+                int count = 0;
+                await foreach (var item in LobbyDownloader.DownloadAllBriefs(CancellationTokenSource.CreateLinkedTokenSource(cts.Token, HttpTokenSource.Token).Token))
                 {
                     data[item.RowId] = item;
+                    count++;
                 }
+
+                logDownloadLoop.Info($"已获取所有服务器数据 一共{count}个");
             }
             catch (Exception e)
             {
@@ -144,7 +126,7 @@ public class LobbyDetailsManager : IDisposable
             //重复的
             foreach (var rowId in currentRowIds.Intersect(newRowIds))
             {
-                (data[rowId] as LobbyBriefsData).CopyTo(ServerMap[rowId]);
+                (data[rowId] as LobbyServer).CopyTo(ServerMap[rowId]);
             }
 
             //新增的
@@ -159,7 +141,8 @@ public class LobbyDetailsManager : IDisposable
                 ServerMap.TryRemove(rowId, out _);
             }
 
-            ServerMapCache = ServerMap.Values;
+            serverCache = ServerMap.Values;
+            Updated?.Invoke(this, new DstUpdatedData(serverCache, false, DateTime.Now));
 
             lock (updateLock)
             {
@@ -179,54 +162,6 @@ public class LobbyDetailsManager : IDisposable
         }
     }
 
-    //旧接口服务器更新
-    private async Task OldRequestLoop()
-    {
-        while (Running)
-        {
-            ConcurrentBag<List<LobbyDetailsData>> bag = new();
-            try
-            {
-                await Parallel.ForEachAsync(OldUrlList, async (url, t) =>
-                {
-                    try
-                    {
-                        var r = await LobbyDownloader.DownloadDetails(url, HttpTokenSource.Token);
-                        bag.Add(r);
-                    }
-                    catch { }
-                });
-            }
-            catch (Exception e)
-            {
-                if (!Running) break;
-            }
-            Dictionary<string, LobbyDetailsData> oldMap = new(bag.Sum(v => v.Count));
-            foreach (var region in bag)
-            {
-                foreach (var item in region)
-                {
-                    oldMap[item.RowId] = item;
-                }
-            }
-            OldServerMap = oldMap;
-            lock (updateLock)
-            {
-                oldUpdated = true;
-            }
-            logDownloadLoop.Info("所有旧接口信息已获取!");
-            UpdateEvent();
-            try
-            {
-                await Task.Delay(20000, HttpTokenSource.Token);
-            }
-            catch (Exception)
-            {
-                if (!Running) break;
-            }
-        }
-    }
-
     private async Task UpdatingLoop()
     {
         Stopwatch s = new();
@@ -235,32 +170,30 @@ public class LobbyDetailsManager : IDisposable
         {
             s.Restart();
             var arr = ServerMap.Values;
-            if (arr.Count == 0)
+            if (arr.Count != 0)
             {
-                await Task.Delay(20000, HttpTokenSource.Token);
-            }
-            try
-            {
-                var count = await LobbyDownloader.UpdateToDetails(arr.ToArray(), HttpTokenSource.Token);
-                if (count <= 0 && arr.Count != 0)
+                try
                 {
-                    logDownloadLoop.Info("@所有详细信息更新失败!");
+                    var count = await LobbyDownloader.UpdateToDetails(arr, HttpTokenSource.Token);
+                    if (count <= 0 && arr.Count != 0)
+                    {
+                        logDownloadLoop.Info("@所有详细信息更新失败!");
+                    }
+                    else
+                    {
+                        logDownloadLoop.Info("@所有详细信息已更新!!!!!");
+                    }
                 }
-                else
-                {
-                    logDownloadLoop.Info("@所有详细信息已更新!!!!!");
-                }
-                await Task.Delay(20000, HttpTokenSource.Token);
+                catch { }
             }
-            catch { }
+            await Task.Delay(20000, HttpTokenSource.Token);
             s.Stop();
-            logDownloadLoop.Info($"更新详细信息耗时: {s.ElapsedMilliseconds}ms");
+            logDownloadLoop.Info($"更新详细信息耗时: {arr.Count}个 {s.ElapsedMilliseconds}ms");
         }
     }
 
     private void UpdateEvent()
     {
-
         lock (updateLock)
         {
             if (oldUpdated && newUpdated)
@@ -296,14 +229,10 @@ public class LobbyDetailsManager : IDisposable
     /// 获取当前当前所有房间的详细数据
     /// </summary>
     /// <returns></returns>
-    public ICollection<LobbyDetailsData> GetCurrentDetails()
+    public ICollection<LobbyServerDetailed> GetCurrentDetails()
     {
-        var newData = ServerMapCache;
-        var oldData = OldServerMap.Values;
-        List<LobbyDetailsData> list = new(newData.Count + oldData.Count);
-        list.AddRange(newData);
-        list.AddRange(oldData);
-        return list;
+        var servers = serverCache;
+        return servers;
     }
 
     /// <summary>
@@ -311,33 +240,29 @@ public class LobbyDetailsManager : IDisposable
     /// </summary>
     /// <param name="rowid"></param>
     /// <returns></returns>
-    public async Task<LobbyDetailsData?> GetDetailByRowIdAsync(string rowid, bool forceUpdate, CancellationToken cancellationToken)
+    public async Task<LobbyServerDetailed?> GetDetailByRowIdAsync(string rowid, bool forceUpdate, CancellationToken cancellationToken)
     {
-        if (OldServerMap.TryGetValue(rowid, out var oldInfo))
-        {
-            return oldInfo;
-        }
-        var newInfo = ServerMap.GetValueOrDefault(rowid);
-        if (newInfo is null) return null;
+        var server = ServerMap.GetValueOrDefault(rowid);
+        if (server is null) return null;
         //Interlocked.Exchange()
-        lock (newInfo)
+        lock (server)
         {
-            newInfo._Lock ??= new SemaphoreSlim(1);
+            server._Lock ??= new SemaphoreSlim(1);
         }
+        var token = CancellationTokenSource.CreateLinkedTokenSource(HttpTokenSource.Token, cancellationToken).Token;
         try
         {
-            var token = CancellationTokenSource.CreateLinkedTokenSource(HttpTokenSource.Token, cancellationToken).Token;
-            await newInfo._Lock.WaitAsync(token);
-            if (forceUpdate || !newInfo._IsDetails || (DateTime.Now - newInfo._LastUpdate) > TimeSpan.FromSeconds(20))
+            await server._Lock.WaitAsync(token);
+            if (forceUpdate || !server._IsDetails || (DateTime.Now - server._LastUpdate) > TimeSpan.FromSeconds(20))
             {
-                await LobbyDownloader.UpdateToDetails(newInfo, HttpTokenSource.Token);
+                await LobbyDownloader.UpdateToDetails(server, HttpTokenSource.Token);
             }
         }
         finally
         {
-            newInfo._Lock.Release();
+            server._Lock.Release();
         }
-        return newInfo;
+        return server;
     }
 
     #endregion
@@ -348,14 +273,14 @@ public delegate void DstDataUpdatedHandler(object sender, DstUpdatedData e);
 
 public class DstUpdatedData : EventArgs
 {
-    public ICollection<LobbyDetailsData> Data { get; init; }
-    public bool IsDownloadCompleted { get; init; }
+    public ICollection<LobbyServerDetailed> Data { get; init; }
+    public bool IsDetailed { get; init; }
     public DateTime UpdatedDateTime { get; init; }
 
-    public DstUpdatedData(ICollection<LobbyDetailsData> data, bool isDownloadCompleted, DateTime updatedDateTime)
+    public DstUpdatedData(ICollection<LobbyServerDetailed> data, bool isDetailed, DateTime updatedDateTime)
     {
         Data = data;
-        IsDownloadCompleted = isDownloadCompleted;
+        IsDetailed = isDetailed;
         UpdatedDateTime = updatedDateTime;
     }
 }
