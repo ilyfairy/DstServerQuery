@@ -7,11 +7,14 @@ using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.Requests;
 using Ilyfairy.DstServerQuery.Services;
 using Ilyfairy.DstServerQuery.Web;
+using Ilyfairy.DstServerQuery.Web.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using NLog;
+using Serilog;
+using Serilog.Settings.Configuration;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Globalization;
+
 
 var builder = WebApplication.CreateBuilder(args);
 if (File.Exists("secrets.json"))
@@ -19,28 +22,61 @@ if (File.Exists("secrets.json"))
     builder.Configuration.AddJsonFile("secrets.json");
 }
 
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger(); // Run之前生效
+
+builder.Services.AddSerilog((service, loggerConfiguration) =>
+{
+    //var options = new ConfigurationReaderOptions(typeof(ConsoleLoggerConfigurationExtensions).Assembly, typeof(Serilog.LoggerConfiguration).Assembly);
+    //new LoggerConfiguration().ReadFrom.Configuration(configuration, options); 
+    //loggerConfiguration.ReadFrom.Configuration(service.GetRequiredService<IConfiguration>()); // 单文件读取失败
+
+    loggerConfiguration.WriteTo.Async(v => v.Console());
+    loggerConfiguration.Enrich.FromLogContext();
+
+    //如果不是开发模式
+    if (!builder.Environment.IsDevelopment())
+    {
+        loggerConfiguration.WriteTo.Async(v => 
+            v.File("Logs/log.log", rollingInterval: RollingInterval.Day)
+        );
+        loggerConfiguration.MinimumLevel.Information();
+        loggerConfiguration.MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Information);
+        loggerConfiguration.MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning);
+        loggerConfiguration.MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning);
+    }
+#if DEBUG
+    loggerConfiguration.MinimumLevel.Debug();
+#endif
+});
+
 //DbContext
 if (builder.Configuration.GetConnectionString("SqlServer") is string sqlServerConnection && !string.IsNullOrWhiteSpace(sqlServerConnection))
 {
-    builder.Services.AddSqlServer<DstDbContext>(sqlServerConnection);
+    builder.Services.AddSqlServer<DstDbContext>(sqlServerConnection, options =>
+    {
+        options.MigrationsAssembly("Ilyfairy.DstServerQuery.Web");
+    });
 }
 else
 {
-    LogManager.GetLogger("Initialize").Warn("没有检测到SqlServer连接字符串, 将使用内存数据库");
+    Log.Logger.Warning("没有检测到SqlServer连接字符串, 将使用Sqlite数据库");
     builder.Services.AddDbContext<DstDbContext>(options =>
     {
-        options.UseInMemoryDatabase("Dst");
+        options.UseSqlite("Data Source=Dst.db");
     });
 }
 
 builder.Services.AddResponseCompression(); //启用压缩
 builder.Services.AddSingleton<HistoryCountManager>();
-builder.Services.AddSingleton(builder.Configuration.GetSection("Requests").Get<RequestRoot>()!);
+builder.Services.AddSingleton(builder.Configuration.GetSection("Requests").Get<RequestConfig>()!);
 builder.Services.AddSingleton<LobbyDetailsManager>();
 builder.Services.AddSingleton<LobbyDetailsManager>();
 builder.Services.AddSingleton<DstVersionService>();
 builder.Services.AddSingleton<GeoIPService>();
 builder.Services.AddSingleton<DstJsonOptions>();
+builder.Services.AddSingleton<DstHistoryService>();
 
 //配置跨域请求
 builder.Services.AddCors(options =>
@@ -89,29 +125,37 @@ CultureInfo.CurrentCulture = new CultureInfo("zh-CN");
 var app = builder.Build();
 
 app.UseCors("CORS");
+
+// 禁止访问/ 以及用来检测服务器是否正常运行
+app.Use(async (v,next) =>
+{
+    if(v.Request.Path == "" || v.Request.Path == "/")
+    {
+        v.Response.StatusCode = 404;
+        return;
+    }
+    await next();
+});
+
 app.UseResponseCompression();
+//app.UseSerilogRequestLogging();
 
 
 app.Lifetime.ApplicationStarted.Register(async () =>
 {
-    //创建数据库表
     using var scope = app.Services.CreateScope();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<IHostApplicationBuilder>>();
+    
+    //数据库迁移
     var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
-    await dbContext.Database.EnsureCreatedAsync();
-
-    //初始化
-    var webLog = LogManager.GetLogger("Lifetime");
-    var lobbyManager = app.Services.GetRequiredService<LobbyDetailsManager>();
-    var dstManager = app.Services.GetRequiredService<DstVersionService>();
-    var historyCountManager = app.Services.GetRequiredService<HistoryCountManager>();
-    //var reqs = app.Services.GetRequiredService<RequestRoot>();
-    var geoIPService = app.Services.GetRequiredService<GeoIPService>();
-    var dstJsonConverter = app.Services.GetRequiredService<DstJsonOptions>();
-
+    await dbContext.Database.MigrateAsync();
+    
     //设置Steam代理api
     DepotDownloader.SteamConfig.SetApiUrl(app.Configuration.GetValue<string>("SteampoweredApiProxy") ?? "https://api.steampowered.com/");
 
     //配置GeoIP
+    var geoIPService = app.Services.GetRequiredService<GeoIPService>();
+    var dstJsonConverter = app.Services.GetRequiredService<DstJsonOptions>();
     if (app.Configuration.GetValue<string>("GeoLite2Path") is string geoLite2Path)
     {
         geoIPService.Initialize(geoLite2Path);
@@ -119,34 +163,28 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     dstJsonConverter.DeserializerOptions.Converters.Add(new IPAddressInfoConverter(geoIPService));
     dstJsonConverter.SerializerOptions.Converters.Add(new IPAddressInfoConverter(geoIPService));
 
-    //服务器更新回调
-    lobbyManager.Updated += (sender, e) =>
-    {
-        if (e.Data.Count == 0) return;
-        var data = e.Data;
-        if (e.IsDetailed)
-        {
-            historyCountManager.Add(data, e.UpdatedDateTime);
-        }
-    };
-
+    var lobbyManager = app.Services.GetRequiredService<LobbyDetailsManager>();
     await lobbyManager.Start();
-    webLog.Info("<Start>");
+    logger.LogInformation("IHostApplicationBuilder Start");
 
-    dstManager.RunAsync(app.Configuration.GetValue<long?>("DstDefaultVersion"));
+    var dstManager = app.Services.GetRequiredService<DstVersionService>();
+    _ = dstManager.RunAsync(app.Configuration.GetValue<long?>("DstDefaultVersion"));
+
+    app.Services.GetRequiredService<DstHistoryService>(); // 确保构造执行
 });
 
 app.Lifetime.ApplicationStopped.Register(() =>
 {
-    var webLog = LogManager.GetLogger("Lifetime");
-    webLog.Info("<Shutdowning>");
+    using var scope = app.Services.CreateScope();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<IHostApplicationBuilder>>();
+    logger.LogInformation("IHostApplicationBuilder Shutdowning");
 
     var lobbyManager = app.Services.GetService<LobbyDetailsManager>()!;
     var dstVersion = app.Services.GetService<DstVersionService>()!;
     dstVersion.Dispose();
     lobbyManager.Dispose();
-    webLog.Info("<Shutdown>");
-    LogManager.Shutdown();
+
+    Log.CloseAndFlush();
 });
 
 if (app.Environment.IsDevelopment())

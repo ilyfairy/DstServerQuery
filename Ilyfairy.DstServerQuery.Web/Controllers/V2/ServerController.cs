@@ -10,6 +10,7 @@ using Ilyfairy.DstServerQuery.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using System.Net.Mime;
 using System.Text.Json;
 
 namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
@@ -19,7 +20,7 @@ namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
 [Route("api/v{version:apiVersion}/[controller]")]
 public class ServerController : ControllerBase
 {
-    private static readonly NLog.Logger _logger = NLog.LogManager.GetLogger("ApiController");
+    private readonly ILogger<ServerController> _logger;
     private readonly LobbyDetailsManager lobbyDetailsManager;
     private readonly DstVersionService dstVersionGetter;
     private readonly HistoryCountManager historyCountManager;
@@ -27,6 +28,7 @@ public class ServerController : ControllerBase
     private readonly DstDbContext dbContext;
 
     public ServerController(
+        ILogger<ServerController> logger,
         LobbyDetailsManager lobbyDetailsManager,
         DstVersionService dstVersionGetter,
         HistoryCountManager historyCountManager,
@@ -34,6 +36,7 @@ public class ServerController : ControllerBase
         DstDbContext dbContext
         )
     {
+        _logger = logger;
         this.lobbyDetailsManager = lobbyDetailsManager;
         this.dstVersionGetter = dstVersionGetter;
         this.historyCountManager = historyCountManager;
@@ -46,7 +49,6 @@ public class ServerController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet("version")]
-    [HttpGet("v")]
     public IActionResult GetServerVersionGet()
     {
         return Ok(dstVersionGetter.Version?.ToString() ?? "null");
@@ -57,7 +59,6 @@ public class ServerController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpPost("version")]
-    [HttpPost("v")]
     public IActionResult GetServerVersionPost()
     {
         return new JsonResult(new
@@ -72,13 +73,13 @@ public class ServerController : ControllerBase
     /// </summary>
     /// <param name="id"></param>   
     /// <returns></returns>
-    [HttpPost("details/{id?}")]
+    [HttpPost("details/{id}")]
     public async Task<IActionResult> GetDetails(string id, [FromQuery] bool forceUpdate = false)
     {
         if (string.IsNullOrWhiteSpace(id))
         {
             //log.Warn("RowId为空");
-            return Content(@"{""msg"":""error""}", "application/json"); //参数为空
+            return BadRequest();
         }
 
         CancellationTokenSource cts = new();
@@ -87,12 +88,19 @@ public class ServerController : ControllerBase
 
         if (info == null)
         {
-            _logger.Warn("找不到该服务器 RowId:{0}", id);
-            return Content(@"{""msg"":""not found""}", "application/json"); //找不到该房间
+            _logger.LogWarning("找不到该服务器 RowId:{RowId}", id);
+            return Content(@"{""Message"":""Not Found""}", "application/json"); //找不到该房间
         }
-        _logger.Info("找到服务器 RowId:{0} Name:{1}", id, info.Name);
-        return new JsonResult(info, dstJsonOptions.SerializerOptions);
+        _logger.LogInformation("找到服务器 RowId:{RowId} Name:{Name}", id, info.Name);
+
+        var json = JsonSerializer.Serialize<ILobbyServerDetailedV2>(info, dstJsonOptions.SerializerOptions);
+        return Content(json, MediaTypeNames.Application.Json);
     }
+
+
+    [HttpPost("details")]
+    public Task<IActionResult> GetDetailsFromQuery([FromQuery] string id, [FromQuery] bool forceUpdate = false) => GetDetails(id, forceUpdate);
+
 
     /// <summary>
     /// 获取服务器列表

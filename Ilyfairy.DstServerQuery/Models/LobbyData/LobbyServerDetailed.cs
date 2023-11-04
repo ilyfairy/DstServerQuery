@@ -7,11 +7,11 @@ namespace Ilyfairy.DstServerQuery.Models.LobbyData;
 /// <summary>
 /// 单个服务器列表详细信息, 用于反序列化
 /// </summary>
-public class LobbyServerDetailed : LobbyServer, ILobbyServerWithPlayerV1, ILobbyServerDetailedV1, ILobbyServerWithPlayerV2, ILobbyServerDetailedV2
+public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlayerV1, ILobbyServerDetailedV1, ILobbyServerWithPlayerV2, ILobbyServerDetailedV2
 {
     [JsonPropertyName("players")]
     [JsonConverter(typeof(PlayersInfoConverter))] // NOTE:自定义转换
-    public LobbyPlayerInfo[] Players { get; set; } = []; //玩家信息
+    public LobbyPlayerInfo[]? Players { get; set; } //玩家信息
 
 
 
@@ -19,17 +19,17 @@ public class LobbyServerDetailed : LobbyServer, ILobbyServerWithPlayerV1, ILobby
     public long LastPing { get; set; } //上次与大厅通信时间
 
     [JsonPropertyName("steamclanid")]
-    public string SteamClanId { get; set; } //steam群组gid
+    public string? SteamClanId { get; set; } //steam群组gid
 
     //TODO: 未完成
     [JsonPropertyName("slaves")]
     [JsonConverter(typeof(WorldLevelConverter))]
-    public object Slaves { get; set; } //json
+    public object? Slaves { get; set; } //json
 
     //TODO: 未完成
     [JsonPropertyName("secondaries")]
     [JsonConverter(typeof(WorldLevelConverter))]
-    public object Secondaries { get; set; } //json
+    public object? Secondaries { get; set; } //json
 
     [JsonPropertyName("clanonly")]
     public bool ClanOnly { get; set; } //仅限steam群组成员加入
@@ -38,7 +38,7 @@ public class LobbyServerDetailed : LobbyServer, ILobbyServerWithPlayerV1, ILobby
     public bool IsFo { get; set; } //是否仅限好友加入
 
     [JsonPropertyName("guid")]
-    public string Guid { get; set; } //GUID
+    public string? Guid { get; set; } //GUID
 
     [JsonPropertyName("clienthosted")]
     public bool ClientHosted { get; set; } //是否是客户端主机
@@ -48,7 +48,7 @@ public class LobbyServerDetailed : LobbyServer, ILobbyServerWithPlayerV1, ILobby
 
     [JsonPropertyName("tags")]
     [JsonConverter(typeof(TagsConverter))] // NOTE:自定义转换
-    public string[] Tags { get; set; } //Tags
+    public string[]? Tags { get; set; } //Tags
 
     [JsonPropertyName("lanonly")]
     public bool LanOnly { get; set; } //是否仅局域网
@@ -88,18 +88,18 @@ public class LobbyServerDetailed : LobbyServer, ILobbyServerWithPlayerV1, ILobby
 
     [JsonPropertyName("data")]
     [JsonConverter(typeof(LobbyDayInfoConverter))] // NOTE:自定义转换
-    public LobbyDayInfo DaysInfo { get; set; } //天数信息
+    public LobbyDaysInfo? DaysInfo { get; set; } //天数信息
 
     //TODO: 未完成
     [JsonPropertyName("worldgen")]
     [JsonConverter(typeof(WorldGenConverter))]
-    public object WorldGen { get; set; } //世界配置
+    public object? WorldGen { get; set; } //世界配置
 
     [JsonPropertyName("steamid")]
-    public string SteamId { get; set; }
+    public string? SteamId { get; set; }
 
     [JsonPropertyName("steamroom")]
-    public string SteamRoom { get; set; }
+    public string? SteamRoom { get; set; }
 
     [JsonPropertyName("Users")]
     public object? Users { get; set; } //始终为null
@@ -108,8 +108,65 @@ public class LobbyServerDetailed : LobbyServer, ILobbyServerWithPlayerV1, ILobby
     [JsonConverter(typeof(LobbyModInfoConverter))] // NOTE:自定义转换
     public LobbyModInfo[]? ModsInfo { get; set; } //mod信息
 
+    object ICloneable.Clone() => Clone();
 
-    public new void CopyTo(LobbyServerDetailed dest)
+    public override LobbyServerDetailed Clone()
+    {
+        LobbyServerDetailed obj = new();
+
+        obj.Name = this.Name;
+        obj.Address = this.Address with { };
+        obj.Port = this.Port;
+        obj.RowId = this.RowId;
+        obj.Connected = this.Connected;
+        obj.IsDedicated = this.IsDedicated;
+        obj.Host = this.Host;
+        obj.Intent = this.Intent;
+        obj.MaxConnections = this.MaxConnections;
+        obj.Mode = this.Mode;
+        obj.IsMods = this.IsMods;
+        obj.IsPassword = this.IsPassword;
+        obj.Platform = this.Platform;
+        obj.Season = this.Season;
+        obj.IsPvp = this.IsPvp;
+        obj.Version = this.Version;
+        obj.Session = this.Session;
+
+        obj.Players = this.Players?.ToArray();
+
+        obj.LastPing = this.LastPing;
+        obj.SteamClanId = this.SteamClanId;
+        obj.Slaves = this.Slaves;
+        obj.Secondaries = this.Secondaries;
+        obj.ClanOnly = this.ClanOnly;
+        obj.IsFo = this.IsFo;
+        obj.Guid = this.Guid;
+        obj.ClientHosted = this.ClientHosted;
+        obj.OwnerNetId = this.OwnerNetId;
+        obj.Tags = this.Tags;
+        obj.LanOnly = this.LanOnly;
+        obj.Description = this.Description;
+        obj.Tick = this.Tick;
+        obj.ClientModsOff = this.ClientModsOff;
+        obj.Nat = this.Nat;
+        obj.AllowNewPlayers = this.AllowNewPlayers;
+        obj.Event = this.Event;
+        obj.IsValveCloudServer = this.IsValveCloudServer;
+        obj.ValvePopId = this.ValvePopId;
+        obj.ValveRoutingInfo = this.ValveRoutingInfo;
+        obj.IsKleiOfficial = this.IsKleiOfficial;
+        obj.IsServerPaused = this.IsServerPaused;
+        obj.DaysInfo = this.DaysInfo is null ? null : DaysInfo with { };
+        obj.WorldGen = this.WorldGen;
+        obj.SteamId = this.SteamId;
+        obj.SteamRoom = this.SteamRoom;
+        obj.Users = this.Users;
+        obj.ModsInfo = this.ModsInfo?.ToArray();
+
+        return obj;
+    }
+
+    public void CopyTo(LobbyServerDetailed dest)
     {
         if (dest is null) return;
         dest.Name = this.Name;

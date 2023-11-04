@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Ilyfairy.DstServerQuery.Models;
 
-public class IPAddressInfo
+public record class IPAddressInfo
 {
     public string IP { get; set; }
     public string? IsoCode => CountryInfo?.IsoCode; // 两位数的ISO代码

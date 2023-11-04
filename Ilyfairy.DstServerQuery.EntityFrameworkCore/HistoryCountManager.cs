@@ -3,7 +3,7 @@ using Ilyfairy.DstServerQuery.Models.Entities;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using NLog;
+using Microsoft.Extensions.Logging;
 
 namespace Ilyfairy.DstServerQuery.EntityFrameworkCore;
 
@@ -12,7 +12,7 @@ namespace Ilyfairy.DstServerQuery.EntityFrameworkCore;
 /// </summary>
 public class HistoryCountManager
 {
-    private readonly Logger logger = LogManager.GetLogger("DstServerQuery.HistoryCountManager");
+    private readonly ILogger<HistoryCountManager> _logger;
     private readonly IServiceScopeFactory serviceScopeFactory;
     private readonly Queue<ServerCountInfo> cache = new(10100);
 
@@ -20,16 +20,17 @@ public class HistoryCountManager
     public DateTime First => cache.FirstOrDefault()?.UpdateDate ?? DateTime.Now;
     public IEnumerable<ServerCountInfo> Cache => cache;
 
-    public HistoryCountManager(IServiceScopeFactory serviceScopeFactory)
+    public HistoryCountManager(IServiceScopeFactory serviceScopeFactory, ILogger<HistoryCountManager> logger)
     {
+        _logger = logger;
         this.serviceScopeFactory = serviceScopeFactory;
         try
         {
             Initialize();
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            logger.Error("HistoryCountManager初始化失败");
+            _logger.LogError("HistoryCountManager初始化失败 {Exception}", e);
         }
     }
 
@@ -47,23 +48,17 @@ public class HistoryCountManager
         {
             cache.Enqueue(item);
         }
-        logger.Info($"初始缓存个数:{cache.Count}");
+        _logger.LogInformation("初始缓存个数:{CacheCount}", cache.Count);
     }
 
-    private bool Add(ServerCountInfo info)
+    private async Task AddAsync(ServerCountInfo info)
     {
         using var scope = serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
 
         var r = dbContext.ServerHistoryCountInfos.Add(info);
-        try
-        {
-            dbContext.SaveChanges();
-        }
-        catch (Exception)
-        {
-            return false;
-        }
+        await dbContext.SaveChangesAsync();
+
         cache.Enqueue(info);
 
         while (cache.Count > 10000)
@@ -71,11 +66,10 @@ public class HistoryCountManager
             cache.Dequeue();
         }
 
-        return r.State == EntityState.Added; // 修改是否成功
     }
 
     // data to info
-    public bool Add(ICollection<LobbyServerDetailed> data, DateTime updateTime)
+    public Task AddAsync(ICollection<LobbyServerDetailed> data, DateTime updateTime)
     {
         LastUpdate = updateTime;
 
@@ -110,7 +104,7 @@ public class HistoryCountManager
                     break;
             }
         }
-        return Add(countInfo);
+        return AddAsync(countInfo);
     }
 
     /// <summary>

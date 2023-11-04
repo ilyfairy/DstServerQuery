@@ -3,7 +3,7 @@
 namespace Ilyfairy.DstServerQuery.Models.Entities;
 
 /// <summary>
-/// 服务器个数情况
+/// 服务器数量信息
 /// </summary>
 public class ServerCountInfo
 {

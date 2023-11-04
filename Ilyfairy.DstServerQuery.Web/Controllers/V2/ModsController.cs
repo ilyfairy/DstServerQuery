@@ -10,10 +10,11 @@ namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
 public class ModsController : ControllerBase
 {
     private readonly LobbyDetailsManager lobbyDetailsManager;
-    private static readonly NLog.Logger _logger = NLog.LogManager.GetLogger("ModsController");
+    private readonly ILogger _logger;
 
-    public ModsController(LobbyDetailsManager LobbyDetailsManager)
+    public ModsController(ILogger<ModsController> logger, LobbyDetailsManager LobbyDetailsManager)
     {
+        _logger = logger;
         lobbyDetailsManager = LobbyDetailsManager;
     }
 

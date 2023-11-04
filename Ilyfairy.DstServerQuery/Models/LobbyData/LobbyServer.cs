@@ -9,7 +9,7 @@ namespace Ilyfairy.DstServerQuery.Models.LobbyData;
 /// <summary>
 /// 简略信息, 用于反序列化
 /// </summary>
-public class LobbyServer : ILobbyServerV1, ILobbyServerV2
+public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
 {
     internal bool _IsDetails;
     internal string? _Region;
@@ -78,8 +78,34 @@ public class LobbyServer : ILobbyServerV1, ILobbyServerV2
     [JsonIgnore]
     public string? Country => Address?.IsoCode;
 
+    object ICloneable.Clone() => Clone();
 
-    public void CopyTo(LobbyServerDetailed dest)
+    public virtual LobbyServer Clone()
+    {
+        LobbyServer obj = new();
+
+        obj.Name = this.Name;
+        obj.Address = this.Address with { };
+        obj.Port = this.Port;
+        obj.RowId = this.RowId;
+        obj.Connected = this.Connected;
+        obj.IsDedicated = this.IsDedicated;
+        obj.Host = this.Host;
+        obj.Intent = this.Intent;
+        obj.MaxConnections = this.MaxConnections;
+        obj.Mode = this.Mode;
+        obj.IsMods = this.IsMods;
+        obj.IsPassword = this.IsPassword;
+        obj.Platform = this.Platform;
+        obj.Season = this.Season;
+        obj.IsPvp = this.IsPvp;
+        obj.Version = this.Version;
+        obj.Session = this.Session;
+
+        return obj;
+    }
+
+    public void CopyTo(LobbyServer dest)
     {
         if (dest is null) return;
         dest.Name = this.Name;

@@ -10,17 +10,17 @@ public interface ILobbyServerDetailedV1 : ILobbyServerWithPlayerV1
     public long LastPing { get; set; } //上次与大厅通信时间
 
     [JsonPropertyName("SteamClanId")]
-    public string SteamClanId { get; set; } //steam群组gid
+    public string? SteamClanId { get; set; } //steam群组gid
 
     //TODO: 未完成
     [JsonPropertyName("Slaves")]
     [JsonConverter(typeof(WorldLevelConverter))]
-    public object Slaves { get; set; } //json
+    public object? Slaves { get; set; } //json
 
     //TODO: 未完成
     [JsonPropertyName("Secondaries")]
     [JsonConverter(typeof(WorldLevelConverter))]
-    public object Secondaries { get; set; } //json
+    public object? Secondaries { get; set; } //json
 
     [JsonPropertyName("ClanOnly")]
     public bool ClanOnly { get; set; } //仅限steam群组成员加入
@@ -29,7 +29,7 @@ public interface ILobbyServerDetailedV1 : ILobbyServerWithPlayerV1
     public bool IsFo { get; set; } //是否仅限好友加入
 
     [JsonPropertyName("Guid")]
-    public string Guid { get; set; } //GUID
+    public string? Guid { get; set; } //GUID
 
     [JsonPropertyName("ClientHosted")]
     public bool ClientHosted { get; set; } //是否是客户端主机
@@ -39,7 +39,7 @@ public interface ILobbyServerDetailedV1 : ILobbyServerWithPlayerV1
 
     [JsonPropertyName("Tags")]
     [JsonConverter(typeof(TagsConverter))] // NOTE:自定义转换
-    public string[] Tags { get; set; } //Tags
+    public string[]? Tags { get; set; } //Tags
 
     [JsonPropertyName("LanOnly")]
     public bool LanOnly { get; set; } //是否仅局域网
@@ -79,23 +79,23 @@ public interface ILobbyServerDetailedV1 : ILobbyServerWithPlayerV1
 
     [JsonPropertyName("DaysInfo")]
     [JsonConverter(typeof(LobbyDayInfoConverter))] // NOTE:自定义转换
-    public LobbyDayInfo DaysInfo { get; set; } //天数信息
+    public LobbyDaysInfo? DaysInfo { get; set; } //天数信息
 
     //TODO: 未完成
     [JsonPropertyName("WorldGen")]
     [JsonConverter(typeof(WorldGenConverter))]
-    public object WorldGen { get; set; } //世界配置
+    public object? WorldGen { get; set; } //世界配置
 
     [JsonPropertyName("SteamId")]
-    public string SteamId { get; set; }
+    public string? SteamId { get; set; }
 
     [JsonPropertyName("SteamRoom")]
-    public string SteamRoom { get; set; }
+    public string? SteamRoom { get; set; }
 
     [JsonPropertyName("Users")]
     public object? Users { get; set; } //始终为null
 
     [JsonPropertyName("ModsInfo")]
     [JsonConverter(typeof(LobbyModInfoConverter))] // NOTE:自定义转换
-    public LobbyModInfo[] ModsInfo { get; set; } //mod信息
+    public LobbyModInfo[]? ModsInfo { get; set; } //mod信息
 }

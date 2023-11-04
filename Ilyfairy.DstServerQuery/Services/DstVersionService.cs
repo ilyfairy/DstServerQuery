@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Ilyfairy.Tools;
-using NLog;
+using Serilog;
 
 namespace Ilyfairy.DstServerQuery.Services;
 
@@ -15,12 +15,13 @@ public class DstVersionService : IDisposable
     public CancellationTokenSource? TokenSource { get; private set; }
     private bool running = true;
     private DstDownloader? currentDst;
-    private readonly Logger log = LogManager.GetLogger("DstVersionGetter");
+    private readonly ILogger log = Log.ForContext<DstVersionService>();
 
     public async Task RunAsync(long? defaultVersion = null)
     {
+        
         Version = defaultVersion;
-        log.Info($"饥荒初始版本为 {defaultVersion}");
+        log.Information($"饥荒初始版本为 {defaultVersion}");
 
         await Task.Yield();
 
@@ -39,7 +40,7 @@ public class DstVersionService : IDisposable
                     await Task.Delay(TimeSpan.FromSeconds(60), TokenSource.Token); //60秒超时
                     if (ok) return;
                     dst.Dispose();
-                    log.Info("饥荒版本获取失败");
+                    log.Warning("饥荒版本获取失败");
                     return;
                 });
 
@@ -51,16 +52,16 @@ public class DstVersionService : IDisposable
                         Version = version.Value;
                         ok = true;
                         TokenSource.Cancel();
-                        log.Info("饥荒版本获取成功: {0}", version);
+                        log.Information("饥荒版本获取成功: {0}", version);
                     }
                     else
                     {
-                        log.Info("饥荒版本获取失败");
+                        log.Warning("饥荒版本获取失败");
                     }
                 }
             }
             catch { }
-            await Task.Delay(10000); //每10秒获取一次
+            await Task.Delay(10000).ConfigureAwait(false); //每10秒获取一次
         }
     }
 

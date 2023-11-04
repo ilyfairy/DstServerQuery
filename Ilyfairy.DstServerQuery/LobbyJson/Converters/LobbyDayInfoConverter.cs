@@ -7,10 +7,10 @@ using System.Text.RegularExpressions;
 
 namespace Ilyfairy.DstServerQuery.LobbyJson.Converter;
 
-public partial class LobbyDayInfoConverter : JsonConverter<LobbyDayInfo>
+public partial class LobbyDayInfoConverter : JsonConverter<LobbyDaysInfo>
 {
     
-    public override LobbyDayInfo? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override LobbyDaysInfo? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         string? dayLua;
         try
@@ -26,7 +26,7 @@ public partial class LobbyDayInfoConverter : JsonConverter<LobbyDayInfo>
         var match = DayRegex().Match(dayLua);
         if (match.Success)
         {
-            LobbyDayInfo info = new();
+            LobbyDaysInfo info = new();
             info.Day = int.Parse(match.Groups[1].Value);
             info.DaysElapsedInSeason = int.Parse(match.Groups[2].Value);
             info.DaysLeftInSeason = int.Parse(match.Groups[3].Value);
@@ -35,7 +35,7 @@ public partial class LobbyDayInfoConverter : JsonConverter<LobbyDayInfo>
         return null;
     }
 
-    public override void Write(Utf8JsonWriter writer, LobbyDayInfo value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, LobbyDaysInfo value, JsonSerializerOptions options)
     {
         JsonSerializer.Serialize(writer, value);
     }

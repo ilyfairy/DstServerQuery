@@ -9,7 +9,6 @@ using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
 using Ilyfairy.DstServerQuery.Services;
 using Ilyfairy.DstServerQuery.Web;
 using Microsoft.AspNetCore.Mvc;
-using NLog;
 using System.Net.Mime;
 using System.Text.Json;
 
@@ -21,7 +20,7 @@ namespace Ilyfairy.DstServerQuery.Web.Controllers.V1;
 [Route("api")]
 public partial class ApiController : ControllerBase
 {
-    private static readonly Logger log = LogManager.GetLogger("ApiController");
+    private readonly ILogger<ApiController> _logger;
 
     private readonly DstVersionService dstVersion;
     private readonly LobbyDetailsManager lobbyDetailsManager;
@@ -34,8 +33,9 @@ public partial class ApiController : ControllerBase
     };
 
     //版本获取, 大厅服务器管理器, 大厅服务器历史房间数量管理器
-    public ApiController(DstVersionService versionGetter, LobbyDetailsManager lobbyDetailsManager, HistoryCountManager historyCountManager, DstJsonOptions dstJsonOptions)
+    public ApiController(ILogger<ApiController> logger, DstVersionService versionGetter, LobbyDetailsManager lobbyDetailsManager, HistoryCountManager historyCountManager, DstJsonOptions dstJsonOptions)
     {
+        _logger = logger;
         dstVersion = versionGetter;
         this.lobbyDetailsManager = lobbyDetailsManager;
         this.historyCountManager = historyCountManager;
@@ -68,13 +68,12 @@ public partial class ApiController : ControllerBase
     /// </summary>
     /// <param name="id"></param>   
     /// <returns></returns>
-    [HttpPost("details/{id?}")]
+    [HttpPost("details/{id}")]
     public async Task<IActionResult> GetDetails(string id, [FromQuery] bool forceUpdate = false)
     {
-        var log = LogManager.GetLogger("Web.Api.Details");
         if (string.IsNullOrWhiteSpace(id))
         {
-            log.Warn("RowId为空");
+            _logger.LogWarning("RowId为空");
             return Content(@"{""msg"":""error""}", "application/json"); //参数为空
         }
 
@@ -84,13 +83,16 @@ public partial class ApiController : ControllerBase
 
         if (info == null)
         {
-            log.Warn("找不到该服务器 RowId:{0}", id);
+            _logger.LogWarning("找不到该服务器 RowId:{RowId}", id);
             return Content(@"{""msg"":""not found""}", "application/json"); //找不到该房间
         }
-        log.Info("找到服务器 RowId:{0} Name:{1}", id, info.Name);
+        _logger.LogInformation("找到服务器 RowId:{RowId} Name:{Name}", id, info.Name);
 
         return Content(JsonSerializer.Serialize<ILobbyServerDetailedV1>(info, dstJsonOptions.SerializerOptions), MediaTypeNames.Application.Json);
     }
+
+    [HttpPost("details")]
+    public Task<IActionResult> GetDetails2([FromQuery] string id, [FromQuery] bool forceUpdate = false) => GetDetails(id, forceUpdate);
 
     /// <summary>
     /// 获取服务器列表
@@ -105,8 +107,8 @@ public partial class ApiController : ControllerBase
         queryer.Query();
 
         string query = string.Join("&", queryKey.Select(v => $"{v.Key}={v.Value}"));
-        log.Info("查询服务器 Count:{0} Query:{1}", queryer.Result.Count, query);
-
+        _logger.LogInformation("查询服务器 Count:{Count} Query:{Query}", queryer.Result.Count, query);
+        
         return Content(queryer.ToJson(dstJsonOptions.SerializerOptions), "application/json");
     }
 
@@ -122,8 +124,7 @@ public partial class ApiController : ControllerBase
     [HttpPost("serverhistorycount")]
     public IActionResult GetServerCountHistory(int interval = 3600, uint rel = 0, int count = 24)
     {
-        var log = LogManager.GetLogger("Web.Api.GetServerCountHistory");
-        log.Info("获取服务器历史记录个数: Interval:{0} Rel:{1} Count:{2}", interval, rel, count);
+        _logger.LogInformation("获取服务器历史记录个数: Interval:{Interval} Rel:{Rel} Count:{Count}", interval, rel, count);
         if (interval <= 0) interval = 3600;
         DateTime date = DateTime.Now.AddSeconds(-rel);
         var history = historyCountManager.GetServerHistory();
@@ -159,8 +160,7 @@ public partial class ApiController : ControllerBase
     [HttpPost("modscount")]
     public async Task<IActionResult> GetModsCount(int topcount = 100)
     {
-        var log = LogManager.GetLogger("Web.Api.GetModsCount");
-        log.Info("获取Mod个数 TopCount{0}", topcount);
+        _logger.LogInformation("获取Mod个数 TopCount:{TopCount}", topcount);
         var list = lobbyDetailsManager.GetCurrentDetails();
         var key = new Dictionary<long, ModCountInfo>();
 
@@ -194,7 +194,7 @@ public partial class ApiController : ControllerBase
     /// </summary>
     public class ModCountInfo
     {
-        public string Name { get; set; }
+        public required string Name { get; set; }
         public int Count { get; set; }
         public long ID { get; set; }
     }
