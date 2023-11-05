@@ -365,3 +365,4 @@ FodyWeavers.xsd
 /DstLobbyProxyDownloader/DstLobbyProxyDownloader.csproj
 /Test
 /DstLobbyProxyDownloader
+/Ilyfairy.DstServerQuery.Web/Properties/launchSettings.json
