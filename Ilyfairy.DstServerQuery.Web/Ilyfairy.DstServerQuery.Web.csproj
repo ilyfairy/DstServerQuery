@@ -12,9 +12,19 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="Properties\launchSettings.json" />
+	  <None Remove="Properties\PublishProfiles\launchSettings.json" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<_WebToolingArtifacts Remove="Properties\launchSettings.json" />
+		<_WebToolingArtifacts Remove="Properties\PublishProfiles\launchSettings.json" />
 		<_WebToolingArtifacts Remove="Properties\PublishProfiles\prod.pubxml" />
 		<_WebToolingArtifacts Remove="Properties\PublishProfiles\test.pubxml" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="Properties\launchSettings.json" />
 	</ItemGroup>
 
 	<ItemGroup>

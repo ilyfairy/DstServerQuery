@@ -77,13 +77,12 @@ public class LobbyDetailsManager : IDisposable
     //循环获取数据  
     private async Task RequestLoop()
     {
-        Dictionary<string, LobbyServerDetailed> data = new(40000);
+        Dictionary<string, LobbyServerDetailed> tempServerRowIdMap = new(40000);
         while (Running)
         {
             try
             {
-                // TODO: Download
-                data.Clear();
+                tempServerRowIdMap.Clear();
                 CancellationTokenSource cts = new();
                 cts.CancelAfter(TimeSpan.FromMinutes(3));
                 _logger.Information("开始 Download");
@@ -91,7 +90,7 @@ public class LobbyDetailsManager : IDisposable
                 int count = 0;
                 await foreach (var item in LobbyDownloader.DownloadAllBriefs(CancellationTokenSource.CreateLinkedTokenSource(cts.Token, HttpTokenSource.Token).Token))
                 {
-                    data[item.RowId] = item;
+                    tempServerRowIdMap[item.RowId] = item;
                     count++;
                 }
 
@@ -112,13 +111,13 @@ public class LobbyDetailsManager : IDisposable
 
             LastUpdate = DateTime.Now;
             var currentRowIds = ServerMap.Keys;
-            var newRowIds = data.Keys;
+            var newRowIds = tempServerRowIdMap.Keys;
 
             //重复的
             List<LobbyServer> unchanged = new(10000);
             foreach (var rowId in currentRowIds.Intersect(newRowIds))
             {
-                var @new = data[rowId];
+                var @new = tempServerRowIdMap[rowId];
                 var server = ServerMap[rowId];
                 (@new as LobbyServer).CopyTo(server);
                 unchanged.Add(server);
@@ -128,7 +127,7 @@ public class LobbyDetailsManager : IDisposable
             List<LobbyServer> added = new(1000);
             foreach (var rowId in newRowIds.Except(currentRowIds))
             {
-                var @new = data[rowId];
+                var @new = tempServerRowIdMap[rowId];
                 if (ServerMap.TryAdd(rowId, @new))
                 {
                     added.Add(@new);
@@ -177,7 +176,7 @@ public class LobbyDetailsManager : IDisposable
                 try
                 {
                     var updated = await LobbyDownloader.UpdateToDetails(arr, HttpTokenSource.Token);
-                    if (updated.Count > arr.Count * 0.9f) // 更新数量大于90%
+                    if (updated.Count > arr.Count * 0.8f) // 更新数量大于80%
                     {
                         Updated?.Invoke(this, new DstUpdatedData(updated, true, LastUpdate));
                     }
