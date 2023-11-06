@@ -52,25 +52,55 @@ builder.Services.AddSerilog((service, loggerConfiguration) =>
 });
 
 //DbContext
+//使用SqlServer
 if (builder.Configuration.GetConnectionString("SqlServer") is string sqlServerConnection && !string.IsNullOrWhiteSpace(sqlServerConnection))
 {
+    Log.Logger.Information("使用SqlServer数据库");
     builder.Services.AddSqlServer<DstDbContext>(sqlServerConnection, options =>
+    {
+        options.MigrationsAssembly("Ilyfairy.DstServerQuery.Web");
+    });
+}
+//使用MySql
+else if(builder.Configuration.GetConnectionString("MySql") is string mysqlConnection && !string.IsNullOrWhiteSpace(mysqlConnection))
+{
+    Log.Logger.Information("使用MySql数据库");
+    //builder.Services.AddMySql<DstDbContext>(mysqlConnection, ServerVersion.Parse("8.0.0"), options =>
+    //{
+    //    options.MigrationsAssembly("Ilyfairy.DstServerQuery.Web");
+    //});
+    builder.Services.AddDbContext<DstDbContext>(options =>
+    {
+        options.UseMySql(mysqlConnection, new MySqlServerVersion(new Version(8, 0, 0)));
+    });
+}
+//使用Sqlite
+else if (builder.Configuration.GetConnectionString("Sqlite") is string sqliteConnection && !string.IsNullOrWhiteSpace(sqliteConnection))
+{
+    Log.Logger.Information("使用Sqlite数据库");
+    builder.Services.AddSqlite<DstDbContext>(sqliteConnection, options =>
     {
         options.MigrationsAssembly("Ilyfairy.DstServerQuery.Web");
     });
 }
 else
 {
-    Log.Logger.Warning("没有检测到SqlServer连接字符串, 将使用Sqlite数据库");
-    builder.Services.AddDbContext<DstDbContext>(options =>
+    Log.Logger.Information("使用内存数据库");
+    builder.Services.AddDbContext<DstDbContext>(v =>
     {
-        options.UseSqlite("Data Source=Dst.db");
+        v.UseInMemoryDatabase("dst");
     });
 }
+////使用内存数据库
+//else if (builder.Configuration.GetConnectionString("InMemory") != null)
+//{
+//    builder.Services.AddSqlServer<DstDbContext>(@"Server=(localdb)\mssqllocaldb;Database=EFProviders.InMemory;Trusted_Connection=True;ConnectRetryCount=0");
+//}
+//否则使用Sqlite
 
 builder.Services.AddResponseCompression(); //启用压缩
 builder.Services.AddSingleton<HistoryCountManager>();
-builder.Services.AddSingleton(builder.Configuration.GetSection("Requests").Get<RequestConfig>()!);
+builder.Services.AddSingleton(builder.Configuration.GetSection("DstConfig").Get<DstWebConfig>()!);
 builder.Services.AddSingleton<LobbyDetailsManager>();
 builder.Services.AddSingleton<LobbyDetailsManager>();
 builder.Services.AddSingleton<DstVersionService>();
@@ -148,10 +178,27 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     
     //数据库迁移
     var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
-    await dbContext.Database.MigrateAsync();
-    
+    bool isMigration = false;
+    try
+    {
+        isMigration = dbContext.Database.GetPendingMigrations().Any();
+    }
+    catch { }
+    if (isMigration)
+    {
+        await dbContext.Database.MigrateAsync(); //执行迁移
+        logger.LogInformation("数据库迁移成功");
+    }
+    else
+    {
+        logger.LogInformation("数据库创建成功");
+        await dbContext.Database.EnsureCreatedAsync();
+    }
+
     //设置Steam代理api
     DepotDownloader.SteamConfig.SetApiUrl(app.Configuration.GetValue<string>("SteampoweredApiProxy") ?? "https://api.steampowered.com/");
+
+    var dstWebConfig = app.Services.GetRequiredService<DstWebConfig>();
 
     //配置GeoIP
     var geoIPService = app.Services.GetRequiredService<GeoIPService>();
@@ -168,7 +215,7 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     logger.LogInformation("IHostApplicationBuilder Start");
 
     var dstManager = app.Services.GetRequiredService<DstVersionService>();
-    _ = dstManager.RunAsync(app.Configuration.GetValue<long?>("DstDefaultVersion"));
+    _ = dstManager.RunAsync(dstWebConfig.DstDefaultVersion);
 
     app.Services.GetRequiredService<DstHistoryService>(); // 确保构造执行
 });

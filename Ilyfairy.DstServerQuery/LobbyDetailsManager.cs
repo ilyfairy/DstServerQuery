@@ -31,7 +31,7 @@ public class LobbyDetailsManager : IDisposable
     public event DstDataUpdatedHandler? Updated;
 
     //参数是依赖注入
-    public LobbyDetailsManager(RequestConfig requestConfig, DstJsonOptions dstJsonOptions) : base()
+    public LobbyDetailsManager(DstWebConfig requestConfig, DstJsonOptions dstJsonOptions) : base()
     {
         LobbyDownloader = new LobbyDownloader(dstJsonOptions, requestConfig.Token, requestConfig.DstDetailsProxyUrls, requestConfig.LobbyProxyTemplate);
     }

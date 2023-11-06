@@ -3,6 +3,7 @@ using Ilyfairy.DstServerQuery.EntityFrameworkCore;
 using Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities;
 using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
+using Ilyfairy.DstServerQuery.Models.Requests;
 using Ilyfairy.DstServerQuery.Web.Helpers;
 
 namespace Ilyfairy.DstServerQuery.Web.Services;
@@ -14,13 +15,19 @@ public class DstHistoryService
     private readonly HistoryCountManager historyCountManager;
 
     private DateTime lastServerUpdateDateTime;
+    private readonly int historyUpdateInterval = 10 * 60;
 
-    public DstHistoryService(ILogger<DstHistoryService> logger, IServiceScopeFactory serviceScopeFactory, LobbyDetailsManager lobbyDetailsManager, HistoryCountManager historyCountManager)
+    public DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig config, IServiceScopeFactory serviceScopeFactory, LobbyDetailsManager lobbyDetailsManager, HistoryCountManager historyCountManager)
     {
         this.logger = logger;
         this.serviceScopeFactory = serviceScopeFactory;
         this.historyCountManager = historyCountManager;
         lobbyDetailsManager.Updated += LobbyDetailsManager_Updated;
+
+        if (config.HistoryUpdateInterval is int updateInterval)
+        {
+            historyUpdateInterval = updateInterval;
+        }
     }
 
     private async void LobbyDetailsManager_Updated(object sender, DstUpdatedData e)
@@ -91,7 +98,7 @@ public class DstHistoryService
 
         lock (this)
         {
-            if (DateTime.Now - lastServerUpdateDateTime < TimeSpan.FromMinutes(10)) // 10分钟更新一次
+            if (DateTime.Now - lastServerUpdateDateTime < TimeSpan.FromSeconds(historyUpdateInterval)) // 10分钟更新一次
             {
                 return;
             }
