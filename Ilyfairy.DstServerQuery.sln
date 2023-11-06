@@ -21,6 +21,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DstDownloader", "DstDownloa
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "解决方案项", "解决方案项", "{BE76E7F2-77A6-413A-92DB-91566E351544}"
 	ProjectSection(SolutionItems) = preProject
+		publish-linux.bat = publish-linux.bat
+		publish-win.bat = publish-win.bat
 		README.md = README.md
 	EndProjectSection
 EndProject
