@@ -14,13 +14,17 @@
 
 配置文件是[appsettings.json](Ilyfairy.DstServerQuery.Web/appsettings.json)
 
+### 数据库
+需要搭建SqlServer的数据库, 并且数据库的排序规则`Collation`需要区分大小写, 可以直接使用`Chinese_RPC_BIN`
+
 ### Token
 需要到找klei去申请一个token, 否则是不能获取详细信息的, 比如玩家信息
 
 ### 代理(可选)
 DstDetailsProxyUrl 是一个批量请求详细数据的代理服务器的Url  
-它相当于是`https://lobby-v2-cdn.klei.com`代理版本, 请自己搭建代理服务器  
-`body`将会传入类似`[{"RowId":"KU_XXXXXXXX","Region":"v2-ap-east-1"}]`的列表
+它相当于`https://lobby-v2-cdn.klei.com`的代理, 可以自己搭建代理服务器  
+`body`将会传入`[{"RowId":"KU_XXXXXXXX","Region":"v2-ap-east-1"}]`这样的的列表, 并返回`{"GET":[xxx]}`  
+不使用代理则请求非常慢
 
 ## 接口
 
