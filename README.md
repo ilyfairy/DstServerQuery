@@ -21,7 +21,7 @@
 如果是MySql,则首次需要执行`SET GLOBAL local_infile = true;`  
 
 ### Token
-需要到找klei去申请一个token, 否则是不能获取详细信息的, 比如玩家信息
+需要开服的Token, 否则是不能获取详细信息的, 比如玩家信息
 
 ### 代理(可选)
 DstDetailsProxyUrl 是一个批量请求详细数据的代理服务器的Url  
