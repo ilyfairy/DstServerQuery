@@ -16,7 +16,9 @@
 
 ### 数据库
 
-需要搭建SqlServer的数据库(MySql可能会报错), 并且数据库的排序规则`Collation`需要区分大小写
+可以使用SqlServer或者MySql
+并且数据库的排序规则`Collation`需要区分大小写  
+如果是MySql,则首次需要执行`SET GLOBAL local_infile = true;`  
 
 ### Token
 需要到找klei去申请一个token, 否则是不能获取详细信息的, 比如玩家信息

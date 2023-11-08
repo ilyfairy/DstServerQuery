@@ -28,7 +28,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-    <PackageReference Include="EFCore.BulkExtensions" Version="7.1.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.13">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

@@ -30,6 +30,17 @@ public class DstDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        var provider = Database.ProviderName ?? "";
+        if (provider.Contains("sqlserver", StringComparison.OrdinalIgnoreCase))
+        {
+            modelBuilder.UseCollation("Chinese_PRC_BIN");
+        }
+        else if (provider.Contains("mysql", StringComparison.OrdinalIgnoreCase))
+        {
+            modelBuilder.UseCollation("utf8mb4_bin");
+        }
+
+
         //服务器信息和历史记录信息的一对多
         modelBuilder.Entity<DstServerHistory>()
             .HasMany(v => v.Items)
@@ -40,7 +51,8 @@ public class DstDbContext : DbContext
         //历史记录信息和天数信息的一对一
         modelBuilder.Entity<DstServerHistoryItem>()
             .HasOne(v => v.DaysInfo)
-            .WithOne(v => v.ServerItem);
+            .WithOne(v => v.ServerItem)
+            .HasForeignKey<DstDaysInfo>(v => v.ServerItemId);
 
         //历史记录信息和玩家信息多对多
         modelBuilder.Entity<DstServerHistoryItem>()

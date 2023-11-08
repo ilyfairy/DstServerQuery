@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Ilyfairy.DstServerQuery.Web.Migrations
+namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 {
     /// <inheritdoc />
     public partial class Init : Migration
@@ -11,22 +11,6 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
-                name: "DaysInfos",
-                columns: table => new
-                {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Day = table.Column<int>(type: "int", nullable: false),
-                    DaysElapsedInSeason = table.Column<int>(type: "int", nullable: false),
-                    DaysLeftInSeason = table.Column<int>(type: "int", nullable: false),
-                    ServerItemId = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_DaysInfos", x => x.Id);
-                });
-
             migrationBuilder.CreateTable(
                 name: "Players",
                 columns: table => new
@@ -49,7 +33,7 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations
                     IP = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Port = table.Column<int>(type: "int", nullable: false),
                     Host = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreateDateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Platform = table.Column<int>(type: "int", nullable: false),
                     GameMode = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Intent = table.Column<string>(type: "nvarchar(max)", nullable: true)
@@ -101,14 +85,31 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations
                 {
                     table.PrimaryKey("PK_ServerHistoryItems", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ServerHistoryItems_DaysInfos_DaysInfoId",
-                        column: x => x.DaysInfoId,
-                        principalTable: "DaysInfos",
-                        principalColumn: "Id");
-                    table.ForeignKey(
                         name: "FK_ServerHistoryItems_ServerHistories_ServerId",
                         column: x => x.ServerId,
                         principalTable: "ServerHistories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DaysInfos",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Day = table.Column<int>(type: "int", nullable: false),
+                    DaysElapsedInSeason = table.Column<int>(type: "int", nullable: false),
+                    DaysLeftInSeason = table.Column<int>(type: "int", nullable: false),
+                    ServerItemId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DaysInfos", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DaysInfos_ServerHistoryItems_ServerItemId",
+                        column: x => x.ServerItemId,
+                        principalTable: "ServerHistoryItems",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -138,16 +139,15 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_DaysInfos_ServerItemId",
+                table: "DaysInfos",
+                column: "ServerItemId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_HistoryServerItemPlayerPair_PlayerId",
                 table: "HistoryServerItemPlayerPair",
                 column: "PlayerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ServerHistoryItems_DaysInfoId",
-                table: "ServerHistoryItems",
-                column: "DaysInfoId",
-                unique: true,
-                filter: "[DaysInfoId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ServerHistoryItems_ServerId",
@@ -159,6 +159,9 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "DaysInfos");
+
+            migrationBuilder.DropTable(
                 name: "HistoryServerItemPlayerPair");
 
             migrationBuilder.DropTable(
@@ -169,9 +172,6 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations
 
             migrationBuilder.DropTable(
                 name: "ServerHistoryItems");
-
-            migrationBuilder.DropTable(
-                name: "DaysInfos");
 
             migrationBuilder.DropTable(
                 name: "ServerHistories");

@@ -52,8 +52,9 @@ builder.Services.AddSerilog((service, loggerConfiguration) =>
 });
 
 //DbContext
+string? sqlType = builder.Configuration.GetValue<string>("SqlType")!;
 //使用SqlServer
-if (builder.Configuration.GetConnectionString("SqlServer") is string sqlServerConnection && !string.IsNullOrWhiteSpace(sqlServerConnection))
+if (sqlType is "SqlServer" && builder.Configuration.GetConnectionString("SqlServer") is string sqlServerConnection && !string.IsNullOrWhiteSpace(sqlServerConnection))
 {
     Log.Logger.Information("使用SqlServer数据库");
     builder.Services.AddSqlServer<DstDbContext>(sqlServerConnection, options =>
@@ -62,20 +63,20 @@ if (builder.Configuration.GetConnectionString("SqlServer") is string sqlServerCo
     });
 }
 //使用MySql
-else if(builder.Configuration.GetConnectionString("MySql") is string mysqlConnection && !string.IsNullOrWhiteSpace(mysqlConnection))
+else if(sqlType is "MySql" && builder.Configuration.GetConnectionString("MySql") is string mysqlConnection && !string.IsNullOrWhiteSpace(mysqlConnection))
 {
     Log.Logger.Information("使用MySql数据库");
-    //builder.Services.AddMySql<DstDbContext>(mysqlConnection, ServerVersion.Parse("8.0.0"), options =>
-    //{
-    //    options.MigrationsAssembly("Ilyfairy.DstServerQuery.Web");
-    //});
-    builder.Services.AddDbContext<DstDbContext>(options =>
+    builder.Services.AddMySql<DstDbContext>(mysqlConnection, ServerVersion.AutoDetect(mysqlConnection), options =>
     {
-        options.UseMySql(mysqlConnection, new MySqlServerVersion(new Version(8, 0, 0)));
+        options.MigrationsAssembly("Ilyfairy.DstServerQuery.Web");
     });
+    //builder.Services.AddDbContext<DstDbContext>(options =>
+    //{
+    //    options.UseMySQL(mysqlConnection);
+    //});
 }
 //使用Sqlite
-else if (builder.Configuration.GetConnectionString("Sqlite") is string sqliteConnection && !string.IsNullOrWhiteSpace(sqliteConnection))
+else if (sqlType is "Sqlite" && builder.Configuration.GetConnectionString("Sqlite") is string sqliteConnection && !string.IsNullOrWhiteSpace(sqliteConnection))
 {
     Log.Logger.Information("使用Sqlite数据库");
     builder.Services.AddSqlite<DstDbContext>(sqliteConnection, options =>
@@ -179,9 +180,14 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     //数据库迁移
     var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
     bool isMigration = false;
+    if (string.Equals(dbContext.Database.ProviderName,"sqlserver", StringComparison.OrdinalIgnoreCase))
+    {
+        isMigration = true;
+    }
     try
     {
-        isMigration = dbContext.Database.GetPendingMigrations().Any();
+        if (isMigration)
+            isMigration = dbContext.Database.GetPendingMigrations().Any();
     }
     catch { }
     if (isMigration)
@@ -191,8 +197,8 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     }
     else
     {
-        logger.LogInformation("数据库创建成功");
         await dbContext.Database.EnsureCreatedAsync();
+        logger.LogInformation("数据库创建成功");
     }
 
     //设置Steam代理api

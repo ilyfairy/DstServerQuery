@@ -1,4 +1,5 @@
 ﻿using Ilyfairy.DstServerQuery.Models;
+using MySql.EntityFrameworkCore.DataAnnotations;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
@@ -72,7 +73,7 @@ public class DstDaysInfo
 
     public int TotalDaysInSeason => DaysElapsedInSeason + DaysLeftInSeason;
 
-    public int ServerItemId { get; set; }
+    public long ServerItemId { get; set; }
     public DstServerHistoryItem ServerItem { get; set; }
 
     [return: NotNullIfNotNull(nameof(lobbyDaysInfo))]

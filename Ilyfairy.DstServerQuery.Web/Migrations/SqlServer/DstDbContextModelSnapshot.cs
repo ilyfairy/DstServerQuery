@@ -4,22 +4,20 @@ using Ilyfairy.DstServerQuery.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Ilyfairy.DstServerQuery.Web.Migrations
+namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 {
     [DbContext(typeof(DstDbContext))]
-    [Migration("20231104082724_ServerHistoryToUpdateTime")]
-    partial class ServerHistoryToUpdateTime
+    partial class DstDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .UseCollation("Chinese_PRC_BIN")
                 .HasAnnotation("ProductVersion", "7.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
@@ -42,10 +40,13 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations
                     b.Property<int>("DaysLeftInSeason")
                         .HasColumnType("int");
 
-                    b.Property<int>("ServerItemId")
-                        .HasColumnType("int");
+                    b.Property<long>("ServerItemId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ServerItemId")
+                        .IsUnique();
 
                     b.ToTable("DaysInfos");
                 });
@@ -132,10 +133,6 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DaysInfoId")
-                        .IsUnique()
-                        .HasFilter("[DaysInfoId] IS NOT NULL");
-
                     b.HasIndex("ServerId");
 
                     b.ToTable("ServerHistoryItems");
@@ -208,19 +205,24 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations
                     b.ToTable("ServerHistoryCountInfos");
                 });
 
+            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstDaysInfo", b =>
+                {
+                    b.HasOne("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistoryItem", "ServerItem")
+                        .WithOne("DaysInfo")
+                        .HasForeignKey("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstDaysInfo", "ServerItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ServerItem");
+                });
+
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistoryItem", b =>
                 {
-                    b.HasOne("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstDaysInfo", "DaysInfo")
-                        .WithOne("ServerItem")
-                        .HasForeignKey("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistoryItem", "DaysInfoId");
-
                     b.HasOne("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistory", "Server")
                         .WithMany("Items")
                         .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("DaysInfo");
 
                     b.Navigation("Server");
                 });
@@ -244,15 +246,14 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations
                     b.Navigation("Player");
                 });
 
-            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstDaysInfo", b =>
-                {
-                    b.Navigation("ServerItem")
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistory", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistoryItem", b =>
+                {
+                    b.Navigation("DaysInfo");
                 });
 #pragma warning restore 612, 618
         }
