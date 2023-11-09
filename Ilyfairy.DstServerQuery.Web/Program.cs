@@ -201,31 +201,6 @@ app.Lifetime.ApplicationStarted.Register(async () =>
         logger.LogInformation("数据库创建成功");
     }
 
-    {
-
-        var dayInfo = dbContext.DaysInfos.First();
-        dbContext.ServerHistories.Add(new Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistory()
-        {
-            Id = "abc",
-            Name = "测试服务器",
-            GameMode = "模式",
-            Host = "localhost",
-            Intent = "intent",
-            IP = "127.0.0.1",
-            Platform = Platform.Steam,
-            UpdateTime = DateTime.UtcNow,
-            Port = 80,
-        });
-        dbContext.ServerHistoryItems.Add(new Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistoryItem()
-        {
-            IsDetailed = true,
-            DateTime = DateTime.UtcNow,
-            ServerId = "abc",
-            DaysInfo = new Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstDaysInfo() { Day = 20 },
-        });
-        dbContext.SaveChanges();
-    }
-
     //设置Steam代理api
     DepotDownloader.SteamConfig.SetApiUrl(app.Configuration.GetValue<string>("SteampoweredApiProxy") ?? "https://api.steampowered.com/");
 

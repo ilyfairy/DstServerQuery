@@ -59,9 +59,6 @@ public class DstHistoryService
         using var scope = serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
 
-        var dayInfo = dbContext.DaysInfos.First();
-        dbContext.Entry(dayInfo);
-
         try
         {
             if (e.IsDetailed)
