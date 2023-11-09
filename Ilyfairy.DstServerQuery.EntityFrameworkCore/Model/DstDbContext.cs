@@ -52,7 +52,7 @@ public class DstDbContext : DbContext
         modelBuilder.Entity<DstServerHistoryItem>()
             .HasOne(v => v.DaysInfo)
             .WithOne(v => v.ServerItem)
-            .HasForeignKey<DstDaysInfo>(v => v.ServerItemId);
+            .HasForeignKey<DstServerHistoryItem>(v => v.DaysInfoId);
 
         //历史记录信息和玩家信息多对多
         modelBuilder.Entity<DstServerHistoryItem>()

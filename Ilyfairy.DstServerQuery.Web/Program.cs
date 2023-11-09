@@ -180,7 +180,7 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     //数据库迁移
     var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
     bool isMigration = false;
-    if (string.Equals(dbContext.Database.ProviderName,"sqlserver", StringComparison.OrdinalIgnoreCase))
+    if (dbContext.Database.ProviderName?.Contains("sqlserver", StringComparison.OrdinalIgnoreCase) == true)
     {
         isMigration = true;
     }
@@ -199,6 +199,31 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     {
         await dbContext.Database.EnsureCreatedAsync();
         logger.LogInformation("数据库创建成功");
+    }
+
+    {
+
+        var dayInfo = dbContext.DaysInfos.First();
+        dbContext.ServerHistories.Add(new Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistory()
+        {
+            Id = "abc",
+            Name = "测试服务器",
+            GameMode = "模式",
+            Host = "localhost",
+            Intent = "intent",
+            IP = "127.0.0.1",
+            Platform = Platform.Steam,
+            UpdateTime = DateTime.UtcNow,
+            Port = 80,
+        });
+        dbContext.ServerHistoryItems.Add(new Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistoryItem()
+        {
+            IsDetailed = true,
+            DateTime = DateTime.UtcNow,
+            ServerId = "abc",
+            DaysInfo = new Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstDaysInfo() { Day = 20 },
+        });
+        dbContext.SaveChanges();
     }
 
     //设置Steam代理api

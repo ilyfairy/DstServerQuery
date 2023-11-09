@@ -167,12 +167,22 @@ public class LobbyDetailsManager : IDisposable
     {
         Stopwatch s = new();
         await Task.Yield();
+        await Task.Delay(10000);
+
+        DateTime lastUpdated = default;
         while (Running)
         {
+            if (DateTime.Now - lastUpdated < TimeSpan.FromSeconds(600))
+            {
+                await Task.Delay(10000);
+                continue;
+            }
+
             s.Restart();
             ICollection<LobbyServerDetailed> arr = ServerMap.Values;
             if (arr.Count != 0)
             {
+                lastUpdated = DateTime.Now;
                 try
                 {
                     var updated = await LobbyDownloader.UpdateToDetails(arr, HttpTokenSource.Token);

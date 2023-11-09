@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 {
     [DbContext(typeof(DstDbContext))]
-    [Migration("20231107103802_Init")]
+    [Migration("20231109061453_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -43,13 +43,7 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
                     b.Property<int>("DaysLeftInSeason")
                         .HasColumnType("int");
 
-                    b.Property<long>("ServerItemId")
-                        .HasColumnType("bigint");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("ServerItemId")
-                        .IsUnique();
 
                     b.ToTable("DaysInfos");
                 });
@@ -136,6 +130,10 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DaysInfoId")
+                        .IsUnique()
+                        .HasFilter("[DaysInfoId] IS NOT NULL");
+
                     b.HasIndex("ServerId");
 
                     b.ToTable("ServerHistoryItems");
@@ -208,24 +206,19 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
                     b.ToTable("ServerHistoryCountInfos");
                 });
 
-            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstDaysInfo", b =>
-                {
-                    b.HasOne("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistoryItem", "ServerItem")
-                        .WithOne("DaysInfo")
-                        .HasForeignKey("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstDaysInfo", "ServerItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ServerItem");
-                });
-
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistoryItem", b =>
                 {
+                    b.HasOne("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstDaysInfo", "DaysInfo")
+                        .WithOne("ServerItem")
+                        .HasForeignKey("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistoryItem", "DaysInfoId");
+
                     b.HasOne("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistory", "Server")
                         .WithMany("Items")
                         .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("DaysInfo");
 
                     b.Navigation("Server");
                 });
@@ -249,14 +242,15 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
                     b.Navigation("Player");
                 });
 
+            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstDaysInfo", b =>
+                {
+                    b.Navigation("ServerItem")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistory", b =>
                 {
                     b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistoryItem", b =>
-                {
-                    b.Navigation("DaysInfo");
                 });
 #pragma warning restore 612, 618
         }

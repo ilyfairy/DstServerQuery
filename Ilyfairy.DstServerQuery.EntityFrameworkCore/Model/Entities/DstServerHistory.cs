@@ -73,8 +73,7 @@ public class DstDaysInfo
 
     public int TotalDaysInSeason => DaysElapsedInSeason + DaysLeftInSeason;
 
-    public long ServerItemId { get; set; }
-    public DstServerHistoryItem ServerItem { get; set; }
+    public DstServerHistoryItem ServerItem { get; set; } = null!;
 
     [return: NotNullIfNotNull(nameof(lobbyDaysInfo))]
     public static DstDaysInfo? FromLobby(LobbyDaysInfo? lobbyDaysInfo)

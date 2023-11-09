@@ -16,6 +16,7 @@ public class DstHistoryService
 
     private DateTime lastServerUpdateDateTime;
     private readonly int historyUpdateInterval = 10 * 60;
+    private bool lastIsDetailed = false;
 
     public DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig config, IServiceScopeFactory serviceScopeFactory, LobbyDetailsManager lobbyDetailsManager, HistoryCountManager historyCountManager)
     {
@@ -37,8 +38,29 @@ public class DstHistoryService
         DateTime updateDateTime = e.UpdatedDateTime;
         LobbyServerDetailed[] servers = e.Servers.Select(s => s.Clone()).ToArray();
 
+        lock (this)
+        {
+            if (!lastIsDetailed && e.IsDetailed)
+            {
+                lastServerUpdateDateTime = DateTime.Now;
+            }
+            else if(DateTime.Now - lastServerUpdateDateTime > TimeSpan.FromSeconds(historyUpdateInterval))
+            {
+                lastServerUpdateDateTime = DateTime.Now;
+            }
+            else
+            {
+                return;
+            }
+            lastIsDetailed = e.IsDetailed;
+        }
+
+        logger.LogInformation("历史信息储存数据库 IsDetailed:{IsDetailed}", e.IsDetailed);
         using var scope = serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
+
+        var dayInfo = dbContext.DaysInfos.First();
+        dbContext.Entry(dayInfo);
 
         try
         {
@@ -95,15 +117,6 @@ public class DstHistoryService
     private async Task Updated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTime updateDateTime)
     {
         await historyCountManager.AddAsync(servers, updateDateTime);
-
-        lock (this)
-        {
-            if (DateTime.Now - lastServerUpdateDateTime < TimeSpan.FromSeconds(historyUpdateInterval)) // 10分钟更新一次
-            {
-                return;
-            }
-            lastServerUpdateDateTime = DateTime.Now;
-        }
 
         await EnsureServersCreated(dbContext, servers, updateDateTime);
 
