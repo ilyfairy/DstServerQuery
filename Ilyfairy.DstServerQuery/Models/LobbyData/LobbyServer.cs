@@ -69,7 +69,7 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
     public bool IsPvp { get; set; } //是否启用pvp
 
     [JsonPropertyName("v")]
-    public int Version { get; set; } //版本
+    public long Version { get; set; } //版本
 
     [JsonPropertyName("session")]
     public string Session { get; set; } //会话id

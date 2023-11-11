@@ -58,7 +58,7 @@ public interface ILobbyServerV1
     public bool IsPvp { get; set; } //是否启用pvp
 
     [JsonPropertyName("Version")]
-    public int Version { get; set; } //版本
+    public long Version { get; set; } //版本
 
     [JsonPropertyName("Session")]
     public string Session { get; set; } //会话id
