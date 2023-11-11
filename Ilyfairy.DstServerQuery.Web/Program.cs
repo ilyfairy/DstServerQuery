@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 using Serilog;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Globalization;
+using System.Reflection;
 using System.Text.Json.Serialization;
 
 
@@ -22,6 +23,7 @@ if (File.Exists("secrets.json"))
     builder.Configuration.AddJsonFile("secrets.json");
 }
 
+#region Logger
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateBootstrapLogger(); // Run之前生效
@@ -50,6 +52,7 @@ builder.Services.AddSerilog((service, loggerConfiguration) =>
     loggerConfiguration.MinimumLevel.Debug();
 #endif
 });
+#endregion
 
 #region DbContext
 //DbContext
@@ -155,17 +158,11 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    string xml = @"bin/Debug/net8.0/Ilyfairy.DstServerQuery.Web.xml";
-    if (File.Exists(xml))
+    var xmlFileName = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlFilePath = Path.Combine(AppContext.BaseDirectory, xmlFileName);
+    if (File.Exists(xmlFilePath))
     {
-        options.IncludeXmlComments(xml);
-        return;
-    }
-    xml = "Ilyfairy.DstServerQuery.Web.xml";
-    if (File.Exists(xml))
-    {
-        options.IncludeXmlComments(xml);
-        return;
+        options.IncludeXmlComments(xmlFilePath);
     }
 });
 

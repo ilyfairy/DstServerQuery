@@ -14,9 +14,13 @@ using System.Text.Json;
 
 namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
 
+/// <summary>
+/// 服务器控制器
+/// </summary>
 [ApiController]
 [ApiVersion(2.0)]
 [Route("api/v{version:apiVersion}/[controller]")]
+[Produces("application/json")]
 public class ServerController : ControllerBase
 {
     private readonly ILogger _logger;
@@ -44,10 +48,11 @@ public class ServerController : ControllerBase
     }
 
     /// <summary>
-    /// 获取服务器最新版本,文本
+    /// 获取服务器最新版本 返回文本
     /// </summary>
     /// <returns></returns>
     [HttpGet("Version")]
+    [ProducesResponseType(200, Type = typeof(string))]
     public IActionResult GetServerVersionGet()
     {
         return Ok(dstVersionGetter.Version?.ToString() ?? "null");
@@ -74,6 +79,7 @@ public class ServerController : ControllerBase
     /// <param name="forceUpdate">是否强制刷新</param>
     /// <returns></returns>
     [HttpPost("Details/{id}")]
+    [ProducesResponseType(200, Type = typeof(ILobbyServerDetailedV2))]
     public async Task<IActionResult> GetDetails(string id, [FromQuery] bool forceUpdate = false)
     {
         if (string.IsNullOrWhiteSpace(id))
@@ -104,6 +110,7 @@ public class ServerController : ControllerBase
     /// <param name="forceUpdate">是否强制刷新</param>
     /// <returns></returns>
     [HttpPost("Details")]
+    [ProducesResponseType(200, Type = typeof(ILobbyServerDetailedV2))]
     public Task<IActionResult> GetDetailsFromQuery([FromQuery] string id, [FromQuery] bool forceUpdate = false) => GetDetails(id, forceUpdate);
 
 
@@ -111,7 +118,43 @@ public class ServerController : ControllerBase
     /// 获取服务器列表
     /// </summary>
     /// <returns></returns>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST
+    ///     {
+    ///         "ServerName":"Name", // 模糊匹配服务器名
+    ///         "Season": {
+    ///             "IsExclude": false,
+    ///             "Value": "winter|summer" // 获取冬天和夏天的服务器
+    ///         },
+    ///         "Platform": "Steam", // 匹配Steam平台的服务器
+    ///         "Version": "latest", // 匹配最新版本
+    ///         "ip": "*.*.*.*", // 匹配任意IP地址
+    ///         "PageIndex": 1, // 页索引
+    ///         "Country": { // 排除为IP地址为null的国家
+    ///             "IsExclude": true,
+    ///             "Value": null
+    ///         },
+    ///         "ModsId": [362175979], // 匹配ModID
+    ///         "IsDetailed": true, // 返回详细数据(包含玩家,Mods等信息)
+    ///         "DaysInSeason": ">90%" // 这个季节已经过去了90%的天数(季节末期)
+    ///         "Tags": { // 排除global和洞穴有关的Tags
+    ///             "Value": ["global","洞穴", "caves"],
+    ///             "IsExclude": true
+    ///         },
+    ///         "Connected": "&lt;100%", // 不是满人的服务器
+    ///         "MaxConnections": ">10" // 最大人数大于10%
+    ///         "PlayerPrefab": { // 过滤WX78和威尔逊这两个角色
+    ///             "IsExclude": true, // 排除
+    ///             "IsRegex": true, // 使用正则
+    ///             "Value": "wx78|wilson" // 匹配WX78和威尔逊
+    ///         }
+    ///     }
+    ///       
+    /// </remarks>
     [HttpPost("List")]
+    [ProducesResponseType(200, Type = typeof(ListResponse<ILobbyServerDetailedV2>))]
     public IActionResult GetServerList([FromBody] QueryParams query)
     {
         var servers = lobbyServerManager.GetCurrentServers();
@@ -130,7 +173,7 @@ public class ServerController : ControllerBase
 
         if (query.PageCount > 1000)
             query.PageCount = 1000;
-        if(query.PageCount < 1)
+        if (query.PageCount < 1)
             query.PageCount = 1;
 
         if (query.PageIndex < 0)
@@ -139,7 +182,7 @@ public class ServerController : ControllerBase
         var totalPageIndex = (int)Math.Ceiling((float)result.Count / query.PageCount) - 1;
         if (query.PageIndex > totalPageIndex)
             query.PageIndex = totalPageIndex;
-        if(totalPageIndex < 0)
+        if (totalPageIndex < 0)
             totalPageIndex = 0;
 
         var current = result.Skip(query.PageCount * query.PageIndex).Take(query.PageCount).ToArray();

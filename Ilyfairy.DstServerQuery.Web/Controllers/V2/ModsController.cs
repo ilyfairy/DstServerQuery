@@ -7,6 +7,7 @@ namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
 [ApiController]
 [ApiVersion(2.0)]
 [Route("api/v{version:apiVersion}/[controller]")]
+[Produces("application/json")]
 public class ModsController : ControllerBase
 {
     private readonly LobbyServerManager lobbyDetailsManager;

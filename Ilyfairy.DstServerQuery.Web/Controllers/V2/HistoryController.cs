@@ -15,6 +15,7 @@ namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
 [ApiController]
 [ApiVersion(2.0)]
 [Route("api/v{version:apiVersion}/[controller]")]
+[Produces("application/json")]
 public class HistoryController : ControllerBase
 {
     private readonly ILogger _logger;
