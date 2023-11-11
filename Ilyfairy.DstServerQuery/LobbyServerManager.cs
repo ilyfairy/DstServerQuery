@@ -11,9 +11,9 @@ namespace Ilyfairy.DstServerQuery;
 /// <summary>
 /// 大厅的详细信息实时获取以及管理
 /// </summary>
-public class LobbyDetailsManager : IDisposable
+public class LobbyServerManager : IDisposable
 {
-    private readonly ILogger _logger = Log.ForContext<LobbyDetailsManager>();
+    private readonly ILogger _logger = Log.ForContext<LobbyServerManager>();
     public ConcurrentDictionary<string, LobbyServerDetailed> ServerMap { get; } = new(2, 40000);
     private ICollection<LobbyServerDetailed> serverCache = Array.Empty<LobbyServerDetailed>();
     public bool Running { get; private set; }
@@ -25,15 +25,17 @@ public class LobbyDetailsManager : IDisposable
     public DateTime LastUpdate { get; private set; }
 
     private readonly Stopwatch sw = Stopwatch.StartNew();
+    private readonly DstWebConfig dstConfig;
 
     public CancellationTokenSource HttpTokenSource { get; private set; } = new();
 
     public event DstDataUpdatedHandler? Updated;
 
     //参数是依赖注入
-    public LobbyDetailsManager(DstWebConfig requestConfig, DstJsonOptions dstJsonOptions) : base()
+    public LobbyServerManager(DstWebConfig requestConfig, LobbyDownloader lobbyDownloader, DstJsonOptions dstJsonOptions) : base()
     {
-        LobbyDownloader = new LobbyDownloader(dstJsonOptions, requestConfig.Token, requestConfig.DstDetailsProxyUrls, requestConfig.LobbyProxyTemplate);
+        LobbyDownloader = lobbyDownloader;
+        this.dstConfig = requestConfig;
     }
 
 
@@ -172,9 +174,9 @@ public class LobbyDetailsManager : IDisposable
         DateTime lastUpdated = default;
         while (Running)
         {
-            if (DateTime.Now - lastUpdated < TimeSpan.FromSeconds(600))
+            if (DateTime.Now - lastUpdated < TimeSpan.FromSeconds(dstConfig.DetailsUpdateInterval ?? 600))
             {
-                await Task.Delay(10000);
+                await Task.Delay(2000, HttpTokenSource.Token);
                 continue;
             }
 
@@ -191,14 +193,7 @@ public class LobbyDetailsManager : IDisposable
                         Updated?.Invoke(this, new DstUpdatedData(updated, true, LastUpdate));
                     }
 
-                    if (updated.Count <= 0 && arr.Count != 0)
-                    {
-                        _logger.Warning("所有详细信息更新失败");
-                    }
-                    else
-                    {
-                        _logger.Information("所有详细信息已更新 在{OriginCount}个中更新了{UpdateCount} 耗时:{ElapsedMilliseconds:0.00}分钟", arr.Count, updated.Count, s.ElapsedMilliseconds / 1000 / 60.0);
-                    }
+                    _logger.Information("所有详细信息已更新 在{OriginCount}个中更新了{UpdateCount} 耗时:{ElapsedMilliseconds:0.00}分钟", arr.Count, updated.Count, s.ElapsedMilliseconds / 1000 / 60.0);
 
                     s.Stop();
                 }
@@ -208,7 +203,6 @@ public class LobbyDetailsManager : IDisposable
                 }
 
             }
-            await Task.Delay(20000, HttpTokenSource.Token);
         }
     }
 
@@ -216,7 +210,7 @@ public class LobbyDetailsManager : IDisposable
     /// 获取当前当前所有房间的详细数据
     /// </summary>
     /// <returns></returns>
-    public ICollection<LobbyServerDetailed> GetCurrentDetails()
+    public ICollection<LobbyServerDetailed> GetCurrentServers()
     {
         var servers = serverCache;
         return servers;
@@ -227,7 +221,7 @@ public class LobbyDetailsManager : IDisposable
     /// </summary>
     /// <param name="rowid"></param>
     /// <returns></returns>
-    public async Task<LobbyServerDetailed?> GetDetailByRowIdAsync(string rowid, bool forceUpdate, CancellationToken cancellationToken)
+    public async Task<LobbyServerDetailed?> GetDetailedByRowIdAsync(string rowid, bool forceUpdate, CancellationToken cancellationToken)
     {
         var server = ServerMap.GetValueOrDefault(rowid);
         if (server is null) return null;

@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities;
@@ -16,11 +17,12 @@ public class DstPlayer
 {
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public required string Id { get; set; }
-    public string? Name { get; set; }
+    public required string Name { get; set; }
     public Platform Platform { get; set; }
 
     /// <summary>
     /// 这个玩家存在哪些服务器中存在过
     /// </summary>
+    [JsonIgnore]
     public ICollection<DstServerHistoryItem> ServerHistoryItems { get; set; } = [];
 }

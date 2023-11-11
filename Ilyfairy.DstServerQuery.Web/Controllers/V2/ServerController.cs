@@ -2,14 +2,13 @@
 using Ilyfairy.DstServerQuery.EntityFrameworkCore;
 using Ilyfairy.DstServerQuery.LobbyJson;
 using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Models.Entities;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
 using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
 using Ilyfairy.DstServerQuery.Services;
+using Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer;
 using Ilyfairy.DstServerQuery.Web.Models;
+using Ilyfairy.DstServerQuery.Web.Models.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
 using System.Net.Mime;
 using System.Text.Json;
 
@@ -20,8 +19,8 @@ namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
 [Route("api/v{version:apiVersion}/[controller]")]
 public class ServerController : ControllerBase
 {
-    private readonly ILogger<ServerController> _logger;
-    private readonly LobbyDetailsManager lobbyDetailsManager;
+    private readonly ILogger _logger;
+    private readonly LobbyServerManager lobbyServerManager;
     private readonly DstVersionService dstVersionGetter;
     private readonly HistoryCountManager historyCountManager;
     private readonly DstJsonOptions dstJsonOptions;
@@ -29,7 +28,7 @@ public class ServerController : ControllerBase
 
     public ServerController(
         ILogger<ServerController> logger,
-        LobbyDetailsManager lobbyDetailsManager,
+        LobbyServerManager lobbyDetailsManager,
         DstVersionService dstVersionGetter,
         HistoryCountManager historyCountManager,
         DstJsonOptions dstJsonOptions,
@@ -37,7 +36,7 @@ public class ServerController : ControllerBase
         )
     {
         _logger = logger;
-        this.lobbyDetailsManager = lobbyDetailsManager;
+        this.lobbyServerManager = lobbyDetailsManager;
         this.dstVersionGetter = dstVersionGetter;
         this.historyCountManager = historyCountManager;
         this.dstJsonOptions = dstJsonOptions;
@@ -48,20 +47,20 @@ public class ServerController : ControllerBase
     /// 获取服务器最新版本,文本
     /// </summary>
     /// <returns></returns>
-    [HttpGet("version")]
+    [HttpGet("Version")]
     public IActionResult GetServerVersionGet()
     {
         return Ok(dstVersionGetter.Version?.ToString() ?? "null");
     }
 
     /// <summary>
-    /// 获取服务器最新版本,Json
+    /// 获取服务器最新版本 返回Json
     /// </summary>
     /// <returns></returns>
-    [HttpPost("version")]
+    [HttpPost("Version")]
     public IActionResult GetServerVersionPost()
     {
-        return new JsonResult(new
+        return new DstResponse(new
         {
             Version = dstVersionGetter.Version,
         });
@@ -71,25 +70,26 @@ public class ServerController : ControllerBase
     /// <summary>
     /// 通过RowId获取详细数据
     /// </summary>
-    /// <param name="id"></param>   
+    /// <param name="id"></param>
+    /// <param name="forceUpdate">是否强制刷新</param>
     /// <returns></returns>
-    [HttpPost("details/{id}")]
+    [HttpPost("Details/{id}")]
     public async Task<IActionResult> GetDetails(string id, [FromQuery] bool forceUpdate = false)
     {
         if (string.IsNullOrWhiteSpace(id))
         {
             //log.Warn("RowId为空");
-            return BadRequest();
+            return DstResponse.BadRequest();
         }
 
         CancellationTokenSource cts = new();
         cts.CancelAfter(15000);
-        LobbyServerDetailed? info = await lobbyDetailsManager.GetDetailByRowIdAsync(id, forceUpdate, cts.Token);
+        LobbyServerDetailed? info = await lobbyServerManager.GetDetailedByRowIdAsync(id, forceUpdate, cts.Token);
 
         if (info == null)
         {
             _logger.LogWarning("找不到该服务器 RowId:{RowId}", id);
-            return Content(@"{""Message"":""Not Found""}", "application/json"); //找不到该房间
+            return DstResponse.NotFound(); //找不到该房间
         }
         _logger.LogInformation("找到服务器 RowId:{RowId} Name:{Name}", id, info.Name);
 
@@ -97,8 +97,13 @@ public class ServerController : ControllerBase
         return Content(json, MediaTypeNames.Application.Json);
     }
 
-
-    [HttpPost("details")]
+    /// <summary>
+    /// 获取服务器详细信息, 从query参数
+    /// </summary>
+    /// <param name="id">RowId</param>
+    /// <param name="forceUpdate">是否强制刷新</param>
+    /// <returns></returns>
+    [HttpPost("Details")]
     public Task<IActionResult> GetDetailsFromQuery([FromQuery] string id, [FromQuery] bool forceUpdate = false) => GetDetails(id, forceUpdate);
 
 
@@ -106,112 +111,91 @@ public class ServerController : ControllerBase
     /// 获取服务器列表
     /// </summary>
     /// <returns></returns>
-    [HttpPost("list")]
-    public async Task<IActionResult> GetServerList()
+    [HttpPost("List")]
+    public IActionResult GetServerList([FromBody] QueryParams query)
     {
-        var queryKey = Request.Query
-            .Select(v => new KeyValuePair<string, string?>(v.Key, v.Value.FirstOrDefault()))
-            .Where(v=>v.Value != null)
-            .ToArray();
+        var servers = lobbyServerManager.GetCurrentServers();
 
-        //LobbyServerQueryerV1 queryer = new(lobbyDetailsManager.GetCurrentDetails(), queryKey, lobbyDetailsManager.LastUpdate);
-        //queryer.Query();
-        
-        //string query = string.Join("&", queryKey.Select(v => $"{v.Key}={v.Value}"));
-        //_logger.Info("查询服务器 Count:{0} Query:{1}", queryer.Result.Count, query);
+        LobbyServerQueryerV2 queryer = new(query, servers, dstVersionGetter.Version);
 
-        ListResponse<ILobbyServerWithPlayerV2> list = new();
-        list.List = lobbyDetailsManager.GetCurrentDetails().Take(100);
-
-        return new JsonResult(list, dstJsonOptions.SerializerOptions);
-    }
-
-    /// <summary>
-    /// 获取服务器历史记录个数
-    /// </summary>
-    /// <param name="interval"></param>
-    /// <param name="rel"></param>
-    /// <param name="count"></param>
-    /// <returns></returns>
-    [HttpPost("historycount")]
-    public async Task<IActionResult> GetServerCountHistory(
-        [FromQuery] long startDateTime, 
-        [FromQuery] long endDateTime, 
-        [FromQuery] int interval = 60 * 60
-        )
-    {
-        var start = DateTimeOffset.FromUnixTimeSeconds(startDateTime).DateTime;
-        var end = DateTimeOffset.FromUnixTimeSeconds(endDateTime).DateTime;
-
-        if (end - start > TimeSpan.FromDays(3) || start - end < default(TimeSpan))
+        ICollection<LobbyServerDetailed> result;
+        try
         {
-            return BadRequest();
+            result = queryer.Query();
+        }
+        catch (QueryArgumentException ex)
+        {
+            return DstResponse.BadRequest(ex.Message);
         }
 
-        DateTime currentDateTime = start;
+        if (query.PageCount > 1000)
+            query.PageCount = 1000;
+        if(query.PageCount < 1)
+            query.PageCount = 1;
 
-        if (interval < 60) interval = 60;
+        if (query.PageIndex < 0)
+            query.PageIndex = 0;
 
-        //linq表达式不能赋值
-        //var linqResult = from item in dbContext.ServerHistoryCountInfos
-        //                 where item.UpdateDate >= start && item.UpdateDate <= end
-        //                 where item.UpdateDate >= currentDateTime && (currentDateTime = currentDateTime.AddSeconds(interval)) <= end
-        //                 select item;
+        var totalPageIndex = (int)Math.Ceiling((float)result.Count / query.PageCount) - 1;
+        if (query.PageIndex > totalPageIndex)
+            query.PageIndex = totalPageIndex;
+        if(totalPageIndex < 0)
+            totalPageIndex = 0;
 
-        //原生sql不会写
-        //List<ServerCountInfo> usersInDb = dbContext.ServerHistoryCountInfos.FromSqlRaw
-        //(
-        //    """
-        //    DECLARE @currentDateTime DATETIME
-        //    SET @currentDateTime = @start;
+        var current = result.Skip(query.PageCount * query.PageIndex).Take(query.PageCount).ToArray();
 
-        //    SELECT *
-        //    FROM ServerHistoryCountInfos
-        //    WHERE UpdateDate >= @start AND UpdateDate <= @end
-        //    AND (
-        //        UpdateDate >= @currentDateTime
-        //        OR (@currentDateTime := DATEADD(SECOND, @interval, @currentDateTime)) IS NOT NULL
-        //    )
-        //    """,
-        //    new SqlParameter("@start", start),
-        //    new SqlParameter("@end", end),
-        //    new SqlParameter("@interval", interval)
-        //)
-        //.ToList();
-
-
-        ServerCountInfo[] r;
-        if (start >= historyCountManager.First)
+        ListResponse<T> CreateResponse<T>() where T : ILobbyServerV2
         {
-            r = historyCountManager.Cache
-                .Where(v => v.UpdateDate >= start && v.UpdateDate <= end)
-                .ToArray();
+            return new ListResponse<T>()
+            {
+                List = current.Cast<T>(),
+                LastUpdate = lobbyServerManager.LastUpdate,
+                AllCount = result.Count,
+                Count = current.Length,
+                CurrentPageIndex = query.PageIndex,
+                DateTime = DateTime.Now,
+                MaxPageIndex = totalPageIndex,
+            };
+        }
+
+        object resonse;
+        if (query.IsDetailed)
+        {
+            resonse = CreateResponse<ILobbyServerDetailedV2>();
+        }
+        else if (query.PlayerName is not null || query.PlayerPrefab is not null)
+        {
+            resonse = CreateResponse<ILobbyServerWithPlayerV2>();
         }
         else
         {
-            r = await dbContext.ServerHistoryCountInfos
-                .Where(v => v.UpdateDate >= start && v.UpdateDate <= end)
-                .ToArrayAsync();
+            resonse = CreateResponse<ILobbyServerV2>();
         }
 
-        List<ServerCountInfo> result = new();
-
-        ServerCountInfo? current = r.FirstOrDefault();
-        foreach (var item in r)
+        return new DstResponse(resonse)
         {
-            if (item.UpdateDate >= currentDateTime)
-            {
-                current = item;
-                currentDateTime = currentDateTime.AddSeconds(interval);
-                result.Add(item);
-            }
-        }
-        
-        if(current != null && current != r[^1])
-        {
-            result.Add(r[^1]);
-        }
+            SerializerSettings = dstJsonOptions.SerializerOptions,
+        };
+    }
 
-        return new JsonResult(result);
+    /// <summary>
+    /// 获取所有玩家预设
+    /// </summary>
+    /// <returns></returns>
+    [HttpPost("GetPrefabs")]
+    public IActionResult GetPrefabs()
+    {
+        var servers = lobbyServerManager.GetCurrentServers();
+
+        var prefabs = servers.SelectMany(v => v.Players?.Select(player => player.Prefab) ?? [])
+            .Where(v => !string.IsNullOrEmpty(v));
+
+        var response = prefabs.GroupBy(v => v).Select(v => new
+        {
+            Prefab = v.Key,
+            Count = v.Count()
+        }).OrderByDescending(v => v.Count);
+
+        return new DstResponse(response);
     }
 }

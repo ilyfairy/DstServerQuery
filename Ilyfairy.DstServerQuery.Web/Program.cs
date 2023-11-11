@@ -11,9 +11,9 @@ using Ilyfairy.DstServerQuery.Web.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
-using Serilog.Settings.Configuration;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Globalization;
+using System.Text.Json.Serialization;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,6 +51,7 @@ builder.Services.AddSerilog((service, loggerConfiguration) =>
 #endif
 });
 
+#region DbContext
 //DbContext
 string? sqlType = builder.Configuration.GetValue<string>("SqlType")!;
 //使用SqlServer
@@ -97,17 +98,18 @@ else
 //{
 //    builder.Services.AddSqlServer<DstDbContext>(@"Server=(localdb)\mssqllocaldb;Database=EFProviders.InMemory;Trusted_Connection=True;ConnectRetryCount=0");
 //}
-//否则使用Sqlite
+#endregion
 
 builder.Services.AddResponseCompression(); //启用压缩
 builder.Services.AddSingleton<HistoryCountManager>();
 builder.Services.AddSingleton(builder.Configuration.GetSection("DstConfig").Get<DstWebConfig>()!);
-builder.Services.AddSingleton<LobbyDetailsManager>();
-builder.Services.AddSingleton<LobbyDetailsManager>();
+builder.Services.AddSingleton<LobbyServerManager>();
+builder.Services.AddSingleton<LobbyServerManager>();
 builder.Services.AddSingleton<DstVersionService>();
 builder.Services.AddSingleton<GeoIPService>();
 builder.Services.AddSingleton<DstJsonOptions>();
 builder.Services.AddSingleton<DstHistoryService>();
+builder.Services.AddSingleton<LobbyDownloader>();
 
 //配置跨域请求
 builder.Services.AddCors(options =>
@@ -144,20 +146,44 @@ builder.Services.AddControllers()
 {
     //默认Json序列化选项
     opt.JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
+    opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    opt.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     opt.JsonSerializerOptions.PropertyNamingPolicy = null;
 });
 
 //Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    string xml = @"bin/Debug/net8.0/Ilyfairy.DstServerQuery.Web.xml";
+    if (File.Exists(xml))
+    {
+        options.IncludeXmlComments(xml);
+        return;
+    }
+    xml = "Ilyfairy.DstServerQuery.Web.xml";
+    if (File.Exists(xml))
+    {
+        options.IncludeXmlComments(xml);
+        return;
+    }
+});
 
 CultureInfo.CurrentCulture = new CultureInfo("zh-CN");
 
 var app = builder.Build();
 
+
+
+
+//`(*>﹏<*)′=================================== 一条华丽的分割线 ===================================`(*>﹏<*)′//
+
+
+
+
 app.UseCors("CORS");
 
-// 禁止访问/ 以及用来检测服务器是否正常运行
+// 禁止访问/  用来检测服务器是否正常运行
 app.Use(async (v,next) =>
 {
     if(v.Request.Path == "" || v.Request.Path == "/")
@@ -168,7 +194,7 @@ app.Use(async (v,next) =>
     await next();
 });
 
-app.UseResponseCompression();
+//app.UseResponseCompression();
 //app.UseSerilogRequestLogging();
 
 
@@ -185,7 +211,7 @@ app.Lifetime.ApplicationStarted.Register(async () =>
         isMigration = true;
     }
     try
-    {
+    {   
         if (isMigration)
             isMigration = dbContext.Database.GetPendingMigrations().Any();
     }
@@ -216,7 +242,7 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     dstJsonConverter.DeserializerOptions.Converters.Add(new IPAddressInfoConverter(geoIPService));
     dstJsonConverter.SerializerOptions.Converters.Add(new IPAddressInfoConverter(geoIPService));
 
-    var lobbyManager = app.Services.GetRequiredService<LobbyDetailsManager>();
+    var lobbyManager = app.Services.GetRequiredService<LobbyServerManager>();
     await lobbyManager.Start();
     logger.LogInformation("IHostApplicationBuilder Start");
 
@@ -232,7 +258,7 @@ app.Lifetime.ApplicationStopped.Register(() =>
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<IHostApplicationBuilder>>();
     logger.LogInformation("IHostApplicationBuilder Shutdowning");
 
-    var lobbyManager = app.Services.GetService<LobbyDetailsManager>()!;
+    var lobbyManager = app.Services.GetService<LobbyServerManager>()!;
     var dstVersion = app.Services.GetService<DstVersionService>()!;
     dstVersion.Dispose();
     lobbyManager.Dispose();
@@ -242,17 +268,19 @@ app.Lifetime.ApplicationStopped.Register(() =>
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(options => 
-    {
-        foreach (var description in app.DescribeApiVersions())
-        {
-            var url = $"/swagger/{description.GroupName}/swagger.json";
-            var name = description.GroupName.ToUpperInvariant();
-            options.SwaggerEndpoint(url, name);
-        }
-    });
 }
+
+app.UseSwagger();
+app.UseSwaggerUI(options => 
+{
+    foreach (var description in app.DescribeApiVersions())
+    {
+        var url = $"/swagger/{description.GroupName}/swagger.json";
+        var name = description.GroupName.ToUpperInvariant();
+        options.SwaggerEndpoint(url, name);
+    }
+    
+});
 
 app.Use(async (context, next) =>
 {

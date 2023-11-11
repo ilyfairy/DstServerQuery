@@ -1,6 +1,7 @@
 ﻿using Ilyfairy.DstServerQuery.LobbyJson;
 using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
+using Ilyfairy.DstServerQuery.Models.Requests;
 using Serilog;
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
@@ -26,17 +27,15 @@ namespace Ilyfairy.DstServerQuery
         private readonly HttpClient http;
         private readonly HttpClient httpUpdate;
         private readonly DstJsonOptions dstJsonOptions;
-        private readonly string _token;
-        private readonly string[]? _dstDetailsProxyUrls; // https://api.com/{0}/{1}/{2}/{3}
-        private readonly string lobbyProxyTemplate;
+        private readonly DstWebConfig dstWebConfig;
 
         //通过区域和平台获取url
         public Dictionary<RegionPlatform, RegionUrl> RegionPlatformMap { get; set; } = new();
 
-        public LobbyDownloader(DstJsonOptions dstJsonOptions, string dstToken, string[]? dstDetailsProxyUrls = null, string lobbyProxyTemplate = "https://lobby-v2-cdn.klei.com/{region}-{platform}.json.gz")
+        public LobbyDownloader(DstJsonOptions dstJsonOptions, DstWebConfig dstWebConfig)
         {
             this.dstJsonOptions = dstJsonOptions;
-            _token = dstToken;
+            this.dstWebConfig = dstWebConfig;
 
             static HttpClient Create()
             {
@@ -50,8 +49,6 @@ namespace Ilyfairy.DstServerQuery
 
             this.http = Create();
             this.httpUpdate = Create();
-            _dstDetailsProxyUrls = dstDetailsProxyUrls;
-            this.lobbyProxyTemplate = lobbyProxyTemplate;
         }
 
         public async Task Initialize()
@@ -70,7 +67,7 @@ namespace Ilyfairy.DstServerQuery
                 {
                     RegionPlatformMap[new(region, Enum.Parse<LobbyPlatform>(platform))] =
                         new(
-                            lobbyProxyTemplate.Replace("{region}", region).Replace("{platform}", platform),
+                            dstWebConfig.LobbyProxyTemplate.Replace("{region}", region).Replace("{platform}", platform),
                             $"https://lobby-v2-{region}.klei.com/lobby/read"
                         );
                 }
@@ -92,13 +89,25 @@ namespace Ilyfairy.DstServerQuery
             return get.Data;
         }
 
+        private async Task<JsonArray> DownloadBriefsJson(string url, CancellationToken cancellationToken = default)
+        {
+            var response = await http.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            JsonObject? obj = JsonNode.Parse(json)?.AsObject();
+
+            return obj?["GET"]?.AsArray() ?? [];
+        }
+
+        
+
         //POST请求
         public async Task<LobbyServerDetailed[]> DownloadDetails(string url, CancellationToken cancellationToken = default)
         {
             var body = $$$"""
                 {
                     "__gameId": "DontStarveTogether",
-                    "__token": "{{{_token}}}",
+                    "__token": "{{{dstWebConfig.Token}}}",
                     "query": {}
                 }
                 """;
@@ -142,7 +151,7 @@ namespace Ilyfairy.DstServerQuery
                     string str = $$$"""
                     {
                         "__gameId": "DontStarveTogether",
-                        "__token": "{{{_token}}}",
+                        "__token": "{{{dstWebConfig.Token}}}",
                         "query": {
                             "__rowId": "{{{server.RowId}}}"
                         }
@@ -306,11 +315,28 @@ namespace Ilyfairy.DstServerQuery
             }
         }
 
+        public async Task<JsonArray> DownloadAllBriefsJson(CancellationToken cancellationToken = default)
+        {
+            JsonArray arr = new();
+            foreach (var map in RegionPlatformMap)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var r = await DownloadBriefsJson(map.Value.BriefsUrl, cancellationToken);
+                foreach (var item in r)
+                {
+                    arr.Add(item.DeepClone());
+                }
+            }
+            return arr;
+        }
+
         public string? GetProxyUrl()
         {
-            if (_dstDetailsProxyUrls is null or { Length: 0 }) return null;
-            var rand = Random.Shared.Next() % _dstDetailsProxyUrls.Length;
-            return _dstDetailsProxyUrls[rand];
+            var dstDetailsProxyUrls = dstWebConfig.DstDetailsProxyUrls;
+
+            if (dstDetailsProxyUrls is null or { Length: 0 }) return null;
+            var rand = Random.Shared.Next() % dstDetailsProxyUrls.Length;
+            return dstDetailsProxyUrls[rand];
         }
 
     }

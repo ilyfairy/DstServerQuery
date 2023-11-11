@@ -3,6 +3,7 @@ using MySql.EntityFrameworkCore.DataAnnotations;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities;
 
@@ -26,6 +27,7 @@ public class DstServerHistory
     public string? GameMode { get; set; }
     public string? Intent { get; set; }
 
+    [JsonIgnore]
     public ICollection<DstServerHistoryItem> Items { get; set; } = [];
 }
 
@@ -54,6 +56,7 @@ public class DstServerHistoryItem
 public class DstDaysInfo
 {
     [Key]
+    [JsonIgnore]
     public long Id { get; set; }
 
     /// <summary>
@@ -71,8 +74,9 @@ public class DstDaysInfo
     /// </summary>
     public int DaysLeftInSeason { get; set; }
 
-    public int TotalDaysInSeason => DaysElapsedInSeason + DaysLeftInSeason;
+    public int TotalDaysSeason => DaysElapsedInSeason + DaysLeftInSeason;
 
+    [JsonIgnore]
     public DstServerHistoryItem ServerItem { get; set; } = null!;
 
     [return: NotNullIfNotNull(nameof(lobbyDaysInfo))]

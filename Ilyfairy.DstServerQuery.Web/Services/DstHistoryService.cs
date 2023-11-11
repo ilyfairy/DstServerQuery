@@ -5,6 +5,7 @@ using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
 using Ilyfairy.DstServerQuery.Models.Requests;
 using Ilyfairy.DstServerQuery.Web.Helpers;
+using Microsoft.EntityFrameworkCore;
 
 namespace Ilyfairy.DstServerQuery.Web.Services;
 
@@ -18,16 +19,21 @@ public class DstHistoryService
     private readonly int historyUpdateInterval = 10 * 60;
     private bool lastIsDetailed = false;
 
-    public DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig config, IServiceScopeFactory serviceScopeFactory, LobbyDetailsManager lobbyDetailsManager, HistoryCountManager historyCountManager)
+    public DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig config, IServiceScopeFactory serviceScopeFactory, LobbyServerManager lobbyDetailsManager, HistoryCountManager historyCountManager)
     {
         this.logger = logger;
         this.serviceScopeFactory = serviceScopeFactory;
         this.historyCountManager = historyCountManager;
-        lobbyDetailsManager.Updated += LobbyDetailsManager_Updated;
 
         if (config.HistoryUpdateInterval is int updateInterval)
         {
             historyUpdateInterval = updateInterval;
+        }
+
+
+        if (config.IsDisabledInsertDatabase is not true)
+        {
+            lobbyDetailsManager.Updated += LobbyDetailsManager_Updated;
         }
     }
 
@@ -44,7 +50,7 @@ public class DstHistoryService
             {
                 lastServerUpdateDateTime = DateTime.Now;
             }
-            else if(DateTime.Now - lastServerUpdateDateTime > TimeSpan.FromSeconds(historyUpdateInterval))
+            else if (DateTime.Now - lastServerUpdateDateTime > TimeSpan.FromSeconds(historyUpdateInterval))
             {
                 lastServerUpdateDateTime = DateTime.Now;
             }
@@ -59,8 +65,11 @@ public class DstHistoryService
         using var scope = serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
 
+
         try
         {
+            await historyCountManager.AddAsync(servers, updateDateTime);
+
             if (e.IsDetailed)
             {
                 await UpdatedDetailed(dbContext, servers, updateDateTime);
@@ -113,8 +122,6 @@ public class DstHistoryService
 
     private async Task Updated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTime updateDateTime)
     {
-        await historyCountManager.AddAsync(servers, updateDateTime);
-
         await EnsureServersCreated(dbContext, servers, updateDateTime);
 
         List<DstServerHistoryItem> updateList = new(servers.Count);
@@ -130,7 +137,7 @@ public class DstHistoryService
 
             updateList.Add(hItem);
         }
-        
+
         await dbContext.BulkInsertAsync(updateList);
         await dbContext.BulkSaveChangesAsync();
     }
@@ -157,7 +164,7 @@ public class DstHistoryService
             });
             await dbContext.BulkSaveChangesAsync();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             throw;
         }
@@ -166,8 +173,6 @@ public class DstHistoryService
 
     private async Task UpdatedDetailed(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTime updateDateTime)
     {
-        await historyCountManager.AddAsync(servers, updateDateTime);
-
         await EnsureServersCreated(dbContext, servers, updateDateTime);
 
         var ServerPlayerKV = servers.SelectMany(s =>
@@ -210,7 +215,7 @@ public class DstHistoryService
         }
         catch (Exception ex)
         {
-            logger.LogWarning("History Chunk更新失败 {Exception}", ex.Message);
+            logger.LogWarning("History更新失败 {Exception}", ex.Message);
         }
     }
 }

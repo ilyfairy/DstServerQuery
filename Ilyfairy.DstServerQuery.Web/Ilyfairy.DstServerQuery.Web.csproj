@@ -8,24 +8,9 @@
 		<RootNamespace>Ilyfairy.DstServerQuery.Web</RootNamespace>
 		<ServerGarbageCollection>false</ServerGarbageCollection>
 		<LangVersion>preview</LangVersion>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 
 	</PropertyGroup>
-
-	<ItemGroup>
-	  <None Remove="Properties\launchSettings.json" />
-	  <None Remove="Properties\PublishProfiles\launchSettings.json" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<_WebToolingArtifacts Remove="Properties\launchSettings.json" />
-		<_WebToolingArtifacts Remove="Properties\PublishProfiles\launchSettings.json" />
-		<_WebToolingArtifacts Remove="Properties\PublishProfiles\prod.pubxml" />
-		<_WebToolingArtifacts Remove="Properties\PublishProfiles\test.pubxml" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Include="Properties\launchSettings.json" />
-	</ItemGroup>
 
 	<ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.13">
@@ -50,10 +35,6 @@
 	  <None Update="GeoLite2-City.mmdb">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Migrations\" />
 	</ItemGroup>
 
 </Project>

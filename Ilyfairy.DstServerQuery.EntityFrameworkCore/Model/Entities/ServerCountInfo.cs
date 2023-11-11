@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.Models.Entities;
 
@@ -7,7 +8,7 @@ namespace Ilyfairy.DstServerQuery.Models.Entities;
 /// </summary>
 public class ServerCountInfo
 {
-    [Key]
+    [Key, JsonIgnore]
     public int Id { get; set; }
 
     //`(*>﹏<*)′=================================== 一条华丽的分割线 ===================================`(*>﹏<*)′//

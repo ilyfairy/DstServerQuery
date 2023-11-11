@@ -7,7 +7,7 @@ using Ilyfairy.DstServerQuery.Models.Entities;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
 using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
 using Ilyfairy.DstServerQuery.Services;
-using Ilyfairy.DstServerQuery.Web;
+using Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Mime;
 using System.Text.Json;
@@ -23,7 +23,7 @@ public partial class ApiController : ControllerBase
     private readonly ILogger<ApiController> _logger;
 
     private readonly DstVersionService dstVersion;
-    private readonly LobbyDetailsManager lobbyDetailsManager;
+    private readonly LobbyServerManager lobbyDetailsManager;
     private readonly HistoryCountManager historyCountManager;
     private readonly DstJsonOptions dstJsonOptions;
     private readonly JsonSerializerOptions v1JsonOptions = new JsonSerializerOptions()
@@ -33,7 +33,7 @@ public partial class ApiController : ControllerBase
     };
 
     //版本获取, 大厅服务器管理器, 大厅服务器历史房间数量管理器
-    public ApiController(ILogger<ApiController> logger, DstVersionService versionGetter, LobbyDetailsManager lobbyDetailsManager, HistoryCountManager historyCountManager, DstJsonOptions dstJsonOptions)
+    public ApiController(ILogger<ApiController> logger, DstVersionService versionGetter, LobbyServerManager lobbyDetailsManager, HistoryCountManager historyCountManager, DstJsonOptions dstJsonOptions)
     {
         _logger = logger;
         dstVersion = versionGetter;
@@ -79,7 +79,7 @@ public partial class ApiController : ControllerBase
 
         CancellationTokenSource cts = new();
         cts.CancelAfter(15000);
-        LobbyServerDetailed? info = await lobbyDetailsManager.GetDetailByRowIdAsync(id, forceUpdate, cts.Token);
+        LobbyServerDetailed? info = await lobbyDetailsManager.GetDetailedByRowIdAsync(id, forceUpdate, cts.Token);
 
         if (info == null)
         {
@@ -99,11 +99,11 @@ public partial class ApiController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpPost("list")]
-    public async Task<IActionResult> GetServerList()
+    public IActionResult GetServerList()
     {
         var queryKey = Request.Query.Select(v => new KeyValuePair<string, string>(v.Key, v.Value.FirstOrDefault())).ToList();
 
-        LobbyServerQueryerV1 queryer = new(lobbyDetailsManager.GetCurrentDetails(), queryKey, lobbyDetailsManager.LastUpdate);
+        LobbyServerQueryerV1 queryer = new(lobbyDetailsManager.GetCurrentServers(), queryKey, lobbyDetailsManager.LastUpdate);
         queryer.Query();
 
         string query = string.Join("&", queryKey.Select(v => $"{v.Key}={v.Value}"));
@@ -161,7 +161,7 @@ public partial class ApiController : ControllerBase
     public async Task<IActionResult> GetModsCount(int topcount = 100)
     {
         _logger.LogInformation("获取Mod个数 TopCount:{TopCount}", topcount);
-        var list = lobbyDetailsManager.GetCurrentDetails();
+        var list = lobbyDetailsManager.GetCurrentServers();
         var key = new Dictionary<long, ModCountInfo>();
 
         foreach (var item in list)

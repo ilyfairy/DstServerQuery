@@ -9,4 +9,6 @@ public class DstWebConfig
     public long? DstDefaultVersion { get; set; }
 
     public int? HistoryUpdateInterval { get; set; }
+    public int? DetailsUpdateInterval { get; set; }
+    public bool? IsDisabledInsertDatabase { get; set; }
 }

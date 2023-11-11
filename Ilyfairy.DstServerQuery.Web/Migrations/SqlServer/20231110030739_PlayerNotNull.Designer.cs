@@ -4,6 +4,7 @@ using Ilyfairy.DstServerQuery.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 {
     [DbContext(typeof(DstDbContext))]
-    partial class DstDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231110030739_PlayerNotNull")]
+    partial class PlayerNotNull
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -42,7 +45,7 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 
                     b.HasKey("Id");
 
-                    b.ToTable("DaysInfos", (string)null);
+                    b.ToTable("DaysInfos");
                 });
 
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstPlayer", b =>
@@ -59,7 +62,7 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 
                     b.HasKey("Id");
 
-                    b.ToTable("Players", (string)null);
+                    b.ToTable("Players");
                 });
 
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistory", b =>
@@ -96,7 +99,7 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 
                     b.HasKey("Id");
 
-                    b.ToTable("ServerHistories", (string)null);
+                    b.ToTable("ServerHistories");
                 });
 
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistoryItem", b =>
@@ -134,7 +137,7 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 
                     b.HasIndex("ServerId");
 
-                    b.ToTable("ServerHistoryItems", (string)null);
+                    b.ToTable("ServerHistoryItems");
                 });
 
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.HistoryServerItemPlayer", b =>
@@ -149,7 +152,7 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 
                     b.HasIndex("PlayerId");
 
-                    b.ToTable("HistoryServerItemPlayerPair", (string)null);
+                    b.ToTable("HistoryServerItemPlayerPair");
                 });
 
             modelBuilder.Entity("Ilyfairy.DstServerQuery.Models.Entities.ServerCountInfo", b =>
@@ -201,7 +204,7 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 
                     b.HasKey("Id");
 
-                    b.ToTable("ServerHistoryCountInfos", (string)null);
+                    b.ToTable("ServerHistoryCountInfos");
                 });
 
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities.DstServerHistoryItem", b =>

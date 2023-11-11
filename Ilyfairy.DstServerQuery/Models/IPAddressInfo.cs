@@ -11,7 +11,11 @@ namespace Ilyfairy.DstServerQuery.Models;
 public record class IPAddressInfo
 {
     public string IP { get; set; }
-    public string? IsoCode => CountryInfo?.IsoCode; // 两位数的ISO代码
+
+    /// <summary>
+    /// 两位数的ISO代码
+    /// </summary>
+    public string? IsoCode => CountryInfo?.IsoCode;
 
     [JsonIgnore]
     public Country? CountryInfo { get; set; }

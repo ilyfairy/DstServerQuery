@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
-namespace Ilyfairy.DstServerQuery.Web;
+namespace Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer;
 
 public class LobbyServerQueryerV1
 {
@@ -39,7 +39,7 @@ public class LobbyServerQueryerV1
         Result = LobbyDetailDatas.ToList();
         foreach (var item in queryKey)
         {
-            this.queryKeyValue[item.Key] = item.Value;
+            queryKeyValue[item.Key] = item.Value;
         }
     }
 
@@ -62,7 +62,7 @@ public class LobbyServerQueryerV1
         var opts = new JsonSerializerOptions(jsonSerializerOptions ?? new());
 
         var ipConv = opts.Converters.OfType<IPAddressReadConverter>().FirstOrDefault();
-        if(ipConv != null)
+        if (ipConv != null)
         {
             opts.Converters.Remove(ipConv);
         }
@@ -133,14 +133,14 @@ public class LobbyServerQueryerV1
 
         if (PropertiesRemove == null || PropertiesRemove.Count == 0)
         {
-            json.Add("List", JsonValue.Create<List<T>>(list));
+            json.Add("List", JsonValue.Create(list));
         }
         else
         {
             JsonArray array = new();
             foreach (var item in list)
             {
-                var obj = JsonSerializer.SerializeToNode<T>(item, jsonSerializerOptions)?.AsObject();
+                var obj = JsonSerializer.SerializeToNode(item, jsonSerializerOptions)?.AsObject();
                 if (obj is null) continue;
                 foreach (var property in PropertiesRemove)
                 {
@@ -409,31 +409,31 @@ public class LobbyServerQueryerV1
                     {
                         case "==":
                             if (isPer)
-                                Match((double)item.Connected / item.MaxConnections == (n / 100.0));
+                                Match((double)item.Connected / item.MaxConnections == n / 100.0);
                             else
                                 Match(item.Connected == n);
                             break;
                         case ">":
                             if (isPer)
-                                Match((double)item.Connected / item.MaxConnections > (n / 100.0));
+                                Match((double)item.Connected / item.MaxConnections > n / 100.0);
                             else
                                 Match(item.Connected > n);
                             break;
                         case "<":
                             if (isPer)
-                                Match((double)item.Connected / item.MaxConnections < (n / 100.0));
+                                Match((double)item.Connected / item.MaxConnections < n / 100.0);
                             else
                                 Match(item.Connected < n);
                             break;
                         case ">=":
                             if (isPer)
-                                Match((double)item.Connected / item.MaxConnections >= (n / 100.0));
+                                Match((double)item.Connected / item.MaxConnections >= n / 100.0);
                             else
                                 Match(item.Connected >= n);
                             break;
                         case "<=":
                             if (isPer)
-                                Match((double)item.Connected / item.MaxConnections <= (n / 100.0));
+                                Match((double)item.Connected / item.MaxConnections <= n / 100.0);
                             else
                                 Match(item.Connected <= n);
                             break;
@@ -575,7 +575,7 @@ public class LobbyServerQueryerV1
             if (IsSortDescending) Result = Result.OrderByDescending(v => v.Name).ToList();
             else Result = Result.OrderBy(v => v.Name).ToList();
         }
-        else if (string.Equals(sort, "Player") || string.Equals(sort, "PlayerCount") || string.Equals(sort, "ConnectionCount")|| string.Equals(sort, "Connected"))
+        else if (string.Equals(sort, "Player") || string.Equals(sort, "PlayerCount") || string.Equals(sort, "ConnectionCount") || string.Equals(sort, "Connected"))
         {
             if (IsSortDescending) Result = Result.OrderByDescending(v => v.Connected).ToList();
             else Result = Result.OrderBy(v => v.Connected).ToList();
@@ -688,12 +688,12 @@ public class LobbyServerQueryerV1
             if (tag.Contains(','))
             {
                 var tags = tag.Split(',');
-                var tmp = Result.Where(v => v.Tags.Any(t => tags.Contains(t)));
+                var tmp = Result.Where(v => v.Tags?.Any(t => tags.Contains(t)) == true);
                 ReAdd(tmp);
             }
             else
             {
-                var tmp = Result.Where(v => v.Tags.Contains(tag));
+                var tmp = Result.Where(v => v.Tags?.Contains(tag) == true);
                 ReAdd(tmp);
             }
         }
@@ -756,7 +756,7 @@ public class LobbyServerQueryerV1
     {
         if (GetQueryValue("Desc", "Describe") is string desc)
         {
-            var tmp = Result.Where(v => v.Description.Contains(desc));
+            var tmp = Result.Where(v => v.Description?.Contains(desc) == true);
             ReAdd(tmp);
         }
     }
@@ -865,7 +865,7 @@ public class LobbyServerQueryerV1
     {
         if (GetQueryValue("Netid", "OwnerNetid") is string ownerNetid)
         {
-            var tmp = Result.Where(v => v.Description.Contains(ownerNetid));
+            var tmp = Result.Where(v => v.Description?.Contains(ownerNetid) == true);
             ReAdd(tmp);
         }
 
@@ -880,12 +880,12 @@ public class LobbyServerQueryerV1
             if (modName.Contains('|'))
             {
                 var names = modName.Split('|');
-                var tmp = Result.Where(server => server.ModsInfo.Any(mod => names.Any(name => mod.Name.Contains(name, StringComparison.CurrentCultureIgnoreCase))));
+                var tmp = Result.Where(server => server.ModsInfo?.Any(mod => names.Any(name => mod.Name.Contains(name, StringComparison.CurrentCultureIgnoreCase))) == true);
                 ReAdd(tmp);
             }
             else
             {
-                var tmp = Result.Where(v => v.Tags.Contains(modName));
+                var tmp = Result.Where(v => v.Tags?.Contains(modName) == true);
                 ReAdd(tmp);
             }
         }
@@ -907,7 +907,7 @@ public class LobbyServerQueryerV1
                         ids.Add(id);
                     }
                 }
-                var tmp = Result.Where(server => server.ModsInfo.Any(mod => ids.Any(id => id == mod.Id)));
+                var tmp = Result.Where(server => server.ModsInfo?.Any(mod => ids.Any(id => id == mod.Id)) == true);
                 ReAdd(tmp);
             }
             else if (modId.Contains('|'))
@@ -954,13 +954,13 @@ public class LobbyServerQueryerV1
             //}
 
             season ??= seasonString switch
-                {
-                    "春" or "春天" => Season.Spring,
-                    "夏" or "夏天" => Season.Summer,
-                    "秋" or "秋天" => Season.Autumn,
-                    "冬" or "冬天" => Season.Winter,
-                    _ => null
-                };
+            {
+                "春" or "春天" => Season.Spring,
+                "夏" or "夏天" => Season.Summer,
+                "秋" or "秋天" => Season.Autumn,
+                "冬" or "冬天" => Season.Winter,
+                _ => null
+            };
 
             if (season == null) return;
             var tmp = Result.Where(v => v.Season == season);
