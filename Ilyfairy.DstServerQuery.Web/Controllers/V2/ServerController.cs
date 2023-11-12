@@ -195,7 +195,7 @@ public class ServerController : ControllerBase
                 LastUpdate = lobbyServerManager.LastUpdate,
                 AllCount = result.Count,
                 Count = current.Length,
-                CurrentPageIndex = query.PageIndex,
+                PageIndex = query.PageIndex,
                 DateTime = DateTime.Now,
                 MaxPageIndex = totalPageIndex,
             };

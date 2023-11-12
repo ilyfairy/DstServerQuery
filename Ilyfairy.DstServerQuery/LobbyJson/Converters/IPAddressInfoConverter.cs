@@ -31,7 +31,6 @@ public abstract class IPAddressReadConverter : JsonConverter<IPAddressInfo>
         }
 
         string? ip = reader.GetString();
-        //Console.WriteLine(ip);
         if (reader.TokenType != JsonTokenType.String || string.IsNullOrWhiteSpace(ip)) return null;
 
         IPAddressInfo info = new(ip.Trim());

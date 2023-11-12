@@ -37,7 +37,7 @@ public class DstHistoryService
         }
     }
 
-    private async void LobbyDetailsManager_Updated(object sender, DstUpdatedData e)
+    private async void LobbyDetailsManager_Updated(object sender, DstUpdatedEventArgs e)
     {
         if (e.Servers.Count == 0) return;
 

@@ -138,15 +138,20 @@ public class HistoryController : ControllerBase
     }
 
     /// <summary>
-    /// 获取所有历史玩家
+    /// 获取历史玩家
     /// </summary>
     /// <param name="name">玩家名</param>
     /// <param name="platform">平台</param>
+    /// <param name="pageIndex">页索引</param>
     /// <returns></returns>
     [HttpPost("GetPlayers")]
-    [ProducesResponseType<IEnumerable<PlayerInfoItem>>(200)]
-    public async Task<IActionResult> GetPlayers([FromQuery] string? name = null, [FromQuery] Platform? platform = null)
+    [ProducesResponseType<GetPlayersResponse>(200)]
+    public async Task<IActionResult> GetPlayers([FromQuery] string? name = null, [FromQuery] Platform? platform = null, [FromQuery] int pageIndex = 0)
     {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return DstResponse.BadRequest("'Name' is empty");
+        }
         Expression<Func<DstPlayer, bool>> playerExpression;
         if (name == null)
         {
@@ -167,9 +172,31 @@ public class HistoryController : ControllerBase
             platformExpression = player => player.Platform == platform;
         }
 
-        var players = await dbContext.Players.AsNoTracking().Where(playerExpression).Where(platformExpression).ToArrayAsync();
+        var pageCount = 100;
 
-        return new JsonResult(players.Select(v => PlayerInfoItem.From(v)));
+        var query = dbContext.Players.AsNoTracking().Where(playerExpression).Where(platformExpression);
+        var allCount = await query.CountAsync();
+        var maxPageIndex = (int)float.Ceiling((float)allCount / pageCount) - 1;
+
+        if (pageIndex < 0)
+            pageIndex = 0;
+        if(pageIndex > maxPageIndex)
+            pageIndex = maxPageIndex;
+
+        var players = await query
+            .Skip(pageIndex * pageCount)
+            .Take(pageCount)
+            .ToArrayAsync();
+
+        GetPlayersResponse response = new()
+        {
+            List = players.Select(PlayerInfoItem.From).ToArray(),
+            AllCount = allCount,
+            PageIndex = pageIndex,
+            MaxPageIndex = maxPageIndex,
+        };
+
+        return new JsonResult(response);
     }
 
     /// <summary>

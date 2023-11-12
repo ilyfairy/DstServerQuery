@@ -1,4 +1,5 @@
 ﻿using Ilyfairy.DstServerQuery.Models;
+using Serilog;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -25,7 +26,7 @@ public partial class LobbyModInfoConverter : JsonConverter<LobbyModInfo[]>
         }
         catch (Exception)
         {
-            Console.WriteLine("ModJson解析异常");
+            Log.Warning("ModJson解析异常");
             return null;
         }
         
@@ -54,13 +55,13 @@ public partial class LobbyModInfoConverter : JsonConverter<LobbyModInfo[]>
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Mod解析失败: {e.Message}");
+                    Log.Warning("Mod解析失败: {Message}", e.Message);
                 }
             }
         }
         else
         {
-            //Console.WriteLine("moditem不是5的倍数");
+            Log.Warning("ModItem不是5的倍数");
         }
         return infos.ToArray();
     }

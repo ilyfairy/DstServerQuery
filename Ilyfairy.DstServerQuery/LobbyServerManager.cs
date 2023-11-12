@@ -147,7 +147,7 @@ public class LobbyServerManager : IDisposable
             }
 
             serverCache = ServerMap.Values;
-            Updated?.Invoke(this, new DstUpdatedData(serverCache, false, DateTime.Now)
+            Updated?.Invoke(this, new DstUpdatedEventArgs(serverCache, false, DateTime.Now)
             {
                 UnchangedServers = unchanged,
                 AddedServers = added,
@@ -190,7 +190,7 @@ public class LobbyServerManager : IDisposable
                     var updated = await LobbyDownloader.UpdateToDetails(arr, HttpTokenSource.Token);
                     if (updated.Count > arr.Count * 0.8f) // 更新数量大于80%
                     {
-                        Updated?.Invoke(this, new DstUpdatedData(updated, true, LastUpdate));
+                        Updated?.Invoke(this, new DstUpdatedEventArgs(updated, true, LastUpdate));
                     }
 
                     _logger.Information("所有详细信息已更新 在{OriginCount}个中更新了{UpdateCount} 耗时:{ElapsedMilliseconds:0.00}分钟", arr.Count, updated.Count, s.ElapsedMilliseconds / 1000 / 60.0);
@@ -250,9 +250,9 @@ public class LobbyServerManager : IDisposable
 
 }
 
-public delegate void DstDataUpdatedHandler(object sender, DstUpdatedData e);
+public delegate void DstDataUpdatedHandler(object sender, DstUpdatedEventArgs e);
 
-public class DstUpdatedData : EventArgs
+public class DstUpdatedEventArgs : EventArgs
 {
     public ICollection<LobbyServerDetailed> Servers { get; init; }
     public ICollection<LobbyServer>? AddedServers { get; init; }
@@ -262,7 +262,7 @@ public class DstUpdatedData : EventArgs
     public bool IsDetailed { get; init; }
     public DateTime UpdatedDateTime { get; init; }
 
-    public DstUpdatedData(ICollection<LobbyServerDetailed> data, bool isDetailed, DateTime updatedDateTime)
+    public DstUpdatedEventArgs(ICollection<LobbyServerDetailed> data, bool isDetailed, DateTime updatedDateTime)
     {
         Servers = data;
         IsDetailed = isDetailed;

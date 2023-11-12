@@ -1,8 +1,8 @@
 ﻿using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Utils;
 using Neo.IronLua;
-using System;
 using System.Collections.Frozen;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -50,8 +50,10 @@ public class PlayersInfoConverter : JsonConverter<LobbyPlayerInfo[]>
             info.EventLevel = item.GetOptionalValue("eventlevel", -1, true);
             info.Name = item.GetOptionalValue("name", "", true); //玩家名
 
-            string netidtemp = item.GetOptionalValue("netid", "-1", true); //玩家ID
-            
+            string? netidtemp = item.GetOptionalValue("netid", default(string), true); //玩家ID
+
+            Debug.Assert(netidtemp != null, "玩家ID不明确");
+
             //分割ID只需要后半部分
             if (netidtemp.IndexOf(':') is int index && index != -1)
             {

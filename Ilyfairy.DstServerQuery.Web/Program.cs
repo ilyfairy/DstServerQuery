@@ -274,7 +274,7 @@ if (app.Environment.IsDevelopment())
 app.UseSwagger();
 app.UseSwaggerUI(options => 
 {
-    foreach (var description in app.DescribeApiVersions())
+    foreach (var description in app.DescribeApiVersions().Reverse())
     {
         var url = $"/swagger/{description.GroupName}/swagger.json";
         var name = description.GroupName.ToUpperInvariant();

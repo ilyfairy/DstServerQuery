@@ -1,6 +1,7 @@
 ﻿using Ilyfairy.DstServerQuery.Models.LobbyData;
 using MaxMind.GeoIP2;
 using MaxMind.GeoIP2.Responses;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +22,7 @@ public class GeoIPService
         }
         catch (Exception e)
         {
-            Console.WriteLine(e.Message);
+            Log.Error("GeoIP初始化异常", e.Message);
         }
     }
 
