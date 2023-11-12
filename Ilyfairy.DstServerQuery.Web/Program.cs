@@ -103,7 +103,7 @@ else
 //}
 #endregion
 
-builder.Services.AddResponseCompression(); //启用压缩
+//builder.Services.AddResponseCompression(); //启用压缩
 builder.Services.AddSingleton<HistoryCountManager>();
 builder.Services.AddSingleton(builder.Configuration.GetSection("DstConfig").Get<DstWebConfig>()!);
 builder.Services.AddSingleton<LobbyServerManager>();
@@ -158,11 +158,15 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    var xmlFileName = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlFilePath = Path.Combine(AppContext.BaseDirectory, xmlFileName);
-    if (File.Exists(xmlFilePath))
+    var currentXmlFilePath = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
+    if (File.Exists(currentXmlFilePath))
     {
-        options.IncludeXmlComments(xmlFilePath);
+        options.IncludeXmlComments(currentXmlFilePath);
+    }
+    var queryXmlFilePath = Path.Combine(AppContext.BaseDirectory, "Ilyfairy.DstServerQuery.xml");
+    if (File.Exists(queryXmlFilePath))
+    {
+        options.IncludeXmlComments(queryXmlFilePath);
     }
 });
 

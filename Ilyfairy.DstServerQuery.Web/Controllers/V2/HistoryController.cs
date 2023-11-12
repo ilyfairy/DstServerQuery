@@ -5,6 +5,7 @@ using Ilyfairy.DstServerQuery.LobbyJson;
 using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.Entities;
 using Ilyfairy.DstServerQuery.Services;
+using Ilyfairy.DstServerQuery.Web.Models;
 using Ilyfairy.DstServerQuery.Web.Models.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -45,7 +46,7 @@ public class HistoryController : ControllerBase
     /// <summary>
     /// 获取服务器历史记录个数
     /// </summary>
-    /// <param name="interval"></param>
+    /// <param name="interval">间隔</param>
     /// <param name="startDateTime">开始时间</param>
     /// <param name="endDateTime">结束时间</param>
     /// <returns></returns>
@@ -143,6 +144,7 @@ public class HistoryController : ControllerBase
     /// <param name="platform">平台</param>
     /// <returns></returns>
     [HttpPost("GetPlayers")]
+    [ProducesResponseType<IEnumerable<PlayerInfoItem>>(200)]
     public async Task<IActionResult> GetPlayers([FromQuery] string? name = null, [FromQuery] Platform? platform = null)
     {
         Expression<Func<DstPlayer, bool>> playerExpression;
@@ -167,18 +169,13 @@ public class HistoryController : ControllerBase
 
         var players = await dbContext.Players.AsNoTracking().Where(playerExpression).Where(platformExpression).ToArrayAsync();
 
-        return new JsonResult(players.Select(v => new
-        {
-            Id = v.Id,
-            Name = v.Name,
-            Platform = v.Platform.ToString(),
-        }));
+        return new JsonResult(players.Select(v => PlayerInfoItem.From(v)));
     }
 
     /// <summary>
     /// 获取玩家存在于哪个服务器中
     /// </summary>
-    /// <param name="playerId"></param>
+    /// <param name="playerId">玩家的NetId</param>
     /// <returns></returns>
     [HttpPost("GetPlayerServerHistory")]
     public async Task<IActionResult> GetPlayerServerHistory([FromQuery] string playerId)
@@ -224,7 +221,8 @@ public class HistoryController : ControllerBase
         if (server is null)
             return DstResponse.NotFound();
 
-        startDateTime ??= default;
+        if (startDateTime is null || startDateTime < DateTime.Now - TimeSpan.FromDays(3))
+            startDateTime = DateTime.Now - TimeSpan.FromDays(3);
         endDateTime ??= DateTime.Now;
 
         var items = await dbContext.ServerHistoryItems
@@ -239,7 +237,7 @@ public class HistoryController : ControllerBase
         ServerHistoryResponse json = new()
         {
             Server = server,
-            Items = items
+            Items = items.Select(v => ServerHistoryItem.From(v))
         };
 
         return new DstResponse(json);

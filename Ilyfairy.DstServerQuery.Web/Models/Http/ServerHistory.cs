@@ -6,5 +6,5 @@ namespace Ilyfairy.DstServerQuery.Web.Models.Http;
 public class ServerHistoryResponse
 {
     public required DstServerHistory Server { get; set; }
-    public required DstServerHistoryItem[] Items { get; set; }
+    public required IEnumerable<ServerHistoryItem> Items { get; set; }
 }

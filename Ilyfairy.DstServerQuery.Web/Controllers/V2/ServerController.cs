@@ -52,7 +52,7 @@ public class ServerController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet("Version")]
-    [ProducesResponseType(200, Type = typeof(string))]
+    [ProducesResponseType<string>(200)]
     public IActionResult GetServerVersionGet()
     {
         return Ok(dstVersionGetter.Version?.ToString() ?? "null");
@@ -79,7 +79,7 @@ public class ServerController : ControllerBase
     /// <param name="forceUpdate">是否强制刷新</param>
     /// <returns></returns>
     [HttpPost("Details/{id}")]
-    [ProducesResponseType(200, Type = typeof(ILobbyServerDetailedV2))]
+    [ProducesResponseType<ILobbyServerDetailedV2>(200)]
     public async Task<IActionResult> GetDetails(string id, [FromQuery] bool forceUpdate = false)
     {
         if (string.IsNullOrWhiteSpace(id))
@@ -110,7 +110,7 @@ public class ServerController : ControllerBase
     /// <param name="forceUpdate">是否强制刷新</param>
     /// <returns></returns>
     [HttpPost("Details")]
-    [ProducesResponseType(200, Type = typeof(ILobbyServerDetailedV2))]
+    [ProducesResponseType<ILobbyServerDetailedV2>(200)]
     public Task<IActionResult> GetDetailsFromQuery([FromQuery] string id, [FromQuery] bool forceUpdate = false) => GetDetails(id, forceUpdate);
 
 
@@ -154,7 +154,7 @@ public class ServerController : ControllerBase
     ///       
     /// </remarks>
     [HttpPost("List")]
-    [ProducesResponseType(200, Type = typeof(ListResponse<ILobbyServerDetailedV2>))]
+    [ProducesResponseType<ListResponse<ILobbyServerDetailedV2>>(200)]
     public IActionResult GetServerList([FromBody] QueryParams query)
     {
         var servers = lobbyServerManager.GetCurrentServers();

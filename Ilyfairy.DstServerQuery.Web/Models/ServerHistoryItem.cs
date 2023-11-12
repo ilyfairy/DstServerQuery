@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.Web.Models;
 
-public record ServerItem
+public record ServerHistoryItem
 {
     public string? Season { get; set; }
     public int PlayerCount { get; set; }
@@ -15,7 +15,7 @@ public record ServerItem
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public ICollection<DstPlayer>? Players { get; set; }
 
-    public static ServerItem From(DstServerHistoryItem item)
+    public static ServerHistoryItem From(DstServerHistoryItem item)
     {
         return new()
         {
