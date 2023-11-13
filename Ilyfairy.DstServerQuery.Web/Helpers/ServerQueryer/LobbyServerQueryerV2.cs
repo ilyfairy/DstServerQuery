@@ -18,8 +18,8 @@ public class LobbyServerQueryerV2
 
     private readonly long? latest;
 
-    public RegexOptions RegexOptions => queryParams.IgnoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
-    public StringComparison StringComparison => queryParams.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+    public RegexOptions RegexOptions => queryParams.IgnoreCase is null or true ? RegexOptions.IgnoreCase : RegexOptions.None;
+    public StringComparison StringComparison => queryParams.IgnoreCase is null or true ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
     public LobbyServerQueryerV2(QueryParams queryParams, ICollection<LobbyServerDetailed> servers, long? latest = null)
     {
@@ -64,62 +64,76 @@ public class LobbyServerQueryerV2
 
     private void HandleSort()
     {
+        current = current.OrderByDescending(v => v.Name.GetHashCode());
         if (queryParams.Sort is null || queryParams.Sort.Value.Value is null)
-        {
-            if (queryParams.IsDescending)
-                current = current.OrderBy(v => v.Name.GetHashCode());
-            else
-                current = current.OrderByDescending(v => v.Name.GetHashCode());
             return;
-        }
 
         var sort = queryParams.Sort.Value;
 
         var sorts = sort.Value.Where(v => v is not null).Take(10).ToArray();
-
-        void HandleOrder<T>(Func<LobbyServerDetailed, T> func)
-        {
-            if (queryParams.IsDescending)
-            {
-                current = current.OrderByDescending(func);
-            }
-            else
-            {
-                current = current.OrderBy(func);
-            }
-        }
-
+    
         foreach (var item in sorts)
         {
-            if (string.Equals("ServerName", item, StringComparison.OrdinalIgnoreCase))
+            string? sortName = item;
+            bool isDesc = false;
+
+            if (item is ['+', .. var val])
+            {
+                sortName = val;
+                isDesc = false;
+            }
+            else if (item is ['-', .. var val2])
+            {
+                sortName = val2;
+                isDesc = true;
+            }
+
+            void HandleOrder<T>(Func<LobbyServerDetailed, T> func)
+            {
+                if (isDesc)
+                {
+                    current = current.OrderByDescending(func);
+                }
+                else
+                {
+                    current = current.OrderBy(func);
+                }
+            }
+
+
+            if (string.IsNullOrWhiteSpace(sortName) || string.Equals("HashCode", sortName, StringComparison.OrdinalIgnoreCase))
             {
                 HandleOrder(v => v.Name);
             }
-            else if (string.Equals("Connected", item, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals("ServerName", sortName, StringComparison.OrdinalIgnoreCase))
+            {
+                HandleOrder(v => v.Name);
+            }
+            else if (string.Equals("Connected", sortName, StringComparison.OrdinalIgnoreCase))
             {
                 HandleOrder(v => v.Connected);
             }
-            else if (string.Equals("MaxConnections", item, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals("MaxConnections", sortName, StringComparison.OrdinalIgnoreCase))
             {
                 HandleOrder(v => v.MaxConnections);
             }
-            else if (string.Equals("Season", item, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals("Season", sortName, StringComparison.OrdinalIgnoreCase))
             {
                 HandleOrder(v => v.Season.Value);
             }
-            else if (string.Equals("Mode", item, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals("Mode", sortName, StringComparison.OrdinalIgnoreCase))
             {
                 HandleOrder(v => v.Mode.Value);
             }
-            else if (string.Equals("IP", item, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals("IP", sortName, StringComparison.OrdinalIgnoreCase))
             {
                 HandleOrder(v => v.Address.IP);
             }
-            else if (string.Equals("Intent", item, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals("Intent", sortName, StringComparison.OrdinalIgnoreCase))
             {
                 HandleOrder(v => v.Intent.Value);
             }
-            else if (string.Equals("Port", item, StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals("Port", sortName, StringComparison.OrdinalIgnoreCase))
             {
                 HandleOrder(v => v.Port);
             }
@@ -706,33 +720,30 @@ public class QueryParams
     /// <summary>
     /// 每页数量
     /// </summary>
-    public int PageCount { get; set; } = 100;
+    public int? PageCount { get; set; } = 100;
     /// <summary>
     /// 页索引
     /// </summary>
-    public int PageIndex { get; set; }
+    public int? PageIndex { get; set; }
 
     /// <summary>
     /// 是否忽略大小写
     /// </summary>
-    public bool IgnoreCase { get; set; } = true;
+    public bool? IgnoreCase { get; set; } = true;
 
     /// <summary>
     /// 是否获取详细信息
     /// </summary>
-    public bool IsDetailed { get; set; } = false;
+    public bool? IsDetailed { get; set; } = false;
 
 
     /// <summary>
-    /// 排序, 默认根据字符串HashCode从小到大排序<br/>
-    /// 可以使用|分割,进行多个排序
+    /// 排序, 默认根据字符串HashCode升序排序<br/>
+    /// 可以使用|分割,进行多个排序, 使用+-前缀代表升序或者降序排序<br/>
+    /// IsExclude属性无效
     /// </summary>
+    [JsonConverter(typeof(StringArrayJsonConverter))]
     public StringArray? Sort { get; set; }
-
-    /// <summary>
-    /// 是否逆序排序
-    /// </summary>
-    public bool IsDescending { get; set; }
 
     /// <summary>
     /// 服务器名

@@ -171,21 +171,24 @@ public class ServerController : ControllerBase
             return DstResponse.BadRequest(ex.Message);
         }
 
-        if (query.PageCount > 1000)
-            query.PageCount = 1000;
-        if (query.PageCount < 1)
-            query.PageCount = 1;
+        int pageCount = query.PageCount ?? 100;
+        int pageIndex = query.PageIndex ?? 0;
+
+        if (pageCount > 1000)
+            pageCount = 1000;
+        if (pageCount < 1)
+            pageCount = 1;
 
         if (query.PageIndex < 0)
             query.PageIndex = 0;
-
-        var totalPageIndex = (int)Math.Ceiling((float)result.Count / query.PageCount) - 1;
+        
+        var totalPageIndex = (int)Math.Ceiling((float)result.Count / pageCount) - 1;
         if (query.PageIndex > totalPageIndex)
             query.PageIndex = totalPageIndex;
         if (totalPageIndex < 0)
             totalPageIndex = 0;
 
-        var current = result.Skip(query.PageCount * query.PageIndex).Take(query.PageCount).ToArray();
+        var current = result.Skip(pageCount * pageIndex).Take(pageCount).ToArray();
 
         ListResponse<T> CreateResponse<T>() where T : ILobbyServerV2
         {
@@ -195,14 +198,14 @@ public class ServerController : ControllerBase
                 LastUpdate = lobbyServerManager.LastUpdate,
                 AllCount = result.Count,
                 Count = current.Length,
-                PageIndex = query.PageIndex,
+                PageIndex = pageIndex,
                 DateTime = DateTime.Now,
                 MaxPageIndex = totalPageIndex,
             };
         }
 
         object resonse;
-        if (query.IsDetailed)
+        if (query.IsDetailed is true)
         {
             resonse = CreateResponse<ILobbyServerDetailedV2>();
         }
