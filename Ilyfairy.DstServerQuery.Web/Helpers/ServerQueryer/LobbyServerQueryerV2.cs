@@ -180,7 +180,7 @@ public class LobbyServerQueryerV2
         }
         else
         {
-            current = servers.Where(v => playerName.IsExclude ^ v.Name.Contains(playerName.Value, StringComparison));
+            current = servers.Where(v => playerName.IsExclude ^ (v.Players is not null && v.Players.Any(p => p.Name.Contains(playerName.Value))));
         }
     }
 
