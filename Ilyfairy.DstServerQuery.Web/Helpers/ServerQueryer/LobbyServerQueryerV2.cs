@@ -196,6 +196,9 @@ public class LobbyServerQueryerV2
 
         string versionString = queryParams.Version;
 
+        if (versionString is "string")
+            return;
+
         if (string.Equals(versionString, "latest", StringComparison.OrdinalIgnoreCase))
         {
             if (latest == null) return;
@@ -269,6 +272,9 @@ public class LobbyServerQueryerV2
         if (queryParams.IP is null)
             return;
 
+        if (queryParams.IP is "string")
+            return;
+
         if (IPAddress.TryParse(queryParams.IP, out var ipAddress))
         {
             current = current.Where(v => v.Address.IP == queryParams.IP);
@@ -320,13 +326,13 @@ public class LobbyServerQueryerV2
         var platformString = queryParams.Platform.Value;
 
         if (platformString.Value is null)
-        {
             return;
-        }
 
         if (platformString.Value.Length == 0)
             return;
 
+        if (platformString.Value is ["string"])
+            return;
 
         Platform[] platforms = platformString.Value.Select(v =>
         {
@@ -422,11 +428,12 @@ public class LobbyServerQueryerV2
         var modsId = queryParams.ModsId.Value;
 
         if (modsId.Value is null)
-        {
             return;
-        }
 
         if (modsId.Value.Length == 0)
+            return;
+
+        if (modsId.Value is ["string"])
             return;
 
         long[] modsIds;
@@ -436,7 +443,7 @@ public class LobbyServerQueryerV2
         }
         catch (Exception)
         {
-            throw new QueryArgumentException("id format error");
+            throw new QueryArgumentException("'ModsId' format error");
         }
 
         current = current.Where(v => modsId.IsExclude ^ modsIds.Any(id => v.ModsInfo?.Any(m => m.Id == id) == true));
@@ -473,6 +480,9 @@ public class LobbyServerQueryerV2
 
         string daysString = queryParams.Days;
 
+        if (daysString is "string")
+            return;
+
         Match match = Regex.Match(daysString, @"(?<op>.*?)(?<days>\d+)");
         if (!match.Success)
         {
@@ -502,6 +512,9 @@ public class LobbyServerQueryerV2
             return;
 
         string daysInSeasonString = queryParams.DaysInSeason;
+
+        if (daysInSeasonString is "string")
+            return;
 
         Match match = Regex.Match(daysInSeasonString, @"(?<op>.*?)(?<daysInSeason>\d+)(?<percent>%?)");
         if (!match.Success)
@@ -581,6 +594,9 @@ public class LobbyServerQueryerV2
 
         string maxConnectionString = queryParams.MaxConnections;
 
+        if (maxConnectionString is "string")
+            return;
+
         Match match = Regex.Match(maxConnectionString, @"(?<op>.*?)(?<maxConnections>\d+)");
         if (!match.Success)
         {
@@ -610,6 +626,9 @@ public class LobbyServerQueryerV2
             return;
 
         string connectedString = queryParams.Connected;
+
+        if (connectedString is "string")
+            return;
 
         Match match = Regex.Match(connectedString, @"(?<op>.*?)(?<connected>\d+)(?<percent>%?)");
         if (!match.Success)
