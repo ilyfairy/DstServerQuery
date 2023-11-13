@@ -28,7 +28,6 @@ public partial class ApiController : ControllerBase
     private readonly DstJsonOptions dstJsonOptions;
     private readonly JsonSerializerOptions v1JsonOptions = new JsonSerializerOptions()
     {
-        Converters = { new DateTimeJsonConverter() },
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 

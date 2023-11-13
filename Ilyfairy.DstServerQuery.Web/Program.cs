@@ -148,7 +148,7 @@ builder.Services.AddControllers()
     .AddJsonOptions(opt =>
 {
     //默认Json序列化选项
-    opt.JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
+    //opt.JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
     opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     opt.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     opt.JsonSerializerOptions.PropertyNamingPolicy = null;
