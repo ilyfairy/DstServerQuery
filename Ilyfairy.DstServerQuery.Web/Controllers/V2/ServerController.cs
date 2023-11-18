@@ -21,7 +21,6 @@ namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
 [ApiController]
 [ApiVersion(2.0)]
 [Route("api/v{version:apiVersion}/[controller]")]
-[Produces("application/json")]
 [EnableRateLimiting("fixed")]
 public class ServerController : ControllerBase
 {
@@ -55,6 +54,7 @@ public class ServerController : ControllerBase
     /// <returns></returns>
     [HttpGet("Version")]
     [ProducesResponseType<string>(200)]
+    [Produces("text/plain")]
     public IActionResult GetServerVersionGet()
     {
         return Ok(dstVersionGetter.Version?.ToString() ?? "null");
@@ -65,6 +65,7 @@ public class ServerController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpPost("Version")]
+    [Produces("application/json")]
     public IActionResult GetServerVersionPost()
     {
         return new DstResponse(new
@@ -82,6 +83,7 @@ public class ServerController : ControllerBase
     /// <returns></returns>
     [HttpPost("Details/{id}")]
     [ProducesResponseType<ILobbyServerDetailedV2>(200)]
+    [Produces("application/json")]
     public async Task<IActionResult> GetDetails(string id, [FromQuery] bool forceUpdate = false)
     {
         if (string.IsNullOrWhiteSpace(id))
@@ -113,6 +115,7 @@ public class ServerController : ControllerBase
     /// <returns></returns>
     [HttpPost("Details")]
     [ProducesResponseType<ILobbyServerDetailedV2>(200)]
+    [Produces("application/json")]
     public Task<IActionResult> GetDetailsFromQuery([FromQuery] string id, [FromQuery] bool forceUpdate = false) => GetDetails(id, forceUpdate);
 
 
@@ -157,6 +160,7 @@ public class ServerController : ControllerBase
     /// </remarks>
     [HttpPost("List")]
     [ProducesResponseType<ListResponse<ILobbyServerDetailedV2>>(200)]
+    [Produces("application/json")]
     public IActionResult GetServerList([FromBody] QueryParams? query = null)
     {
         var servers = lobbyServerManager.GetCurrentServers();
@@ -233,6 +237,7 @@ public class ServerController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpPost("GetPrefabs")]
+    [Produces("application/json")]
     public IActionResult GetPrefabs()
     {
         var servers = lobbyServerManager.GetCurrentServers();

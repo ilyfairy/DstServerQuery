@@ -1,4 +1,5 @@
 //入口点
+using AspNetCoreRateLimit;
 using Ilyfairy.DstServerQuery;
 using Ilyfairy.DstServerQuery.EntityFrameworkCore;
 using Ilyfairy.DstServerQuery.LobbyJson;
@@ -106,6 +107,8 @@ else
 //}
 #endregion
 
+builder.Services.AddMemoryCache();
+
 builder.Services.AddSingleton<HistoryCountManager>();
 builder.Services.AddSingleton(builder.Configuration.GetSection("DstConfig").Get<DstWebConfig>()!);
 builder.Services.AddSingleton<LobbyServerManager>();
@@ -116,15 +119,22 @@ builder.Services.AddSingleton<DstJsonOptions>();
 builder.Services.AddSingleton<DstHistoryService>();
 builder.Services.AddSingleton<LobbyDownloader>();
 
-//速率限制
-builder.Services.AddRateLimiter(_ => _
-    .AddFixedWindowLimiter(policyName: "fixed", options =>
-    {
-        options.PermitLimit = builder.Configuration.GetSection("LimitCount").Get<int>();
-        options.Window = TimeSpan.FromSeconds(builder.Configuration.GetSection("LimitTime").Get<int>());
-        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        options.QueueLimit = 2;
-    }));
+//IP速率限制
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.Configure<IpRateLimitPolicies>(builder.Configuration.GetSection("IpRateLimitPolicies"));
+
+builder.Services.AddInMemoryRateLimiting();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
+////速率限制
+//builder.Services.AddRateLimiter(_ => _
+//    .AddFixedWindowLimiter(policyName: "fixed", options =>
+//    {
+//        options.PermitLimit = builder.Configuration.GetSection("LimitCount").Get<int>();
+//        options.Window = TimeSpan.FromSeconds(builder.Configuration.GetSection("LimitTime").Get<int>());
+//        options.QueueProcessingOrder = QueueProcessingOrder.NewestFirst;
+//        options.QueueLimit = 2;
+//    }));
 
 //配置压缩
 builder.Services.AddResponseCompression(options =>
@@ -219,7 +229,8 @@ app.Use(async (v,next) =>
 app.UseResponseCompression();
 //app.UseSerilogRequestLogging();
 
-app.UseRateLimiter(); // 速率限制
+//app.UseRateLimiter(); // 速率限制
+app.UseIpRateLimiting(); // IP速率限制
 
 app.Lifetime.ApplicationStarted.Register(async () =>
 {
