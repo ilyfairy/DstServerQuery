@@ -8,6 +8,7 @@ using Ilyfairy.DstServerQuery.Models.Requests;
 using Ilyfairy.DstServerQuery.Services;
 using Ilyfairy.DstServerQuery.Web;
 using Ilyfairy.DstServerQuery.Web.Services;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -103,7 +104,6 @@ else
 //}
 #endregion
 
-//builder.Services.AddResponseCompression(); //启用压缩
 builder.Services.AddSingleton<HistoryCountManager>();
 builder.Services.AddSingleton(builder.Configuration.GetSection("DstConfig").Get<DstWebConfig>()!);
 builder.Services.AddSingleton<LobbyServerManager>();
@@ -113,6 +113,15 @@ builder.Services.AddSingleton<GeoIPService>();
 builder.Services.AddSingleton<DstJsonOptions>();
 builder.Services.AddSingleton<DstHistoryService>();
 builder.Services.AddSingleton<LobbyDownloader>();
+
+//配置压缩
+builder.Services.AddResponseCompression(options =>
+{
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(v => v.Level = System.IO.Compression.CompressionLevel.Optimal);
+builder.Services.Configure<GzipCompressionProviderOptions>(v => v.Level = System.IO.Compression.CompressionLevel.Optimal);
 
 //配置跨域请求
 builder.Services.AddCors(options =>
@@ -195,7 +204,7 @@ app.Use(async (v,next) =>
     await next();
 });
 
-//app.UseResponseCompression();
+app.UseResponseCompression();
 //app.UseSerilogRequestLogging();
 
 
@@ -280,7 +289,6 @@ app.UseSwaggerUI(options =>
         var name = description.GroupName.ToUpperInvariant();
         options.SwaggerEndpoint(url, name);
     }
-    
 });
 
 app.Use(async (context, next) =>
