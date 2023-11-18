@@ -24,12 +24,12 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
     //TODO: 未完成
     [JsonPropertyName("slaves")]
     [JsonConverter(typeof(WorldLevelConverter))]
-    public object? Slaves { get; set; } //json
+    public Dictionary<string, LobbyWorldLevel>? Slaves { get; set; } //json
 
     //TODO: 未完成
     [JsonPropertyName("secondaries")]
     [JsonConverter(typeof(WorldLevelConverter))]
-    public object? Secondaries { get; set; } //json
+    public Dictionary<string, LobbyWorldLevel>? Secondaries { get; set; } //json
 
     [JsonPropertyName("clanonly")]
     public bool ClanOnly { get; set; } //仅限steam群组成员加入

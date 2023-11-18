@@ -8,6 +8,7 @@ using Ilyfairy.DstServerQuery.Models.Requests;
 using Ilyfairy.DstServerQuery.Services;
 using Ilyfairy.DstServerQuery.Web;
 using Ilyfairy.DstServerQuery.Web.Services;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -16,6 +17,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -114,6 +116,16 @@ builder.Services.AddSingleton<DstJsonOptions>();
 builder.Services.AddSingleton<DstHistoryService>();
 builder.Services.AddSingleton<LobbyDownloader>();
 
+//速率限制
+builder.Services.AddRateLimiter(_ => _
+    .AddFixedWindowLimiter(policyName: "fixed", options =>
+    {
+        options.PermitLimit = builder.Configuration.GetSection("LimitCount").Get<int>();
+        options.Window = TimeSpan.FromSeconds(builder.Configuration.GetSection("LimitTime").Get<int>());
+        options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        options.QueueLimit = 2;
+    }));
+
 //配置压缩
 builder.Services.AddResponseCompression(options =>
 {
@@ -207,6 +219,7 @@ app.Use(async (v,next) =>
 app.UseResponseCompression();
 //app.UseSerilogRequestLogging();
 
+app.UseRateLimiter(); // 速率限制
 
 app.Lifetime.ApplicationStarted.Register(async () =>
 {

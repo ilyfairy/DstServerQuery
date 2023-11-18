@@ -6,7 +6,7 @@ namespace Ilyfairy.DstServerQuery.Models.Entities;
 /// <summary>
 /// 服务器数量信息
 /// </summary>
-public class ServerCountInfo
+public record ServerCountInfo
 {
     [Key, JsonIgnore]
     public int Id { get; set; }

@@ -9,6 +9,7 @@ using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
 using Ilyfairy.DstServerQuery.Services;
 using Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Net.Mime;
 using System.Text.Json;
 
@@ -18,6 +19,7 @@ namespace Ilyfairy.DstServerQuery.Web.Controllers.V1;
 [ApiVersion(1.0)]
 [Route("api/v{version:apiVersion}")]
 [Route("api")]
+[EnableRateLimiting("fixed")]
 public partial class ApiController : ControllerBase
 {
     private readonly ILogger<ApiController> _logger;

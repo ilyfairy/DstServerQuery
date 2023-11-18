@@ -1,19 +1,19 @@
-﻿using System.Text.Json;
+﻿using Ilyfairy.DstServerQuery.Models;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.LobbyJson.Converter;
 
-public class WorldLevelConverter : JsonConverter<object>
+public class WorldLevelConverter : JsonConverter<Dictionary<string, LobbyWorldLevel>>
 {
-    public override object? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override Dictionary<string, LobbyWorldLevel>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        _ = JsonNode.Parse(ref reader);
-        return null;
+        return JsonSerializer.Deserialize<Dictionary<string, LobbyWorldLevel>>(ref reader);
     }
 
-    public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, Dictionary<string, LobbyWorldLevel> value, JsonSerializerOptions options)
     {
-        writer.WriteNullValue();
+        JsonSerializer.Serialize(writer, value);
     }
 }

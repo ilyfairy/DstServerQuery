@@ -43,7 +43,7 @@ public class HistoryCountManager
         var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
         
         var day3 = DateTime.Now - TimeSpan.FromDays(3); //三天前
-        var r = dbContext.ServerHistoryCountInfos.Where(v => v.UpdateDate > day3).ToArray();
+        var r = dbContext.ServerHistoryCountInfos.Where(v => v.UpdateDate > day3).AsNoTracking().ToArray();
         foreach (var item in r)
         {
             cache.Enqueue(item);

@@ -15,12 +15,12 @@ public interface ILobbyServerDetailedV2 : ILobbyServerWithPlayerV2
     //TODO: 未完成
     [JsonPropertyName("Slaves")]
     [JsonConverter(typeof(WorldLevelConverter))]
-    public object? Slaves { get; set; } //json
+    public Dictionary<string, LobbyWorldLevel>? Slaves { get; set; } //json
 
     //TODO: 未完成
     [JsonPropertyName("Secondaries")]
     [JsonConverter(typeof(WorldLevelConverter))]
-    public object? Secondaries { get; set; } //json
+    public Dictionary<string, LobbyWorldLevel>? Secondaries { get; set; } //json
 
     [JsonPropertyName("ClanOnly")]
     public bool ClanOnly { get; set; } //仅限steam群组成员加入

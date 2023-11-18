@@ -8,6 +8,7 @@ using Ilyfairy.DstServerQuery.Services;
 using Ilyfairy.DstServerQuery.Web.Models;
 using Ilyfairy.DstServerQuery.Web.Models.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -17,6 +18,7 @@ namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
 [ApiVersion(2.0)]
 [Route("api/v{version:apiVersion}/[controller]")]
 [Produces("application/json")]
+[EnableRateLimiting("fixed")]
 public class HistoryController : ControllerBase
 {
     private readonly ILogger _logger;

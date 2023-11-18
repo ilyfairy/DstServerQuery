@@ -9,6 +9,7 @@ using Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer;
 using Ilyfairy.DstServerQuery.Web.Models;
 using Ilyfairy.DstServerQuery.Web.Models.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Net.Mime;
 using System.Text.Json;
 
@@ -21,6 +22,7 @@ namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
 [ApiVersion(2.0)]
 [Route("api/v{version:apiVersion}/[controller]")]
 [Produces("application/json")]
+[EnableRateLimiting("fixed")]
 public class ServerController : ControllerBase
 {
     private readonly ILogger _logger;

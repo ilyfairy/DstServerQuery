@@ -41,7 +41,7 @@ public class PlayersInfoConverter : JsonConverter<LobbyPlayerInfo[]>
             return [];
         }
         
-        List<LobbyPlayerInfo> list = new(8);
+        List<LobbyPlayerInfo> list = new(table.Length);
         foreach (var item in table.Select(v => v.Value as LuaTable))
         {
             if (item is null) continue;
