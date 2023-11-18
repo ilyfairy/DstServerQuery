@@ -137,6 +137,14 @@ public class LobbyServerQueryerV2
             {
                 HandleOrder(v => v.Port);
             }
+            else if (string.Equals("Days", sortName, StringComparison.OrdinalIgnoreCase))
+            {
+                HandleOrder(v => v.DaysInfo?.Day ?? 0);
+            }
+            else if (string.Equals("DaysInSeason", sortName, StringComparison.OrdinalIgnoreCase))
+            {
+                HandleOrder(v => v.DaysInfo?.DaysElapsedInSeason ?? 0);
+            }
         }
 
     }

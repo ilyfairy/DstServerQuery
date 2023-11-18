@@ -61,7 +61,7 @@ public partial class LobbyModInfoConverter : JsonConverter<LobbyModInfo[]>
         }
         else
         {
-            Log.Warning("ModItem不是5的倍数");
+            //Log.Warning("ModItem不是5的倍数");
         }
         return infos.ToArray();
     }

@@ -5,7 +5,7 @@ namespace Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer.JsonConverters;
 
 public class StringSplitConverter : JsonConverter<string?[]>
 {
-    public static char[] SplitChars { get; } = [';', '|'];
+    public static char[] SplitChars { get; } = [';', '|', ','];
 
     public static StringSplitConverter Instance { get; } = new();
 
@@ -14,7 +14,9 @@ public class StringSplitConverter : JsonConverter<string?[]>
         if (reader.TokenType == JsonTokenType.String)
         {
             var str = reader.GetString()!;
-            return str.Split(SplitChars);
+            return str.Split(SplitChars, StringSplitOptions.RemoveEmptyEntries)
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .ToArray();
         }
         else if(reader.TokenType == JsonTokenType.StartArray)
         {

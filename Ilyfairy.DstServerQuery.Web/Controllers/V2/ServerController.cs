@@ -155,9 +155,11 @@ public class ServerController : ControllerBase
     /// </remarks>
     [HttpPost("List")]
     [ProducesResponseType<ListResponse<ILobbyServerDetailedV2>>(200)]
-    public IActionResult GetServerList([FromBody] QueryParams query)
+    public IActionResult GetServerList([FromBody] QueryParams? query = null)
     {
         var servers = lobbyServerManager.GetCurrentServers();
+
+        query ??= new();
 
         LobbyServerQueryerV2 queryer = new(query, servers, dstVersionGetter.Version);
 
@@ -179,12 +181,12 @@ public class ServerController : ControllerBase
         if (pageCount < 1)
             pageCount = 1;
 
-        if (query.PageIndex < 0)
-            query.PageIndex = 0;
+        if (pageIndex < 0)
+            pageIndex = 0;
         
         var totalPageIndex = (int)Math.Ceiling((float)result.Count / pageCount) - 1;
-        if (query.PageIndex > totalPageIndex)
-            query.PageIndex = totalPageIndex;
+        if (pageIndex > totalPageIndex)
+            pageIndex = totalPageIndex;
         if (totalPageIndex < 0)
             totalPageIndex = 0;
 

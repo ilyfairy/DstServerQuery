@@ -42,4 +42,9 @@ public class ListResponse<T> where T : ILobbyServerV2
     /// 服务器列表
     /// </summary>
     public IEnumerable<T> List { get; set; } = Array.Empty<T>();
+
+    /// <summary>
+    /// 响应码
+    /// </summary>
+    public int Code { get; set; }
 }
