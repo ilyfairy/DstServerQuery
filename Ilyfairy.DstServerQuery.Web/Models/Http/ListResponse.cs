@@ -27,7 +27,7 @@ public class ListResponse<T> : ResponseBase where T : ILobbyServerV2
     /// <summary>
     /// 所有个数
     /// </summary>
-    public int AllCount { get; set; }
+    public int TotalCount { get; set; }
 
     /// <summary>
     /// 当前页索引

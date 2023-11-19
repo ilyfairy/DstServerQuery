@@ -10,7 +10,7 @@ public class GetPlayersResponse : ResponseBase
     /// <summary>
     /// 所有个数
     /// </summary>
-    public required int AllCount { get; set; }
+    public required int TotalCount { get; set; }
 
     /// <summary>
     /// 当前页个数

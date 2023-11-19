@@ -202,7 +202,7 @@ public class ServerController : ControllerBase
             {
                 List = current.Cast<T>(),
                 LastUpdate = lobbyServerManager.LastUpdate,
-                AllCount = result.Count,
+                TotalCount = result.Count,
                 Count = current.Length,
                 PageIndex = pageIndex,
                 DateTime = DateTime.Now,

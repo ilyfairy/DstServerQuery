@@ -193,7 +193,7 @@ public class HistoryController : ControllerBase
         GetPlayersResponse response = new()
         {
             List = players.Select(PlayerInfoItem.From).ToArray(),
-            AllCount = allCount,
+            TotalCount = allCount,
             PageIndex = pageIndex,
             MaxPageIndex = maxPageIndex,
         };
