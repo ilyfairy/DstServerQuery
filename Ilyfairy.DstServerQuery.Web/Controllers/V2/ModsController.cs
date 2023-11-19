@@ -1,5 +1,7 @@
 ﻿using Asp.Versioning;
 using Ilyfairy.DstServerQuery.Models;
+using Ilyfairy.DstServerQuery.Web.Models;
+using Ilyfairy.DstServerQuery.Web.Models.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -37,20 +39,15 @@ public class ModsController : ControllerBase
         var group = mods.GroupBy(v => v.Id).Select(v =>
         {
             var mod = v.First();
-            return new
-            {
-                Mod = new
-                {
-                    Id = mod.Id,
-                    Name = mod.Name,
-                },
-                Count = v.Count(),
-            };
+            return new DstModCount(mod.Id,mod.Name,v.Count());
         });
 
         var r = group.OrderByDescending(v => v.Count);
 
-        return new JsonResult(r.Take(maxCount));
+        DstModsUsageResponse response = new();
+        response.Mods = r.Take(maxCount);
+        
+        return response.ToJsonResult();
     }
 
     
@@ -61,22 +58,18 @@ public class ModsController : ControllerBase
     [HttpPost("GetNames")]
     public IActionResult GetNames()
     {
-        //_logger.Info("获取Mod个数 TopCount{0}", maxCount);
         var list = lobbyDetailsManager.GetCurrentServers();
 
         IEnumerable<string> mods = list.SelectMany(v => v.ModsInfo ?? []).Select(v => v.Name);
 
-        var group = mods.GroupBy(v => v).Select(v =>
-        new
-        {
-            Name = v.Key,
-            Count = v.Count(),
-        });
+        var group = mods.GroupBy(v => v).Select(v => new DstModNameCount(v.Key, v.Count()));
 
         var r = group.OrderByDescending(v => v.Count);
 
-        return new JsonResult(r);
-    }
+        DstModsNameUsageResponse response = new();
+        response.Mods = r;
 
+        return response.ToJsonResult();
+    }
 
 }

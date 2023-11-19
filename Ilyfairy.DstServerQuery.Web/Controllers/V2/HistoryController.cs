@@ -64,7 +64,7 @@ public class HistoryController : ControllerBase
 
         if (end - start > TimeSpan.FromDays(3) || start - end < default(TimeSpan))
         {
-            return DstResponse.BadRequest();
+            return ResponseBase.BadRequest();
         }
 
         DateTime currentDateTime = start;
@@ -131,12 +131,12 @@ public class HistoryController : ControllerBase
             result.Add(r[^1]);
         }
 
-        var json = new ServerCountHistory()
+        var json = new ServerCountHistoryResponse()
         {
             List = result
         };
 
-        return new DstResponse(json);
+        return json.ToJsonResult();
     }
 
     /// <summary>
@@ -152,7 +152,7 @@ public class HistoryController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            return DstResponse.BadRequest("'Name' is empty");
+            return ResponseBase.BadRequest("'Name' is empty");
         }
         Expression<Func<DstPlayer, bool>> playerExpression;
         if (name == null)
@@ -198,7 +198,7 @@ public class HistoryController : ControllerBase
             MaxPageIndex = maxPageIndex,
         };
 
-        return new JsonResult(response);
+        return response.ToJsonResult();
     }
 
     /// <summary>
@@ -211,13 +211,14 @@ public class HistoryController : ControllerBase
     {
         if (string.IsNullOrEmpty(playerId))
         {
-            return DstResponse.BadRequest();
+            return ResponseBase.BadRequest();
         }
 
         var servers = await dbContext.HistoryServerItemPlayerPair
             .AsNoTracking()
             .Where(v => v.PlayerId == playerId)
             .Select(v => v.HistoryServerItem.ServerId)
+            .Distinct()
             .ToArrayAsync();
 
         PlayerServerHistoryResponse json = new()
@@ -225,7 +226,7 @@ public class HistoryController : ControllerBase
             Servers = servers,
         };
 
-        return new DstResponse(json);
+        return json.ToJsonResult();
     }
 
     /// <summary>
@@ -241,14 +242,14 @@ public class HistoryController : ControllerBase
     {
         if (string.IsNullOrEmpty(rowId))
         {
-            return DstResponse.BadRequest();
+            return ResponseBase.BadRequest();
         }
 
         var server = await dbContext.ServerHistories
             .FirstOrDefaultAsync(v => v.Id == rowId);
 
         if (server is null)
-            return DstResponse.NotFound();
+            return ResponseBase.NotFound();
 
         if (startDateTime is null || startDateTime < DateTime.Now - TimeSpan.FromDays(3))
             startDateTime = DateTime.Now - TimeSpan.FromDays(3);
@@ -263,13 +264,13 @@ public class HistoryController : ControllerBase
             .Where(v => v.IsDetailed == isDetailed)
             .ToArrayAsync();
 
-        ServerHistoryResponse json = new()
+        ServerHistoryResponse response = new()
         {
             Server = server,
             Items = items.Select(v => ServerHistoryItem.From(v))
         };
 
-        return new DstResponse(json);
+        return response.ToJsonResult();
     }
 
 }

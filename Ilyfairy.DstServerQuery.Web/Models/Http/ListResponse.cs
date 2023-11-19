@@ -1,4 +1,5 @@
 ﻿using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
+using Ilyfairy.DstServerQuery.Web.Models.Http;
 
 namespace Ilyfairy.DstServerQuery.Web.Models;
 
@@ -6,7 +7,7 @@ namespace Ilyfairy.DstServerQuery.Web.Models;
 /// List响应结果
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class ListResponse<T> where T : ILobbyServerV2
+public class ListResponse<T> : ResponseBase where T : ILobbyServerV2
 {
     /// <summary>
     /// Http开始响应的时间
@@ -42,9 +43,5 @@ public class ListResponse<T> where T : ILobbyServerV2
     /// 服务器列表
     /// </summary>
     public IEnumerable<T> List { get; set; } = Array.Empty<T>();
-
-    /// <summary>
-    /// 响应码
-    /// </summary>
-    public int Code { get; set; }
 }
+

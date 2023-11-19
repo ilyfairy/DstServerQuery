@@ -68,10 +68,8 @@ public class ServerController : ControllerBase
     [Produces("application/json")]
     public IActionResult GetServerVersionPost()
     {
-        return new DstResponse(new
-        {
-            Version = dstVersionGetter.Version,
-        });
+        var version = dstVersionGetter.Version;
+        return new GetServerVersionResponse(dstVersionGetter.Version).ToJsonResult();
     }
 
 
@@ -89,7 +87,7 @@ public class ServerController : ControllerBase
         if (string.IsNullOrWhiteSpace(id))
         {
             //log.Warn("RowId为空");
-            return DstResponse.BadRequest();
+            return ResponseBase.BadRequest();
         }
 
         CancellationTokenSource cts = new();
@@ -99,7 +97,7 @@ public class ServerController : ControllerBase
         if (info == null)
         {
             _logger.LogWarning("找不到该服务器 RowId:{RowId}", id);
-            return DstResponse.NotFound(); //找不到该房间
+            return ResponseBase.NotFound(); //找不到该房间
         }
         _logger.LogInformation("找到服务器 RowId:{RowId} Name:{Name}", id, info.Name);
 
@@ -176,7 +174,7 @@ public class ServerController : ControllerBase
         }
         catch (QueryArgumentException ex)
         {
-            return DstResponse.BadRequest(ex.Message);
+            return ResponseBase.BadRequest(ex.Message);
         }
 
         int pageCount = query.PageCount ?? 100;
@@ -189,7 +187,7 @@ public class ServerController : ControllerBase
 
         if (pageIndex < 0)
             pageIndex = 0;
-        
+
         var totalPageIndex = (int)Math.Ceiling((float)result.Count / pageCount) - 1;
         if (pageIndex > totalPageIndex)
             pageIndex = totalPageIndex;
@@ -198,7 +196,7 @@ public class ServerController : ControllerBase
 
         var current = result.Skip(pageCount * pageIndex).Take(pageCount).ToArray();
 
-        ListResponse<T> CreateResponse<T>() where T : ILobbyServerV2
+        ResponseBase CreateResponse<T>() where T : ILobbyServerV2
         {
             return new ListResponse<T>()
             {
@@ -212,7 +210,7 @@ public class ServerController : ControllerBase
             };
         }
 
-        object resonse;
+        ResponseBase resonse;
         if (query.IsDetailed is true)
         {
             resonse = CreateResponse<ILobbyServerDetailedV2>();
@@ -226,10 +224,7 @@ public class ServerController : ControllerBase
             resonse = CreateResponse<ILobbyServerV2>();
         }
 
-        return new DstResponse(resonse)
-        {
-            SerializerSettings = dstJsonOptions.SerializerOptions,
-        };
+        return resonse.ToJsonResult(dstJsonOptions.SerializerOptions);
     }
 
     /// <summary>
@@ -245,12 +240,8 @@ public class ServerController : ControllerBase
         var prefabs = servers.SelectMany(v => v.Players?.Select(player => player.Prefab) ?? [])
             .Where(v => !string.IsNullOrEmpty(v));
 
-        var response = prefabs.GroupBy(v => v).Select(v => new
-        {
-            Prefab = v.Key,
-            Count = v.Count()
-        }).OrderByDescending(v => v.Count);
-
-        return new DstResponse(response);
+        var response = prefabs.GroupBy(v => v).Select(v => new PrefabsResponse.PlayerPrefab(v.Key, v.Count())).OrderByDescending(v => v.Count);
+        
+        return new PrefabsResponse(response).ToJsonResult();
     }
 }

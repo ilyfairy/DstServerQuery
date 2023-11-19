@@ -1,6 +1,6 @@
 ﻿namespace Ilyfairy.DstServerQuery.Web.Models.Http;
 
-public class GetPlayersResponse
+public class GetPlayersResponse : ResponseBase
 {
     /// <summary>
     /// 玩家列表

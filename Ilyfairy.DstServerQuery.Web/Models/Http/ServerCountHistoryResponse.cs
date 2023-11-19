@@ -2,7 +2,7 @@
 
 namespace Ilyfairy.DstServerQuery.Web.Models.Http;
 
-public class ServerCountHistory
+public class ServerCountHistoryResponse : ResponseBase
 {
     public required ICollection<ServerCountInfo> List { get; set; }
 }
