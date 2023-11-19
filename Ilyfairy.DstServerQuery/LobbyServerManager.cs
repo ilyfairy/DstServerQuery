@@ -169,7 +169,7 @@ public class LobbyServerManager : IDisposable
     {
         Stopwatch s = new();
         await Task.Yield();
-        await Task.Delay(10000);
+        await Task.Delay(20000); // 延迟,等待RequestLoop更新完
 
         DateTime lastUpdated = default;
         while (Running)

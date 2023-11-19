@@ -12,12 +12,10 @@ public interface ILobbyServerDetailedV1 : ILobbyServerWithPlayerV1
     [JsonPropertyName("SteamClanId")]
     public string? SteamClanId { get; set; } //steam群组gid
 
-    //TODO: 未完成
     [JsonPropertyName("Slaves")]
     [JsonConverter(typeof(WorldLevelConverter))]
     public Dictionary<string, LobbyWorldLevel>? Slaves { get; set; } //json
 
-    //TODO: 未完成
     [JsonPropertyName("Secondaries")]
     [JsonConverter(typeof(WorldLevelConverter))]
     public Dictionary<string, LobbyWorldLevel>? Secondaries { get; set; } //json

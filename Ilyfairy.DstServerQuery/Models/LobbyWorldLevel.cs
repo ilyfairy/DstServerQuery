@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Ilyfairy.DstServerQuery.Models;
 
 
-public class LobbyWorldLevel
+public class LobbyWorldLevel : ILobbyWorldLevel
 {
     [JsonPropertyName("__addr")]
     public string Address { get; set; }
@@ -20,5 +20,16 @@ public class LobbyWorldLevel
     public string Id { get; set; }
 
     [JsonPropertyName("steamid")]
+    public string SteamId { get; set; }
+}
+
+public interface ILobbyWorldLevel
+{
+    public string Address { get; set; }
+
+    public int Port { get; set; }
+
+    public string Id { get; set; }
+
     public string SteamId { get; set; }
 }

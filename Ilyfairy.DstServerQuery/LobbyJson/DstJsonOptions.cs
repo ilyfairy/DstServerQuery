@@ -19,6 +19,7 @@ public class DstJsonOptions
         //SerializerOptions.Converters.Add(new CustomNameConverter<LobbyBriefsDataPlayers>());
         //SerializerOptions.Converters.Add(new CustomNameConverter<LobbyDetailsData>());
         SerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
+        SerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
 
         DeserializerOptions.Converters.Add(new JsonStringEnumConverter());
         DeserializerOptions.Converters.Add(new PlatformConverter());

@@ -183,6 +183,7 @@ builder.Services.AddControllers()
     opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     opt.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     opt.JsonSerializerOptions.PropertyNamingPolicy = null;
+    opt.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
 });
 
 //Swagger
@@ -227,7 +228,7 @@ app.Use(async (v,next) =>
 });
 
 app.UseResponseCompression();
-//app.UseSerilogRequestLogging();
+app.UseSerilogRequestLogging();
 
 //app.UseRateLimiter(); // 速率限制
 app.UseIpRateLimiting(); // IP速率限制

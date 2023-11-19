@@ -14,6 +14,12 @@ public class WorldLevelConverter : JsonConverter<Dictionary<string, LobbyWorldLe
 
     public override void Write(Utf8JsonWriter writer, Dictionary<string, LobbyWorldLevel> value, JsonSerializerOptions options)
     {
-        JsonSerializer.Serialize(writer, value);
+        writer.WriteStartObject();
+        foreach (var (k, v) in value)
+        {
+            writer.WritePropertyName(k);
+            JsonSerializer.Serialize<ILobbyWorldLevel>(writer, v);
+        }
+        writer.WriteEndObject();
     }
 }

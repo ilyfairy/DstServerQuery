@@ -14,19 +14,16 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
     public LobbyPlayerInfo[]? Players { get; set; } //玩家信息
 
 
-
     [JsonPropertyName("__lastPing")]
     public long LastPing { get; set; } //上次与大厅通信时间
 
     [JsonPropertyName("steamclanid")]
     public string? SteamClanId { get; set; } //steam群组gid
 
-    //TODO: 未完成
     [JsonPropertyName("slaves")]
     [JsonConverter(typeof(WorldLevelConverter))]
     public Dictionary<string, LobbyWorldLevel>? Slaves { get; set; } //json
 
-    //TODO: 未完成
     [JsonPropertyName("secondaries")]
     [JsonConverter(typeof(WorldLevelConverter))]
     public Dictionary<string, LobbyWorldLevel>? Secondaries { get; set; } //json
