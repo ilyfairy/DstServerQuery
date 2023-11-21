@@ -11,6 +11,7 @@ using Ilyfairy.DstServerQuery.Web.Models.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Net.Mime;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
@@ -63,24 +64,32 @@ public class ServerController : ControllerBase
     /// <summary>
     /// 获取服务器最新版本 返回Json
     /// </summary>
+    /// <response code="200">获取成功</response>
+    /// <response code="503">服务器未准备就绪</response>
     /// <returns></returns>
     [HttpPost("Version")]
     [Produces("application/json")]
+    [ProducesResponseType<GetServerVersionResponse>(200)]
+    [ProducesResponseType<GetServerVersionResponse>(503)]
     public IActionResult GetServerVersionPost()
     {
-        var version = dstVersionGetter.Version;
         return new GetServerVersionResponse(dstVersionGetter.Version).ToJsonResult();
     }
 
 
     /// <summary>
-    /// 通过RowId获取详细数据
+    /// 通过RowId获取服务器详细数据
     /// </summary>
-    /// <param name="id"></param>
+    /// <param name="id">RowId</param>
     /// <param name="forceUpdate">是否强制刷新</param>
+    /// <response code="200">获取成功</response>
+    /// <response code="400">参数错误</response>
+    /// <response code="404">找不到游戏服务器</response>
     /// <returns></returns>
     [HttpPost("Details/{id}")]
     [ProducesResponseType<ILobbyServerDetailedV2>(200)]
+    [ProducesResponseType<ResponseBase>(404)]
+    [ProducesResponseType<ResponseBase>(400)]
     [Produces("application/json")]
     public async Task<IActionResult> GetDetails(string id, [FromQuery] bool forceUpdate = false)
     {
@@ -101,18 +110,33 @@ public class ServerController : ControllerBase
         }
         _logger.LogInformation("找到服务器 RowId:{RowId} Name:{Name}", id, info.Name);
 
-        var json = JsonSerializer.Serialize<ILobbyServerDetailedV2>(info, dstJsonOptions.SerializerOptions);
-        return Content(json, MediaTypeNames.Application.Json);
+
+        [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_LastUpdate")]
+        static extern ref DateTime GetLastUpdate(LobbyServer info); // 不安全
+
+        DateTime lastUpdate = GetLastUpdate(info);
+        ServerDetailsResponse response = new()
+        {
+            Server = info,
+            LastUpdate = lastUpdate,
+        };
+
+        return response.ToJsonResult(dstJsonOptions.SerializerOptions);
     }
 
     /// <summary>
-    /// 获取服务器详细信息, 从query参数
+    /// 通过RowId获取服务器详细数据
     /// </summary>
     /// <param name="id">RowId</param>
     /// <param name="forceUpdate">是否强制刷新</param>
+    /// <response code="200">获取成功</response>
+    /// <response code="400">参数错误</response>
+    /// <response code="404">找不到游戏服务器</response>
     /// <returns></returns>
     [HttpPost("Details")]
     [ProducesResponseType<ILobbyServerDetailedV2>(200)]
+    [ProducesResponseType<ResponseBase>(400)]
+    [ProducesResponseType<ResponseBase>(404)]
     [Produces("application/json")]
     public Task<IActionResult> GetDetailsFromQuery([FromQuery] string id, [FromQuery] bool forceUpdate = false) => GetDetails(id, forceUpdate);
 
@@ -233,6 +257,7 @@ public class ServerController : ControllerBase
     /// <returns></returns>
     [HttpPost("GetPrefabs")]
     [Produces("application/json")]
+    [ProducesResponseType<PrefabsResponse>(200)]
     public IActionResult GetPrefabs()
     {
         var servers = lobbyServerManager.GetCurrentServers();

@@ -3,10 +3,19 @@ using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.Web.Models;
 
+/// <summary>
+/// 响应
+/// </summary>
 public class ResponseBase
 {
+    /// <summary>
+    /// 响应码
+    /// </summary>
     public int Code { get; set; } = 200;
 
+    /// <summary>
+    /// 当Code不等于200时的错误消息
+    /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Error { get; set; }
 
