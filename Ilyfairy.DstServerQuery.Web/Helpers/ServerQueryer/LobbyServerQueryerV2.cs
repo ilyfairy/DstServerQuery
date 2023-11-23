@@ -163,11 +163,11 @@ public class LobbyServerQueryerV2
         if (serverName.IsRegex)
         {
             Regex regex = new(serverName.Value);
-            current = servers.Where(v => serverName.IsExclude ^ regex.IsMatch(v.Name));
+            current = current.Where(v => serverName.IsExclude ^ regex.IsMatch(v.Name));
         }
         else
         {
-            current = servers.Where(v => serverName.IsExclude ^ v.Name.Contains(serverName.Value, StringComparison));
+            current = current.Where(v => serverName.IsExclude ^ v.Name.Contains(serverName.Value, StringComparison));
         }
     }
 
@@ -184,11 +184,11 @@ public class LobbyServerQueryerV2
         if (playerName.IsRegex)
         {
             Regex regex = CreateRegex(playerName.Value);
-            current = servers.Where(v => playerName.IsExclude ^ (v.Players is not null && v.Players.Any(p => regex.IsMatch(p.Name))));
+            current = current.Where(v => playerName.IsExclude ^ (v.Players is not null && v.Players.Any(p => regex.IsMatch(p.Name))));
         }
         else
         {
-            current = servers.Where(v => playerName.IsExclude ^ (v.Players is not null && v.Players.Any(p => p.Name.Contains(playerName.Value))));
+            current = current.Where(v => playerName.IsExclude ^ (v.Players is not null && v.Players.Any(p => p.Name.Contains(playerName.Value))));
         }
     }
 
@@ -583,11 +583,11 @@ public class LobbyServerQueryerV2
         if (description.IsRegex)
         {
             Regex regex = new(description.Value);
-            current = servers.Where(v => description.IsExclude ^ (v.Description is not null && regex.IsMatch(v.Description)));
+            current = current.Where(v => description.IsExclude ^ (v.Description is not null && regex.IsMatch(v.Description)));
         }
         else
         {
-            current = servers.Where(v => description.IsExclude ^ (v.Description?.Contains(description.Value, StringComparison) == true));
+            current = current.Where(v => description.IsExclude ^ (v.Description?.Contains(description.Value, StringComparison) == true));
         }
     }
 
@@ -693,11 +693,11 @@ public class LobbyServerQueryerV2
         if (playerPrefab.IsRegex)
         {
             Regex regex = CreateRegex(playerPrefab.Value);
-            current = servers.Where(v => playerPrefab.IsExclude ^ (v.Players is not null && v.Players.Any(p => regex.IsMatch(p.Prefab))));
+            current = current.Where(v => playerPrefab.IsExclude ^ (v.Players is not null && v.Players.Any(p => regex.IsMatch(p.Prefab))));
         }
         else
         {
-            current = servers.Where(v => playerPrefab.IsExclude ^ v.Players?.Any(p => p.Prefab.Contains(playerPrefab.Value, StringComparison)) == true);
+            current = current.Where(v => playerPrefab.IsExclude ^ v.Players?.Any(p => p.Prefab.Contains(playerPrefab.Value, StringComparison)) == true);
         }
     }
 
