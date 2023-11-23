@@ -16,7 +16,7 @@ public class LobbyServerManager : IDisposable
     private readonly ILogger _logger = Log.ForContext<LobbyServerManager>();
     public ConcurrentDictionary<string, LobbyServerDetailed> ServerMap { get; } = new(2, 40000);
     private ICollection<LobbyServerDetailed> serverCache = Array.Empty<LobbyServerDetailed>();
-    public bool Running { get; private set; }
+    public bool Running => !HttpTokenSource.IsCancellationRequested;
     public LobbyDownloader LobbyDownloader { get; private set; }
 
     /// <summary>
@@ -27,7 +27,7 @@ public class LobbyServerManager : IDisposable
     private readonly Stopwatch sw = Stopwatch.StartNew();
     private readonly DstWebConfig dstConfig;
 
-    public CancellationTokenSource HttpTokenSource { get; private set; } = new();
+    public CancellationTokenSource HttpTokenSource { get; private set; } = new(0);
 
     public event DstDataUpdatedHandler? Updated;
 
@@ -43,7 +43,8 @@ public class LobbyServerManager : IDisposable
 
     public async Task Start()
     {
-        Running = true;
+        HttpTokenSource = new();
+
         await LobbyDownloader.Initialize();
 
         _logger.Information("开始DownloadLoop Task");
@@ -58,7 +59,7 @@ public class LobbyServerManager : IDisposable
             }
             catch (Exception e)
             {
-                Running = false;
+                HttpTokenSource.Cancel();
                 _logger.Error("DownloadLoopException: {Exception}", e.Message);
             }
         });
@@ -69,11 +70,9 @@ public class LobbyServerManager : IDisposable
 
     public void Dispose()
     {
-        if (HttpTokenSource.IsCancellationRequested) return;
         HttpTokenSource.Cancel();
         GC.SuppressFinalize(this);
         _logger.Information("LobbyDetailsManager Dispose");
-        Running = false;
     }
 
     //循环获取数据  
@@ -100,7 +99,7 @@ public class LobbyServerManager : IDisposable
             }
             catch (Exception e)
             {
-                if (!Running)
+                if (!Running || HttpTokenSource.IsCancellationRequested)
                 {
                     _logger.Warning("中断请求,结束");
                     break;
