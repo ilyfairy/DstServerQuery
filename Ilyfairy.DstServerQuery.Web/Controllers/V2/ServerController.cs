@@ -271,7 +271,7 @@ public class ServerController : ControllerBase
     }
 
     /// <summary>
-    /// 获取所有玩家预设
+    /// 获取所有Tags
     /// </summary>
     /// <returns></returns>
     [HttpPost("GetTags")]
@@ -284,7 +284,7 @@ public class ServerController : ControllerBase
         var tags = servers.SelectMany(v => v.Tags ?? [])
             .Where(v => !string.IsNullOrEmpty(v));
 
-        var response = tags.GroupBy(v => v).Select(v => new TagsResponse.Tag(v.Key, v.Count())).OrderByDescending(v => v.Count);
+        var response = tags.GroupBy(v => v).Select(v => new TagsResponse.ServerTag(v.Key, v.Count())).OrderByDescending(v => v.Count);
 
         return new TagsResponse(response).ToJsonResult();
     }

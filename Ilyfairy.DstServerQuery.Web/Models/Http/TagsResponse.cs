@@ -1,8 +1,8 @@
 ﻿namespace Ilyfairy.DstServerQuery.Web.Models.Http;
 
-public class TagsResponse(IEnumerable<TagsResponse.Tag> tags) : ResponseBase
+public class TagsResponse(IEnumerable<TagsResponse.ServerTag> tags) : ResponseBase
 {
-    public IEnumerable<Tag> Tags { get; } = tags;
+    public IEnumerable<ServerTag> Tags { get; } = tags;
 
-    public record Tag(string Prefab, int Count);
+    public record ServerTag(string Tag, int Count);
 }
