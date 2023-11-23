@@ -53,6 +53,7 @@ public class LobbyServerQueryerV2
         HandleMaxConnection();
         HandleConnected();
         HandlePlayerPrefab();
+        HandleIsMods();
 
         HandleSort();
 
@@ -701,6 +702,14 @@ public class LobbyServerQueryerV2
         }
     }
 
+    private void HandleIsMods()
+    {
+        if (queryParams.IsMods is null)
+            return;
+
+        current = current.Where(v => v.IsMods == queryParams.IsMods);
+    }
+
     private Regex CreateRegex(string pattern)
     {
         try
@@ -876,6 +885,11 @@ public class QueryParams
     /// </summary>
     [JsonConverter(typeof(RegexValueJsonConverter))]
     public RegexValue? PlayerPrefab { get; set; }
+
+    /// <summary>
+    /// 是否启用Mods
+    /// </summary>
+    public bool? IsMods { get; set; }
 }
 
 /// <summary>
