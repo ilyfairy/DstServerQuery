@@ -269,4 +269,24 @@ public class ServerController : ControllerBase
         
         return new PrefabsResponse(response).ToJsonResult();
     }
+
+    /// <summary>
+    /// 获取所有玩家预设
+    /// </summary>
+    /// <returns></returns>
+    [HttpPost("GetTags")]
+    [Produces("application/json")]
+    [ProducesResponseType<TagsResponse>(200)]
+    public IActionResult GetTags()
+    {
+        var servers = lobbyServerManager.GetCurrentServers();
+
+        var tags = servers.SelectMany(v => v.Tags ?? [])
+            .Where(v => !string.IsNullOrEmpty(v));
+
+        var response = tags.GroupBy(v => v).Select(v => new TagsResponse.Tag(v.Key, v.Count())).OrderByDescending(v => v.Count);
+
+        return new TagsResponse(response).ToJsonResult();
+    }
+
 }
