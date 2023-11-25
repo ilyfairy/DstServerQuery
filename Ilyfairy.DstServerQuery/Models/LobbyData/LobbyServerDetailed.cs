@@ -29,16 +29,16 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
     public Dictionary<string, LobbyWorldLevel>? Secondaries { get; set; } //json
 
     [JsonPropertyName("clanonly")]
-    public bool ClanOnly { get; set; } //仅限steam群组成员加入
+    public bool IsClanOnly { get; set; } //仅限steam群组成员加入
 
     [JsonPropertyName("fo")]
-    public bool IsFo { get; set; } //是否仅限好友加入
+    public bool IsFriendsOnly { get; set; } //是否仅限好友加入
 
     [JsonPropertyName("guid")]
     public string? Guid { get; set; } //GUID
 
     [JsonPropertyName("clienthosted")]
-    public bool ClientHosted { get; set; } //是否是客户端主机
+    public bool IsClientHosted { get; set; } //是否是客户端主机
 
     [JsonPropertyName("ownernetid")]
     public string? OwnerNetId { get; set; } //steamid
@@ -48,7 +48,7 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
     public string[]? Tags { get; set; } //Tags
 
     [JsonPropertyName("lanonly")]
-    public bool LanOnly { get; set; } //是否仅局域网
+    public bool IsLanOnly { get; set; } //是否仅局域网
 
     [JsonPropertyName("desc")]
     public string? Description { get; set; } //房间描述
@@ -57,16 +57,16 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
     public int Tick { get; set; } //Tick
 
     [JsonPropertyName("clientmodsoff")]
-    public bool ClientModsOff { get; set; }
+    public bool IsClientModsOff { get; set; }
 
     [JsonPropertyName("nat")]
     public int Nat { get; set; } //服务器网络类型  公网5内网7
 
     [JsonPropertyName("allownewplayers")]
-    public bool AllowNewPlayers { get; set; } //是否允许新玩家加入
+    public bool IsAllowNewPlayers { get; set; } //是否允许新玩家加入
 
     [JsonPropertyName("event")]
-    public bool Event { get; set; }
+    public bool IsEvent { get; set; }
 
     [JsonPropertyName("valvecloudserver")]
     public bool IsValveCloudServer { get; set; }
@@ -135,19 +135,19 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
         obj.SteamClanId = this.SteamClanId;
         obj.Slaves = this.Slaves;
         obj.Secondaries = this.Secondaries;
-        obj.ClanOnly = this.ClanOnly;
-        obj.IsFo = this.IsFo;
+        obj.IsClanOnly = this.IsClanOnly;
+        obj.IsFriendsOnly = this.IsFriendsOnly;
         obj.Guid = this.Guid;
-        obj.ClientHosted = this.ClientHosted;
+        obj.IsClientHosted = this.IsClientHosted;
         obj.OwnerNetId = this.OwnerNetId;
         obj.Tags = this.Tags;
-        obj.LanOnly = this.LanOnly;
+        obj.IsLanOnly = this.IsLanOnly;
         obj.Description = this.Description;
         obj.Tick = this.Tick;
-        obj.ClientModsOff = this.ClientModsOff;
+        obj.IsClientModsOff = this.IsClientModsOff;
         obj.Nat = this.Nat;
-        obj.AllowNewPlayers = this.AllowNewPlayers;
-        obj.Event = this.Event;
+        obj.IsAllowNewPlayers = this.IsAllowNewPlayers;
+        obj.IsEvent = this.IsEvent;
         obj.IsValveCloudServer = this.IsValveCloudServer;
         obj.ValvePopId = this.ValvePopId;
         obj.ValveRoutingInfo = this.ValveRoutingInfo;
@@ -190,19 +190,19 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
         dest.SteamClanId = this.SteamClanId;
         dest.Slaves = this.Slaves;
         dest.Secondaries = this.Secondaries;
-        dest.ClanOnly = this.ClanOnly;
-        dest.IsFo = this.IsFo;
+        dest.IsClanOnly = this.IsClanOnly;
+        dest.IsFriendsOnly = this.IsFriendsOnly;
         dest.Guid = this.Guid;
-        dest.ClientHosted = this.ClientHosted;
+        dest.IsClientHosted = this.IsClientHosted;
         dest.OwnerNetId = this.OwnerNetId;
         dest.Tags = this.Tags;
-        dest.LanOnly = this.LanOnly;
+        dest.IsLanOnly = this.IsLanOnly;
         dest.Description = this.Description;
         dest.Tick = this.Tick;
-        dest.ClientModsOff = this.ClientModsOff;
+        dest.IsClientModsOff = this.IsClientModsOff;
         dest.Nat = this.Nat;
-        dest.AllowNewPlayers = this.AllowNewPlayers;
-        dest.Event = this.Event;
+        dest.IsAllowNewPlayers = this.IsAllowNewPlayers;
+        dest.IsEvent = this.IsEvent;
         dest.IsValveCloudServer = this.IsValveCloudServer;
         dest.ValvePopId = this.ValvePopId;
         dest.ValveRoutingInfo = this.ValveRoutingInfo;

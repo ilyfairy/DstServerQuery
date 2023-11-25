@@ -20,17 +20,17 @@ public interface ILobbyServerDetailedV2 : ILobbyServerWithPlayerV2
     [JsonConverter(typeof(WorldLevelConverter))]
     public Dictionary<string, LobbyWorldLevel>? Secondaries { get; set; } //json
 
-    [JsonPropertyName("ClanOnly")]
-    public bool ClanOnly { get; set; } //仅限steam群组成员加入
+    [JsonPropertyName("IsClanOnly")]
+    public bool IsClanOnly { get; set; } //仅限steam群组成员加入
 
-    [JsonPropertyName("IsFo")]
-    public bool IsFo { get; set; } //是否仅限好友加入
+    [JsonPropertyName("IsFriendsOnly")]
+    public bool IsFriendsOnly { get; set; } //是否仅限好友加入
 
     [JsonPropertyName("Guid")]
     public string? Guid { get; set; } //GUID
 
-    [JsonPropertyName("ClientHosted")]
-    public bool ClientHosted { get; set; } //是否是客户端主机
+    [JsonPropertyName("IsClientHosted")]
+    public bool IsClientHosted { get; set; } //是否是客户端主机
 
     [JsonPropertyName("OwnerNetId")]
     public string? OwnerNetId { get; set; } //steamid
@@ -39,8 +39,8 @@ public interface ILobbyServerDetailedV2 : ILobbyServerWithPlayerV2
     [JsonConverter(typeof(TagsConverter))] // NOTE:自定义转换
     public string[]? Tags { get; set; } //Tags
 
-    [JsonPropertyName("LanOnly")]
-    public bool LanOnly { get; set; } //是否仅局域网
+    [JsonPropertyName("IsLanOnly")]
+    public bool IsLanOnly { get; set; } //是否仅局域网
 
     [JsonPropertyName("Description")]
     public string? Description { get; set; } //房间描述
@@ -48,17 +48,17 @@ public interface ILobbyServerDetailedV2 : ILobbyServerWithPlayerV2
     [JsonPropertyName("Tick")]
     public int Tick { get; set; } //Tick
 
-    [JsonPropertyName("ClientModsOff")]
-    public bool ClientModsOff { get; set; }
+    [JsonPropertyName("IsClientModsOff")]
+    public bool IsClientModsOff { get; set; }
 
     [JsonPropertyName("Nat")]
     public int Nat { get; set; } //服务器网络类型  公网5内网7
 
-    [JsonPropertyName("AllowNewPlayers")]
-    public bool AllowNewPlayers { get; set; } //是否允许新玩家加入
+    [JsonPropertyName("IsAllowNewPlayers")]
+    public bool IsAllowNewPlayers { get; set; } //是否允许新玩家加入
 
-    [JsonPropertyName("Event")]
-    public bool Event { get; set; }
+    [JsonPropertyName("IsEvent")]
+    public bool IsEvent { get; set; }
 
     [JsonPropertyName("IsValveCloudServer")]
     public bool IsValveCloudServer { get; set; }
