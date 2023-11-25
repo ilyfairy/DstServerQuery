@@ -211,7 +211,7 @@ var app = builder.Build();
 
 //`(*>﹏<*)′=================================== 一条华丽的分割线 ===================================`(*>﹏<*)′//
 
-
+app.UseStaticFiles();
 
 
 app.UseCors("CORS");
@@ -221,7 +221,7 @@ app.Use(async (v,next) =>
 {
     if(v.Request.Path == "" || v.Request.Path == "/")
     {
-        v.Response.StatusCode = 404;
+        v.Response.StatusCode = 204;
         return;
     }
     await next();
@@ -308,6 +308,7 @@ if (app.Environment.IsDevelopment())
 app.UseSwagger();
 app.UseSwaggerUI(options => 
 {
+    options.InjectJavascript("/swagger/swagger_ext.js");
     foreach (var description in app.DescribeApiVersions().Reverse())
     {
         var url = $"/swagger/{description.GroupName}/swagger.json";

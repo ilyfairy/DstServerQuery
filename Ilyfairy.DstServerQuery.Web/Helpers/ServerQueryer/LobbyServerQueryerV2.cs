@@ -710,6 +710,14 @@ public class LobbyServerQueryerV2
         current = current.Where(v => v.IsMods == queryParams.IsMods);
     }
 
+    private void HandleIsDedicated()
+    {
+        if (queryParams.IsDedicated is null)
+            return;
+
+        current = current.Where(v => v.IsDedicated == queryParams.IsDedicated);
+    }
+
     private Regex CreateRegex(string pattern)
     {
         try
@@ -890,6 +898,11 @@ public class QueryParams
     /// 是否启用Mods
     /// </summary>
     public bool? IsMods { get; set; }
+
+    /// <summary>
+    /// 是否是专用服务器
+    /// </summary>
+    public bool? IsDedicated { get; set; }
 }
 
 /// <summary>
