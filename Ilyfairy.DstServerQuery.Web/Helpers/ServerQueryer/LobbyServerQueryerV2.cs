@@ -54,6 +54,9 @@ public class LobbyServerQueryerV2
         HandleConnected();
         HandlePlayerPrefab();
         HandleIsMods();
+        HandleIsDedicated();
+        HandleOwnerNetId();
+        HandleIsAllowNewPlayers();
 
         HandleSort();
 
@@ -201,10 +204,7 @@ public class LobbyServerQueryerV2
         var season = queryParams.Season.Value;
 
         if (season.Value is null)
-        {
-            current = current.Where(v => season.IsExclude ^ v.Season.Value is null);
             return;
-        }
 
         if (season.Value.Length == 0)
             return;
@@ -260,10 +260,7 @@ public class LobbyServerQueryerV2
         var gamemode = queryParams.GameMode.Value;
 
         if (gamemode.Value is null)
-        {
-            current = current.Where(v => gamemode.IsExclude ^ v.Mode.Value is null);
             return;
-        }
 
         if (gamemode.Value.Length == 0)
             return;
@@ -279,10 +276,7 @@ public class LobbyServerQueryerV2
         var intent = queryParams.Intent.Value;
 
         if (intent.Value is null)
-        {
-            current = current.Where(v => intent.IsExclude ^ v.Intent.Value is null);
             return;
-        }
 
         if (intent.Value.Length == 0)
             return;
@@ -405,10 +399,7 @@ public class LobbyServerQueryerV2
         var country = queryParams.Country.Value;
 
         if (country.Value is null)
-        {
-            current = current.Where(v => country.IsExclude ^ v.Address.IsoCode is null);
             return;
-        }
 
         if (country.Value.Length == 0)
             return;
@@ -424,9 +415,7 @@ public class LobbyServerQueryerV2
         var modName = queryParams.ModsName.Value;
 
         if (modName.Value is null)
-        {
             return;
-        }
 
         if (modName.Value.Length == 0)
             return;
@@ -576,10 +565,7 @@ public class LobbyServerQueryerV2
         var description = queryParams.Description.Value;
 
         if (description.Value is null)
-        {
-            current = current.Where(v => v.Description == null);
             return;
-        }
 
         if (description.IsRegex)
         {
@@ -600,9 +586,7 @@ public class LobbyServerQueryerV2
         var tags = queryParams.Tags.Value;
 
         if (tags.Value is null)
-        {
             return;
-        }
 
         if (tags.Value.Length == 0)
             return;
@@ -666,10 +650,10 @@ public class LobbyServerQueryerV2
             throw new QueryArgumentException("not a number");
         }
 
-        Func<int, int, int?> func = (cur, max) =>
+        int? func(int cur, int max)
         {
             return percent ? (int)((double)cur / max * 100) : cur;
-        };
+        }
         current = op switch
         {
             "" or "==" or "" => current.Where(v => func(v.Connected, v.MaxConnections) == connected),
@@ -717,6 +701,42 @@ public class LobbyServerQueryerV2
 
         current = current.Where(v => v.IsDedicated == queryParams.IsDedicated);
     }
+
+    private void HandleOwnerNetId()
+    {
+        if (queryParams.OwnerNetId is null)
+            return;
+
+        var ownerNetId = queryParams.OwnerNetId.Value;
+
+        if (ownerNetId.Value is null)
+            return;
+
+        if (ownerNetId.Value.Length == 0)
+            return;
+
+        if (ownerNetId.Value is ["string"])
+            return;
+
+        current = current.Where(v => ownerNetId.IsExclude ^ ownerNetId.Value.Any(id => id is null ? v.OwnerNetId == null : v.OwnerNetId?.AsSpan().Trim().Equals(id.AsSpan().Trim(), StringComparison.OrdinalIgnoreCase) == true));
+    }
+
+    private void HandleIsAllowNewPlayers()
+    {
+        if (queryParams.IsAllowNewPlayers is null)
+            return;
+
+        current = current.Where(v => v.IsAllowNewPlayers == queryParams.IsAllowNewPlayers);
+    }
+
+    private void HandleIsServerPaused()
+    {
+        if (queryParams.IsServerPaused is null)
+            return;
+
+        current = current.Where(v => v.IsServerPaused == queryParams.IsServerPaused);
+    }
+
 
     private Regex CreateRegex(string pattern)
     {
@@ -903,6 +923,22 @@ public class QueryParams
     /// 是否是专用服务器
     /// </summary>
     public bool? IsDedicated { get; set; }
+
+    /// <summary>
+    /// 所有者的玩家ID
+    /// </summary>
+    [JsonConverter(typeof(StringArrayJsonConverter))]
+    public StringArray? OwnerNetId { get; set; }
+
+    /// <summary>
+    /// 是否允许新玩家加入
+    /// </summary>
+    public bool? IsAllowNewPlayers { get; set; }
+
+    /// <summary>
+    /// 服务器是否已暂停
+    /// </summary>
+    public bool? IsServerPaused { get; set; }
 }
 
 /// <summary>
