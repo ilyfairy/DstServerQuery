@@ -11,7 +11,7 @@ namespace Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer;
 
 public class LobbyServerQueryerV2
 {
-    private readonly QueryParams queryParams;
+    private readonly ListQueryParams queryParams;
     private readonly ICollection<LobbyServerDetailed> servers;
 
     private IEnumerable<LobbyServerDetailed> current;
@@ -21,7 +21,7 @@ public class LobbyServerQueryerV2
     public RegexOptions RegexOptions => queryParams.IgnoreCase is null or true ? RegexOptions.IgnoreCase : RegexOptions.None;
     public StringComparison StringComparison => queryParams.IgnoreCase is null or true ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
-    public LobbyServerQueryerV2(QueryParams queryParams, ICollection<LobbyServerDetailed> servers, long? latest = null)
+    public LobbyServerQueryerV2(ListQueryParams queryParams, ICollection<LobbyServerDetailed> servers, long? latest = null)
     {
         this.queryParams = queryParams;
         this.servers = servers;
@@ -770,7 +770,7 @@ public class QueryArgumentException(string message) : Exception(message);
 /// <summary>
 /// 查询参数
 /// </summary>
-public class QueryParams
+public class ListQueryParams
 {
     /// <summary>
     /// 每页数量

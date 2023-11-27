@@ -183,7 +183,7 @@ public class ServerController : ControllerBase
     [HttpPost("List")]
     [ProducesResponseType<ListResponse<ILobbyServerDetailedV2>>(200)]
     [Produces("application/json")]
-    public IActionResult GetServerList([FromBody] QueryParams? query = null)
+    public IActionResult GetServerList([FromBody] ListQueryParams? query = null)
     {
         var servers = lobbyServerManager.GetCurrentServers();
 
