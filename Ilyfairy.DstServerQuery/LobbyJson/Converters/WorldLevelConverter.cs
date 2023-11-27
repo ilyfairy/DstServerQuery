@@ -5,21 +5,15 @@ using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.LobbyJson.Converter;
 
-public class WorldLevelConverter : JsonConverter<Dictionary<string, LobbyWorldLevel>>
+public class WorldLevelConverter : JsonConverter<ILobbyWorldLevel>
 {
-    public override Dictionary<string, LobbyWorldLevel>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override ILobbyWorldLevel? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        return JsonSerializer.Deserialize<Dictionary<string, LobbyWorldLevel>>(ref reader);
+        return JsonSerializer.Deserialize<LobbyWorldLevel>(ref reader);
     }
 
-    public override void Write(Utf8JsonWriter writer, Dictionary<string, LobbyWorldLevel> value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, ILobbyWorldLevel value, JsonSerializerOptions options)
     {
-        writer.WriteStartObject();
-        foreach (var (k, v) in value)
-        {
-            writer.WritePropertyName(k);
-            JsonSerializer.Serialize<ILobbyWorldLevel>(writer, v);
-        }
-        writer.WriteEndObject();
+        JsonSerializer.Serialize<ILobbyWorldLevel>(writer, value);
     }
 }

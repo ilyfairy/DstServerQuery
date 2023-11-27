@@ -21,12 +21,10 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
     public string? SteamClanId { get; set; } //steam群组gid
 
     [JsonPropertyName("slaves")]
-    [JsonConverter(typeof(WorldLevelConverter))]
-    public Dictionary<string, LobbyWorldLevel>? Slaves { get; set; } //json
+    public Dictionary<string, ILobbyWorldLevel>? Slaves { get; set; } //json
 
     [JsonPropertyName("secondaries")]
-    [JsonConverter(typeof(WorldLevelConverter))]
-    public Dictionary<string, LobbyWorldLevel>? Secondaries { get; set; } //json
+    public Dictionary<string, ILobbyWorldLevel>? Secondaries { get; set; } //json
 
     [JsonPropertyName("clanonly")]
     public bool IsClanOnly { get; set; } //仅限steam群组成员加入

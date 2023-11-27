@@ -13,12 +13,10 @@ public interface ILobbyServerDetailedV1 : ILobbyServerWithPlayerV1
     public string? SteamClanId { get; set; } //steam群组gid
 
     [JsonPropertyName("Slaves")]
-    [JsonConverter(typeof(WorldLevelConverter))]
-    public Dictionary<string, LobbyWorldLevel>? Slaves { get; set; } //json
+    public Dictionary<string, ILobbyWorldLevel>? Slaves { get; set; } //json
 
     [JsonPropertyName("Secondaries")]
-    [JsonConverter(typeof(WorldLevelConverter))]
-    public Dictionary<string, LobbyWorldLevel>? Secondaries { get; set; } //json
+    public Dictionary<string, ILobbyWorldLevel>? Secondaries { get; set; } //json
 
     [JsonPropertyName("ClanOnly")]
     public bool IsClanOnly { get; set; } //仅限steam群组成员加入
