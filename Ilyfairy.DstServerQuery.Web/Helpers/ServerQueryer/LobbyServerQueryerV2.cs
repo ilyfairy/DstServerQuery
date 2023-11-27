@@ -68,7 +68,7 @@ public class LobbyServerQueryerV2
 
     private void HandleSort()
     {
-        current = current.OrderByDescending(v => v.Name.GetHashCode());
+        current = current.OrderByDescending(v => v.RowId);
         if (queryParams.Sort is null || queryParams.Sort.Value.Value is null)
             return;
 
@@ -107,7 +107,11 @@ public class LobbyServerQueryerV2
 
             if (string.IsNullOrWhiteSpace(sortName) || string.Equals("HashCode", sortName, StringComparison.OrdinalIgnoreCase))
             {
-                HandleOrder(v => v.Name);
+                HandleOrder(v => v.Name.GetHashCode());
+            }
+            if (string.IsNullOrWhiteSpace(sortName) || string.Equals("RowId", sortName, StringComparison.OrdinalIgnoreCase) || string.Equals("Id", sortName, StringComparison.OrdinalIgnoreCase))
+            {
+                HandleOrder(v => v.RowId);
             }
             if (string.Equals("ServerName", sortName, StringComparison.OrdinalIgnoreCase))
             {
@@ -229,14 +233,20 @@ public class LobbyServerQueryerV2
             return;
         }
 
-        Match match = Regex.Match(versionString, @"(?<op>.*?)(?<version>\d+)");
+        Match match = Regex.Match(versionString, @"(?<op>.*?)(?<version>[0-9a-zA-Z]+)");
         if (!match.Success)
         {
             throw new QueryArgumentException("'Version' syntax error");
         }
 
         var op = match.Groups["op"].Value;
-        if (!int.TryParse(match.Groups["version"].Value, out var version))
+        var _version = match.Groups["version"].Value;
+        long version = 0;
+        if(_version == "latest" && latest != null)
+        {
+            version = latest.Value;
+        }
+        else if (!long.TryParse(_version, out version))
         {
             throw new QueryArgumentException("not a number");
         }

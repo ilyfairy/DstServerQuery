@@ -366,3 +366,4 @@ FodyWeavers.xsd
 /Test
 /DstLobbyProxyDownloader
 /Ilyfairy.DstServerQuery.Web/Properties/launchSettings.json
+/MiniApiTest
