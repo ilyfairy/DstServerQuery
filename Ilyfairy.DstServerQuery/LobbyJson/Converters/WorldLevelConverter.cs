@@ -5,14 +5,14 @@ using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.LobbyJson.Converter;
 
-public class WorldLevelConverter : JsonConverter<LobbyWorldLevel>
+public class WorldLevelConverter : JsonConverter<ILobbyWorldLevel>
 {
-    public override LobbyWorldLevel? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override ILobbyWorldLevel? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         return JsonSerializer.Deserialize<LobbyWorldLevel>(ref reader);
     }
 
-    public override void Write(Utf8JsonWriter writer, LobbyWorldLevel value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, ILobbyWorldLevel value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
         writer.WriteString(nameof(value.Address), value.Address);
