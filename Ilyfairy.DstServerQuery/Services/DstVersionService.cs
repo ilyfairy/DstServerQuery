@@ -16,10 +16,11 @@ public class DstVersionService : IDisposable
     private bool running = true;
     private DstDownloader? currentDst;
     private readonly ILogger log = Log.ForContext<DstVersionService>();
+    public event EventHandler<long> VersionUpdated;
+    private bool isDisposed = false;
 
     public async Task RunAsync(long? defaultVersion = null)
     {
-        
         Version = defaultVersion;
         log.Information($"饥荒初始版本为 {defaultVersion}");
 
@@ -50,6 +51,7 @@ public class DstVersionService : IDisposable
                     if (version.HasValue && version.Value > 0)
                     {
                         Version = version.Value;
+                        VersionUpdated?.Invoke(this, version.Value);
                         ok = true;
                         TokenSource.Cancel();
                         log.Information("饥荒版本获取成功: {0}", version);
@@ -67,6 +69,8 @@ public class DstVersionService : IDisposable
 
     public void Dispose()
     {
+        if (isDisposed) return;
+        isDisposed = true;
         GC.SuppressFinalize(this);
         running = false;
         TokenSource?.Cancel();

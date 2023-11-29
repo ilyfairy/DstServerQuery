@@ -12,19 +12,15 @@ namespace Ilyfairy.DstServerQuery.Models;
 public class LobbyWorldLevel : ILobbyWorldLevel
 {
     [JsonPropertyName("__addr")]
-    //[DataMember(Name = nameof(Address))]
     public string Address { get; set; }
-    
+
     [JsonPropertyName("port")]
-    //[DataMember(Name = nameof(Port))]
     public int Port { get; set; }
 
     [JsonPropertyName("id")]
-    //[DataMember(Name = nameof(Id))]
     public string Id { get; set; }
 
     [JsonPropertyName("steamid")]
-    //[DataMember(Name = nameof(SteamId))]
     public string SteamId { get; set; }
 }
 
