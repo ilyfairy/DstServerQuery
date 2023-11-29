@@ -289,4 +289,22 @@ public class ServerController : ControllerBase
         return new TagsResponse(response).ToJsonResult();
     }
 
+    /// <summary>
+    /// 获取总计信息
+    /// </summary>
+    /// <returns></returns>
+    [HttpPost("GetTotal")]
+    [Produces("application/json")]
+    [ProducesResponseType<GetTotalResponse>(200)]
+    public IActionResult GetTotal()
+    {
+        var servers = lobbyServerManager.GetCurrentServers();
+
+        GetTotalResponse response = new();
+        response.Version = dstVersionGetter.Version;
+        response.Connections = servers.Sum(v => v.Connected);
+        response.Servers = servers.Count;
+
+        return response.ToJsonResult();
+    }
 }

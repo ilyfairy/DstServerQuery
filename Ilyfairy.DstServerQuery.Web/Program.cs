@@ -9,6 +9,7 @@ using Ilyfairy.DstServerQuery.Models.Requests;
 using Ilyfairy.DstServerQuery.Services;
 using Ilyfairy.DstServerQuery.Web;
 using Ilyfairy.DstServerQuery.Web.Services;
+using Ilyfairy.DstServerQuery.Web.Services.TrafficRateLimiter;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
@@ -105,7 +106,22 @@ else
 //{
 //    builder.Services.AddSqlServer<DstDbContext>(@"Server=(localdb)\mssqllocaldb;Database=EFProviders.InMemory;Trusted_Connection=True;ConnectRetryCount=0");
 //}
+
+builder.Services.AddSqlite<SimpleCacheDatabase>($"Data Source={Path.Join(AppContext.BaseDirectory, "cache.db")}");
 #endregion
+
+//流量速率限制
+builder.Services.AddTrafficLimiter(options =>
+{
+    options.StatusCode = 429;
+    options.MaxQueue = 10000;
+    var trafficRate = builder.Configuration.GetRequiredSection("TrafficRateLimit");
+
+    options.TrafficAny = trafficRate.GetSection("Any").Get<TrafficRateLimit[]>() ?? [];
+    options.TrafficTargets = trafficRate.GetSection("Targets").Get<Dictionary<string, TrafficRateLimit[]>>() ?? [];
+    options.IPHeader = trafficRate.GetSection("IPHeader").Get<string[]>() ?? [];
+});
+
 
 builder.Services.AddMemoryCache();
 
@@ -211,21 +227,27 @@ var app = builder.Build();
 
 //`(*>﹏<*)′=================================== 一条华丽的分割线 ===================================`(*>﹏<*)′//
 
-app.UseStaticFiles();
-
-
 app.UseCors("CORS");
 
 // 禁止访问/  用来检测服务器是否正常运行
-app.Use(async (v,next) =>
+app.Use(async (v, next) =>
 {
-    if(v.Request.Path == "" || v.Request.Path == "/")
+    if (v.Request.Path == "" || v.Request.Path == "/")
     {
         v.Response.StatusCode = 204;
         return;
     }
     await next();
 });
+
+//请求流量限制
+app.UseTrafficLimiter(async (context, v2, next) =>
+{
+    Log.Warning("流量速率限制  IP:{IP}  Path:{Path}", v2.IP, context.Request.Path.ToString());
+    await context.Response.WriteAsync("""{"Code":429,"Error":"Too Many Requests"}""");
+});
+
+app.UseStaticFiles();
 
 app.UseResponseCompression();
 app.UseSerilogRequestLogging();
@@ -237,7 +259,11 @@ app.Lifetime.ApplicationStarted.Register(async () =>
 {
     using var scope = app.Services.CreateScope();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<IHostApplicationBuilder>>();
-    
+
+    //键值对缓存数据库
+    var cache = scope.ServiceProvider.GetRequiredService<SimpleCacheDatabase>();
+    cache.EnsureInitialize();
+
     //数据库迁移
     var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
     bool isMigration = false;
@@ -277,12 +303,19 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     dstJsonConverter.DeserializerOptions.Converters.Add(new IPAddressInfoConverter(geoIPService));
     dstJsonConverter.SerializerOptions.Converters.Add(new IPAddressInfoConverter(geoIPService));
 
+    //启动服务管理器
     var lobbyManager = app.Services.GetRequiredService<LobbyServerManager>();
     await lobbyManager.Start();
     logger.LogInformation("IHostApplicationBuilder Start");
 
+    //饥荒版本获取
     var dstManager = app.Services.GetRequiredService<DstVersionService>();
-    _ = dstManager.RunAsync(dstWebConfig.DstDefaultVersion);
+    _ = dstManager.RunAsync(cache.Get<long?>("DstVersion") ?? dstWebConfig.DstDefaultVersion);
+    var dstVersionDatabase = app.Services.CreateScope().ServiceProvider.GetRequiredService<SimpleCacheDatabase>(); // 不销毁
+    dstManager.VersionUpdated += (sender, version) =>
+    {
+        dstVersionDatabase["DstVersion"] = version;
+    };
 
     app.Services.GetRequiredService<DstHistoryService>(); // 确保构造执行
 });

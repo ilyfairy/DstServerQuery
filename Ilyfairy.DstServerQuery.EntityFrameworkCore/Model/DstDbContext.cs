@@ -13,7 +13,7 @@ public class DstDbContext : DbContext
     public DbSet<HistoryServerItemPlayer> HistoryServerItemPlayerPair { get; set; }
     public DbSet<DstDaysInfo> DaysInfos { get; set; }
 
-    public DstDbContext(DbContextOptions options) : base(options)
+    public DstDbContext(DbContextOptions<DstDbContext> options) : base(options)
     {
     }
 
