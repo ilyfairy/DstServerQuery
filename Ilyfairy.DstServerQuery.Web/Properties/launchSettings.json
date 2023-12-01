@@ -8,7 +8,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "http://localhost:2400"
+      "applicationUrl": "http://localhost:3000"
     },
     "Web NoBrowser": {
       "commandName": "Project",
@@ -17,12 +17,14 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "http://localhost:2400"
+      "applicationUrl": "http://localhost:3000"
     },
-    "IIS Express": {
-      "commandName": "IISExpress",
+    "Https": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
       "launchBrowser": true,
       "launchUrl": "swagger",
+      "applicationUrl": "https://localhost:3001",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -38,13 +40,5 @@
       "distributionName": ""
     }
   },
-  "$schema": "https://json.schemastore.org/launchsettings.json",
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:30627",
-      "sslPort": 0
-    }
-  }
+  "$schema": "https://json.schemastore.org/launchsettings.json"
 }
