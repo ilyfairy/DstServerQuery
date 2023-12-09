@@ -28,11 +28,11 @@ public class LobbyServerQueryerV1
     public bool IsPlayerId { get; set; } = false;
     public bool IsPlayerQuery { get; set; }
     public bool IsSortDescending { get; set; }
-    public DateTime LastUpdate { get; set; }
+    public DateTimeOffset LastUpdate { get; set; }
 
     public HashSet<string>? PropertiesRemove { get; set; }
 
-    public LobbyServerQueryerV1(ICollection<LobbyServerDetailed> lobbyDetailDatas, IEnumerable<KeyValuePair<string, string>> queryKey, DateTime lastUpdate)
+    public LobbyServerQueryerV1(ICollection<LobbyServerDetailed> lobbyDetailDatas, IEnumerable<KeyValuePair<string, string>> queryKey, DateTimeOffset lastUpdate)
     {
         LastUpdate = lastUpdate;
         LobbyDetailDatas = lobbyDetailDatas;
@@ -124,7 +124,7 @@ public class LobbyServerQueryerV1
         List<T> list = Result.Select(v => (v as T)!).ToList();
 
         JsonObject json = new();
-        json.Add("DateTime", DateTime.Now);
+        json.Add("DateTime", DateTimeOffset.Now);
         json.Add("LastUpdate", LastUpdate);
         json.Add("Count", CurrentPageCount);
         json.Add("AllCount", AllQueryCount);

@@ -1,6 +1,6 @@
 ﻿using EFCore.BulkExtensions;
 using Ilyfairy.DstServerQuery.EntityFrameworkCore;
-using Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities;
+using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
 using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
 using Ilyfairy.DstServerQuery.Models.Requests;
@@ -15,7 +15,7 @@ public class DstHistoryService
     private readonly IServiceScopeFactory serviceScopeFactory;
     private readonly HistoryCountManager historyCountManager;
 
-    private DateTime lastServerUpdateDateTime;
+    private DateTimeOffset lastServerUpdateDateTime;
     private readonly int historyUpdateInterval = 10 * 60;
     private bool lastIsDetailed = false;
 
@@ -41,18 +41,18 @@ public class DstHistoryService
     {
         if (e.Servers.Count == 0) return;
 
-        DateTime updateDateTime = e.UpdatedDateTime;
+        DateTimeOffset updateDateTime = e.UpdatedDateTime;
         LobbyServerDetailed[] servers = e.Servers.Select(s => s.Clone()).ToArray();
 
         lock (this)
         {
             if (!lastIsDetailed && e.IsDetailed)
             {
-                lastServerUpdateDateTime = DateTime.Now;
+                lastServerUpdateDateTime = DateTimeOffset.Now;
             }
-            else if (DateTime.Now - lastServerUpdateDateTime > TimeSpan.FromSeconds(historyUpdateInterval))
+            else if (DateTimeOffset.Now - lastServerUpdateDateTime > TimeSpan.FromSeconds(historyUpdateInterval))
             {
-                lastServerUpdateDateTime = DateTime.Now;
+                lastServerUpdateDateTime = DateTimeOffset.Now;
             }
             else
             {
@@ -85,7 +85,7 @@ public class DstHistoryService
         }
     }
 
-    private async Task EnsureServersCreated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTime createDateTime)
+    private async Task EnsureServersCreated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTimeOffset createDateTime)
     {
         List<DstServerHistory> list = new();
         foreach (var server in servers)
@@ -101,7 +101,7 @@ public class DstHistoryService
                 Platform = server.Platform,
                 Intent = server.Intent.Value,
                 GameMode = server.Mode.Value,
-                UpdateTime = createDateTime,
+                UpdateTime = server.GetUpdateTime(),
             };
             list.Add(h);
         }
@@ -120,7 +120,7 @@ public class DstHistoryService
         }
     }
 
-    private async Task Updated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTime updateDateTime)
+    private async Task Updated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTimeOffset updateDateTime)
     {
         await EnsureServersCreated(dbContext, servers, updateDateTime);
 
@@ -130,7 +130,7 @@ public class DstHistoryService
             DstServerHistoryItem hItem = new()
             {
                 ServerId = item.RowId,
-                DateTime = updateDateTime,
+                DateTime = item.GetUpdateTime(),
                 PlayerCount = item.Connected,
                 Season = item.Season.Value,
             };
@@ -171,7 +171,7 @@ public class DstHistoryService
     }
 
 
-    private async Task UpdatedDetailed(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTime updateDateTime)
+    private async Task UpdatedDetailed(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTimeOffset updateDateTime)
     {
         await EnsureServersCreated(dbContext, servers, updateDateTime);
 
@@ -189,7 +189,7 @@ public class DstHistoryService
             {
                 IsDetailed = true,
                 ServerId = item.RowId,
-                DateTime = updateDateTime,
+                DateTime = item.GetUpdateTime(),
                 PlayerCount = item.Connected,
                 Season = item.Season.Value,
                 DaysInfo = DstDaysInfo.FromLobby(item.DaysInfo)

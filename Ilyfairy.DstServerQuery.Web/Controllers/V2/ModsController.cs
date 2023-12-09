@@ -39,24 +39,25 @@ public class ModsController : ControllerBase
         var group = mods.GroupBy(v => v.Id).Select(v =>
         {
             var mod = v.First();
-            return new DstModCount(mod.Id,mod.Name,v.Count());
+            return new DstModCount(mod.Id, mod.Name, v.Count());
         });
 
         var r = group.OrderByDescending(v => v.Count);
 
         DstModsUsageResponse response = new();
         response.Mods = r.Take(maxCount);
-        
+
         return response.ToJsonResult();
     }
 
-    
+
     /// <summary>
-    /// 获取所有Mod的名称和使用量
+    /// 获取Mod的名称和使用量
     /// </summary>
+    /// <param name="min">最小个数</param>
     /// <returns></returns>
     [HttpPost("GetNames")]
-    public IActionResult GetNames()
+    public IActionResult GetNames([FromQuery] int min = 1)
     {
         var list = lobbyDetailsManager.GetCurrentServers();
 
@@ -64,7 +65,8 @@ public class ModsController : ControllerBase
 
         var group = mods.GroupBy(v => v).Select(v => new DstModNameCount(v.Key, v.Count()));
 
-        var r = group.OrderByDescending(v => v.Count);
+        var r = group.OrderByDescending(v => v.Count)
+            .Where(v => v.Count >= min);
 
         DstModsNameUsageResponse response = new();
         response.Mods = r;

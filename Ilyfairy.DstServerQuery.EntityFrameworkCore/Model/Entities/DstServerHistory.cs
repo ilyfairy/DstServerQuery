@@ -1,14 +1,16 @@
 ﻿using Ilyfairy.DstServerQuery.Models;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities;
+namespace Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
 
 /// <summary>
 /// 服务器, 保存了几乎不可变的字段
 /// </summary>
+[Index(nameof(Id), nameof(UpdateTime))]
 public class DstServerHistory
 {
     /// <summary>
@@ -21,7 +23,7 @@ public class DstServerHistory
     public string IP { get; set; }
     public int Port { get; set; }
     public string Host { get; set; }
-    public DateTime UpdateTime { get; set; }
+    public DateTimeOffset UpdateTime { get; set; }
     public Platform Platform { get; set; }
     public string? GameMode { get; set; }
     public string? Intent { get; set; }
@@ -30,6 +32,8 @@ public class DstServerHistory
     public ICollection<DstServerHistoryItem> Items { get; set; } = [];
 }
 
+
+[Index(nameof(Id), nameof(DateTime))]
 public class DstServerHistoryItem
 {
     [Key]
@@ -38,7 +42,7 @@ public class DstServerHistoryItem
     public string? Season { get; set; }
     public int PlayerCount { get; set; }
 
-    public DateTime DateTime { get; set; }
+    public DateTimeOffset DateTime { get; set; }
 
     public string ServerId { get; set; }
     public DstServerHistory Server { get; set; }

@@ -8,5 +8,5 @@ namespace Ilyfairy.DstServerQuery.Web.Models.Http;
 public class ServerDetailsResponse : ResponseBase
 {
     public required ILobbyServerDetailedV2 Server { get; set; }
-    public required DateTime LastUpdate { get; set; }
+    public required DateTimeOffset LastUpdate { get; set; }
 }

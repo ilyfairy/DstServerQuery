@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Models.Entities;
+namespace Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
 
 /// <summary>
 /// 服务器数量信息
@@ -12,7 +12,7 @@ public record ServerCountInfo
     public int Id { get; set; }
 
     //`(*>﹏<*)′=================================== 一条华丽的分割线 ===================================`(*>﹏<*)′//
-    public DateTime UpdateDate { get; set; }
+    public DateTimeOffset UpdateDate { get; set; }
     public int AllServerCount { get; set; }
     public int AllPlayerCount { get; set; }
     //`(*>﹏<*)′=================================== 一条华丽的分割线 ===================================`(*>﹏<*)′//

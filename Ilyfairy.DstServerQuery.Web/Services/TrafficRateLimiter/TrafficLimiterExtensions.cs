@@ -65,7 +65,7 @@ public static class TrafficLimiterExtensions
 
             foreach (var limit in limits)
             {
-                DateTime start = DateTime.Now - TimeSpan.FromSeconds(limit.WindowSec);
+                DateTimeOffset start = DateTimeOffset.Now - TimeSpan.FromSeconds(limit.WindowSec);
                 var range = chunks.Where(v => v.DateTime >= start);
                 var sum = range.Sum(v => v.Bytes);
                 TrafficContext trafficContext = new()
@@ -91,7 +91,7 @@ public static class TrafficLimiterExtensions
             TrafficChunk currentChunk = new()
             {
                 Bytes = trafficMonitorStream.Bytes,
-                DateTime = DateTime.Now,
+                DateTime = DateTimeOffset.Now,
             };
             chunks.Enqueue(currentChunk);
 

@@ -110,11 +110,7 @@ public class ServerController : ControllerBase
         }
         _logger.LogInformation("找到服务器 RowId:{RowId} Name:{Name}", id, info.Name);
 
-
-        [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_LastUpdate")]
-        static extern ref DateTime GetLastUpdate(LobbyServer info); // 不安全
-
-        DateTime lastUpdate = GetLastUpdate(info);
+        DateTimeOffset lastUpdate = info.GetUpdateTime();
         ServerDetailsResponse response = new()
         {
             Server = info,
@@ -229,7 +225,7 @@ public class ServerController : ControllerBase
                 TotalCount = result.Count,
                 Count = current.Length,
                 PageIndex = pageIndex,
-                DateTime = DateTime.Now,
+                DateTime = DateTimeOffset.Now,
                 MaxPageIndex = totalPageIndex,
             };
         }
@@ -277,14 +273,17 @@ public class ServerController : ControllerBase
     [HttpPost("GetTags")]
     [Produces("application/json")]
     [ProducesResponseType<TagsResponse>(200)]
-    public IActionResult GetTags()
+    public IActionResult GetTags([FromQuery] int min = 1)
     {
         var servers = lobbyServerManager.GetCurrentServers();
 
         var tags = servers.SelectMany(v => v.Tags ?? [])
             .Where(v => !string.IsNullOrEmpty(v));
 
-        var response = tags.GroupBy(v => v).Select(v => new TagsResponse.ServerTag(v.Key, v.Count())).OrderByDescending(v => v.Count);
+        var response = tags.GroupBy(v => v)
+            .Select(v => new TagsResponse.ServerTag(v.Key, v.Count()))
+            .OrderByDescending(v => v.Count)
+            .Where(v => v.Count >= min);
 
         return new TagsResponse(response).ToJsonResult();
     }
@@ -304,6 +303,7 @@ public class ServerController : ControllerBase
         response.Version = dstVersionGetter.Version;
         response.Connections = servers.Sum(v => v.Connected);
         response.Servers = servers.Count;
+        response.DateTime = DateTimeOffset.Now;
 
         return response.ToJsonResult();
     }

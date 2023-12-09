@@ -10,6 +10,7 @@ public class TagsConverter : JsonConverter<string[]>
     {
         if (reader.GetString() is not string str) return Array.Empty<string>();
         var tags = str.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        tags = tags.Select(x => x.Trim()).Distinct().ToArray();
         for (int i = 0; i < tags.Length; i++)
         {
             tags[i] = string.Intern(tags[i]);

@@ -1,5 +1,5 @@
-﻿using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Models.Entities;
+﻿using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
+using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,8 +16,8 @@ public class HistoryCountManager
     private readonly IServiceScopeFactory serviceScopeFactory;
     private readonly Queue<ServerCountInfo> cache = new(10100);
 
-    public DateTime LastUpdate { get; private set; }
-    public DateTime First => cache.FirstOrDefault()?.UpdateDate ?? DateTime.Now;
+    public DateTimeOffset LastUpdate { get; private set; }
+    public DateTimeOffset First => cache.FirstOrDefault()?.UpdateDate ?? DateTimeOffset.Now;
     public IEnumerable<ServerCountInfo> Cache => cache;
 
     public HistoryCountManager(IServiceScopeFactory serviceScopeFactory, ILogger<HistoryCountManager> logger)
@@ -42,7 +42,7 @@ public class HistoryCountManager
         using var scope = serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
         
-        var day3 = DateTime.Now - TimeSpan.FromDays(3); //三天前
+        var day3 = DateTimeOffset.Now - TimeSpan.FromDays(3); //三天前
         var r = dbContext.ServerHistoryCountInfos.Where(v => v.UpdateDate > day3).AsNoTracking().ToArray();
         foreach (var item in r)
         {
@@ -69,7 +69,7 @@ public class HistoryCountManager
     }
 
     // data to info
-    public Task AddAsync(ICollection<LobbyServerDetailed> data, DateTime updateTime)
+    public Task AddAsync(ICollection<LobbyServerDetailed> data, DateTimeOffset updateTime)
     {
         LastUpdate = updateTime;
 

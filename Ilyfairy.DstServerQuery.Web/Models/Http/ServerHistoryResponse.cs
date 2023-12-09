@@ -1,4 +1,4 @@
-﻿using Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities;
+﻿using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ilyfairy.DstServerQuery.Web.Models.Http;

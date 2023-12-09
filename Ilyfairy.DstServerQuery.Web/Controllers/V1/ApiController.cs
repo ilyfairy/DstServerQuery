@@ -1,9 +1,8 @@
 ﻿using Asp.Versioning;
-using Ilyfairy.DstServerQuery;
 using Ilyfairy.DstServerQuery.EntityFrameworkCore;
+using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
 using Ilyfairy.DstServerQuery.LobbyJson;
 using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Models.Entities;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
 using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
 using Ilyfairy.DstServerQuery.Services;
@@ -127,7 +126,7 @@ public partial class ApiController : ControllerBase
     {
         _logger.LogInformation("获取服务器历史记录个数: Interval:{Interval} Rel:{Rel} Count:{Count}", interval, rel, count);
         if (interval <= 0) interval = 3600;
-        DateTime date = DateTime.Now.AddSeconds(-rel);
+        DateTimeOffset date = DateTimeOffset.Now.AddSeconds(-rel);
         var history = historyCountManager.GetServerHistory();
 
         List<ServerCountInfo> result = new();
@@ -137,7 +136,7 @@ public partial class ApiController : ControllerBase
             var item = history[i];
             try
             {
-                if (new DateTimeOffset(item.UpdateDate).ToUnixTimeSeconds() < new DateTimeOffset(date).ToUnixTimeSeconds() - last)
+                if (item.UpdateDate < date - TimeSpan.FromSeconds(last))
                 {
                     result.Add(item);
                     if (result.Count >= count)

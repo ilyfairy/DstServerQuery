@@ -247,6 +247,9 @@ app.UseTrafficLimiter(async (context, v2, next) =>
     await context.Response.WriteAsync("""{"Code":429,"Error":"Too Many Requests"}""");
 });
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseStaticFiles();
 
 app.UseResponseCompression();
@@ -279,6 +282,7 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     catch { }
     if (isMigration)
     {
+        dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(100));
         await dbContext.Database.MigrateAsync(); //执行迁移
         logger.LogInformation("数据库迁移成功");
     }

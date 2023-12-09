@@ -12,12 +12,12 @@ public class ListResponse<T> : ResponseBase where T : ILobbyServerV2
     /// <summary>
     /// Http开始响应的时间
     /// </summary>
-    public DateTime DateTime { get; set; }
+    public DateTimeOffset DateTime { get; set; }
 
     /// <summary>
     /// 数据最后更新时间
     /// </summary>
-    public DateTime LastUpdate { get; set; }
+    public DateTimeOffset LastUpdate { get; set; }
 
     /// <summary>
     /// 当前页个数

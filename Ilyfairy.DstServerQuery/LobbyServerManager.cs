@@ -22,7 +22,7 @@ public class LobbyServerManager : IDisposable
     /// <summary>
     /// 最后更新时间
     /// </summary>
-    public DateTime LastUpdate { get; private set; }
+    public DateTimeOffset LastUpdate { get; private set; }
 
     private readonly Stopwatch sw = Stopwatch.StartNew();
     private readonly DstWebConfig dstConfig;
@@ -110,7 +110,7 @@ public class LobbyServerManager : IDisposable
 
             if (!Running) break;
 
-            LastUpdate = DateTime.Now;
+            LastUpdate = DateTimeOffset.Now;
             var currentRowIds = ServerMap.Keys;
             var newRowIds = tempServerRowIdMap.Keys;
 
@@ -146,7 +146,7 @@ public class LobbyServerManager : IDisposable
             }
 
             serverCache = ServerMap.Values;
-            Updated?.Invoke(this, new DstUpdatedEventArgs(serverCache, false, DateTime.Now)
+            Updated?.Invoke(this, new DstUpdatedEventArgs(serverCache, false, DateTimeOffset.Now)
             {
                 UnchangedServers = unchanged,
                 AddedServers = added,
@@ -170,10 +170,10 @@ public class LobbyServerManager : IDisposable
         await Task.Yield();
         await Task.Delay(20000); // 延迟,等待RequestLoop更新完
 
-        DateTime lastUpdated = default;
+        DateTimeOffset lastUpdated = default;
         while (Running)
         {
-            if (DateTime.Now - lastUpdated < TimeSpan.FromSeconds(dstConfig.DetailsUpdateInterval ?? 600))
+            if (DateTimeOffset.Now - lastUpdated < TimeSpan.FromSeconds(dstConfig.DetailsUpdateInterval ?? 600))
             {
                 await Task.Delay(2000, HttpTokenSource.Token);
                 continue;
@@ -183,7 +183,7 @@ public class LobbyServerManager : IDisposable
             ICollection<LobbyServerDetailed> arr = ServerMap.Values;
             if (arr.Count != 0)
             {
-                lastUpdated = DateTime.Now;
+                lastUpdated = DateTimeOffset.Now;
                 try
                 {
                     var updated = await LobbyDownloader.UpdateToDetails(arr, HttpTokenSource.Token);
@@ -218,7 +218,9 @@ public class LobbyServerManager : IDisposable
     /// <summary>
     /// 通过RowId获取房间详细信息
     /// </summary>
-    /// <param name="rowid"></param>
+    /// <param name="rowid">RowId</param>
+    /// <param name="forceUpdate">是否强制更新</param>
+    /// <param name="cancellationToken">取消令牌</param>
     /// <returns></returns>
     public async Task<LobbyServerDetailed?> GetDetailedByRowIdAsync(string rowid, bool forceUpdate, CancellationToken cancellationToken)
     {
@@ -233,7 +235,7 @@ public class LobbyServerManager : IDisposable
         try
         {
             await server._Lock.WaitAsync(token);
-            if (forceUpdate || !server._IsDetails || (DateTime.Now - server._LastUpdate) > TimeSpan.FromSeconds(20))
+            if (forceUpdate || !server._IsDetails || (DateTimeOffset.Now - server._LastUpdate) > TimeSpan.FromSeconds(20))
             {
                 await LobbyDownloader.UpdateToDetails(server, HttpTokenSource.Token);
             }
@@ -259,9 +261,9 @@ public class DstUpdatedEventArgs : EventArgs
     public ICollection<LobbyServer>? UnchangedServers { get; init; }
 
     public bool IsDetailed { get; init; }
-    public DateTime UpdatedDateTime { get; init; }
+    public DateTimeOffset UpdatedDateTime { get; init; }
 
-    public DstUpdatedEventArgs(ICollection<LobbyServerDetailed> data, bool isDetailed, DateTime updatedDateTime)
+    public DstUpdatedEventArgs(ICollection<LobbyServerDetailed> data, bool isDetailed, DateTimeOffset updatedDateTime)
     {
         Servers = data;
         IsDetailed = isDetailed;

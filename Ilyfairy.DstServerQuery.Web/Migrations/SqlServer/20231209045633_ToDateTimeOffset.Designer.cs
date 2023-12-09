@@ -4,6 +4,7 @@ using Ilyfairy.DstServerQuery.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 {
     [DbContext(typeof(DstDbContext))]
-    partial class DstDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231209045633_ToDateTimeOffset")]
+    partial class ToDateTimeOffset
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

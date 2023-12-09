@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities;
+namespace Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
 
 /// <summary>
 /// 服务器玩家

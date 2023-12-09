@@ -84,7 +84,7 @@ namespace Ilyfairy.DstServerQuery
             
             foreach (var item in get.Data)
             {
-                item._LastUpdate = DateTime.Now;
+                item._LastUpdate = DateTimeOffset.Now;
             }
             return get.Data;
         }
@@ -129,7 +129,7 @@ namespace Ilyfairy.DstServerQuery
             foreach (var item in get.Data)
             {
                 item._IsDetails = true;
-                item._LastUpdate = DateTime.Now;
+                item._LastUpdate = DateTimeOffset.Now;
             }
             return get.Data;
         }
@@ -176,7 +176,7 @@ namespace Ilyfairy.DstServerQuery
                 var newServer = get.Data.First();
                 newServer.CopyTo(server); //更新数据
                 server._IsDetails = true; //变成详细数据
-                server._LastUpdate = DateTime.Now;
+                server._LastUpdate = DateTimeOffset.Now;
                 return true;
             }
             try
@@ -290,7 +290,7 @@ namespace Ilyfairy.DstServerQuery
                             //Interlocked.Increment(ref updatedCount);
                             newServer.CopyTo(server); //更新数据
                             server._IsDetails = true; //标记为详细数据
-                            server._LastUpdate = DateTime.Now;
+                            server._LastUpdate = DateTimeOffset.Now;
                         }
                     }
                 });
@@ -309,7 +309,7 @@ namespace Ilyfairy.DstServerQuery
                 {
                     item._Region = map.Key.Region;
                     item._LobbyPlatform = map.Key.Platform;
-                    item._LastUpdate = DateTime.Now;
+                    item._LastUpdate = DateTimeOffset.Now;
                     yield return item;
                 }
             }

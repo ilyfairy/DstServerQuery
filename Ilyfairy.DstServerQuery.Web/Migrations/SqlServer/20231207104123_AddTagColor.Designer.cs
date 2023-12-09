@@ -4,6 +4,7 @@ using Ilyfairy.DstServerQuery.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 {
     [DbContext(typeof(DstDbContext))]
-    partial class DstDbContextModelSnapshot : ModelSnapshot
+    [Migration("20231207104123_AddTagColor")]
+    partial class AddTagColor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -91,12 +94,10 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
                     b.Property<int>("Port")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("UpdateTime")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("UpdateTime")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Id", "UpdateTime");
 
                     b.ToTable("ServerHistories");
                 });
@@ -109,8 +110,8 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTimeOffset>("DateTime")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("DateTime")
+                        .HasColumnType("datetime2");
 
                     b.Property<long?>("DaysInfoId")
                         .HasColumnType("bigint");
@@ -135,8 +136,6 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
                         .HasFilter("[DaysInfoId] IS NOT NULL");
 
                     b.HasIndex("ServerId");
-
-                    b.HasIndex("Id", "DateTime");
 
                     b.ToTable("ServerHistoryItems");
                 });
@@ -188,8 +187,8 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
                     b.Property<int?>("SwitchServerCount")
                         .HasColumnType("int");
 
-                    b.Property<DateTimeOffset>("UpdateDate")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<DateTime>("UpdateDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("WeGamePlayerCount")
                         .HasColumnType("int");
@@ -213,7 +212,7 @@ namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("Color")
+                    b.Property<string>("TagColors")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

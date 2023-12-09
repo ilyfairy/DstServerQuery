@@ -14,8 +14,10 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
     internal bool _IsDetails;
     internal string? _Region;
     internal LobbyPlatform _LobbyPlatform;
-    internal DateTime _LastUpdate;
+    internal DateTimeOffset _LastUpdate;
     internal SemaphoreSlim? _Lock;
+
+    public DateTimeOffset GetUpdateTime() => _LastUpdate;
 
     
     [JsonPropertyName("name")]
@@ -125,6 +127,8 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
         dest.IsPvp = this.IsPvp;
         dest.Version = this.Version;
         dest.Session = this.Session;
+
+        dest._LastUpdate = this._LastUpdate;
     }
 
 }

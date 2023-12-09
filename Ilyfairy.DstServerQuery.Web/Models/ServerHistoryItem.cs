@@ -1,4 +1,4 @@
-﻿using Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities;
+﻿using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
 using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.Web.Models;
@@ -7,7 +7,7 @@ public record ServerHistoryItem
 {
     public string? Season { get; set; }
     public int PlayerCount { get; set; }
-    public DateTime DateTime { get; set; }
+    public DateTimeOffset DateTime { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DstDaysInfo? DaysInfo { get; set; }

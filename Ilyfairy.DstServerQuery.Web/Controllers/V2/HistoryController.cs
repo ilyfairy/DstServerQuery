@@ -1,9 +1,8 @@
 ﻿using Asp.Versioning;
 using Ilyfairy.DstServerQuery.EntityFrameworkCore;
-using Ilyfairy.DstServerQuery.EntityFrameworkCore.Model.Entities;
+using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
 using Ilyfairy.DstServerQuery.LobbyJson;
 using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Models.Entities;
 using Ilyfairy.DstServerQuery.Services;
 using Ilyfairy.DstServerQuery.Web.Models;
 using Ilyfairy.DstServerQuery.Web.Models.Http;
@@ -49,8 +48,8 @@ public class HistoryController : ControllerBase
     /// 获取服务器历史记录个数
     /// </summary>
     /// <param name="interval">间隔</param>
-    /// <param name="startDateTime">开始时间</param>
-    /// <param name="endDateTime">结束时间</param>
+    /// <param name="startDateTime">开始时间戳</param>
+    /// <param name="endDateTime">结束时间戳</param>
     /// <returns></returns>
     [HttpPost("HistoryCount")]
     public async Task<IActionResult> GetServerCountHistory(
@@ -59,15 +58,15 @@ public class HistoryController : ControllerBase
         [FromQuery] int interval = 60 * 60
         )
     {
-        var start = DateTimeOffset.FromUnixTimeSeconds(startDateTime).DateTime;
-        var end = DateTimeOffset.FromUnixTimeSeconds(endDateTime).DateTime;
+        var start = DateTimeOffset.FromUnixTimeSeconds(startDateTime);
+        var end = DateTimeOffset.FromUnixTimeSeconds(endDateTime);
 
         if (end - start > TimeSpan.FromDays(3) || start - end < default(TimeSpan))
         {
             return ResponseBase.BadRequest();
         }
 
-        DateTime currentDateTime = start;
+        DateTimeOffset currentDateTime = start;
 
         if (interval < 60) interval = 60;
 
@@ -233,12 +232,21 @@ public class HistoryController : ControllerBase
     /// 获取历史服务器的信息
     /// </summary>
     /// <param name="rowId">房间Id</param>
-    /// <param name="isDetailed">是否详细信息</param>
     /// <param name="startDateTime">开始时间</param>
     /// <param name="endDateTime">结束时间</param>
+    /// <param name="isDetails">是否指定获取详细信息</param>
+    /// <param name="includeDays">是否获取天数</param>
+    /// <param name="includePlayers">是否获取玩家</param>
     /// <returns></returns>
     [HttpPost("GetServerHistory")]
-    public async Task<IActionResult> GetServerHistory([FromQuery] string rowId, [FromQuery] bool isDetailed = false, [FromQuery] DateTime? startDateTime = null, [FromQuery] DateTime? endDateTime = null)
+    public async Task<IActionResult> GetServerHistory(
+        [FromQuery] string rowId, 
+        [FromQuery] DateTimeOffset? startDateTime = null, 
+        [FromQuery] DateTimeOffset? endDateTime = null, 
+        bool? isDetails = null,
+        bool? includeDays = false,
+        bool? includePlayers = false
+        )
     {
         if (string.IsNullOrEmpty(rowId))
         {
@@ -251,19 +259,35 @@ public class HistoryController : ControllerBase
         if (server is null)
             return ResponseBase.NotFound();
 
-        if (startDateTime is null || startDateTime < DateTime.Now - TimeSpan.FromDays(3))
-            startDateTime = DateTime.Now - TimeSpan.FromDays(3);
-        endDateTime ??= DateTime.Now;
+        if (startDateTime is null || startDateTime < DateTimeOffset.Now - TimeSpan.FromDays(3))
+            startDateTime = DateTimeOffset.Now - TimeSpan.FromDays(3);
+        endDateTime ??= DateTimeOffset.Now;
 
-        var items = await dbContext.ServerHistoryItems
+        var query = dbContext.ServerHistoryItems
             .AsNoTracking()
-            .Include(v => v.DaysInfo)
-            .Include(v => v.Players)
-            .Where(v => v.DateTime >= startDateTime && v.DateTime <= endDateTime)
-            .Where(v => v.ServerId == server.Id)
-            .Where(v => v.IsDetailed == isDetailed)
-            .ToArrayAsync();
+            .Where(v => v.ServerId == server.Id);
 
+        query = query.Where(v => v.DateTime >= startDateTime && v.DateTime <= endDateTime);
+
+        if (isDetails == null)
+        {
+            query = query.Where(v => v.IsDetailed == (includeDays == true || includePlayers == true));
+        }
+        else
+        {
+            query = query.Where(v => v.IsDetailed == isDetails);
+        }
+
+        if(includeDays == true)
+        {
+            query = query.Include(v => v.DaysInfo);
+        }
+        if(includePlayers == true)
+        {
+            query = query.Include(v => v.Players);
+        }
+
+        var items = await query.OrderBy(v => v.DateTime).ToArrayAsync();
         ServerHistoryResponse response = new()
         {
             Server = server,

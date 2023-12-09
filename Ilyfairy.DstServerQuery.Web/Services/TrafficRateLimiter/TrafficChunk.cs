@@ -2,6 +2,6 @@
 
 public record struct TrafficChunk
 {
-    public DateTime DateTime { get; set; }
+    public DateTimeOffset DateTime { get; set; }
     public int Bytes { get; set; }
 }

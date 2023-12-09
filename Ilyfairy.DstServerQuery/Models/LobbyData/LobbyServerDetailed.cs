@@ -158,6 +158,11 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
         obj.Users = this.Users;
         obj.ModsInfo = this.ModsInfo?.ToArray();
 
+        obj._IsDetails = this._IsDetails;
+        obj._LastUpdate = this._LastUpdate;
+        obj._LobbyPlatform = this._LobbyPlatform;
+        obj._Region = this._Region;
+
         return obj;
     }
 
@@ -213,6 +218,7 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
         dest.Users = this.Users;
         dest.ModsInfo = this.ModsInfo;
 
+        dest._LastUpdate = this._LastUpdate;
     }
 
 }

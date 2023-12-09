@@ -6,5 +6,5 @@ public class GetTotalResponse : ResponseBase
     public int Connections { get; set; }
     public int Servers { get; set; }
 
-    public DateTime DateTime { get; set; }
+    public DateTimeOffset DateTime { get; set; }
 }
