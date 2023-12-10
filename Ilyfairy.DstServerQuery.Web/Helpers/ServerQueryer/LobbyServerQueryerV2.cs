@@ -57,6 +57,9 @@ public class LobbyServerQueryerV2
         HandleIsDedicated();
         HandleOwnerNetId();
         HandleIsAllowNewPlayers();
+        HandleIsServerPaused();
+        HandleNat();
+        HandleIsFriendsOnly();
 
         HandleSort();
 
@@ -747,6 +750,22 @@ public class LobbyServerQueryerV2
         current = current.Where(v => v.IsServerPaused == queryParams.IsServerPaused);
     }
 
+    private void HandleNat()
+    {
+        if (queryParams.Nat is null)
+            return;
+
+        current = current.Where(v => v.Nat == queryParams.Nat);
+    }
+
+    private void HandleIsFriendsOnly()
+    {
+        if (queryParams.IsFriendsOnly is null)
+            return;
+
+        current = current.Where(v => v.IsFriendsOnly == queryParams.IsFriendsOnly);
+    }
+
 
     private Regex CreateRegex(string pattern)
     {
@@ -949,6 +968,16 @@ public class ListQueryParams
     /// 服务器是否已暂停
     /// </summary>
     public bool? IsServerPaused { get; set; }
+
+    /// <summary>
+    /// 服务器网络类型
+    /// </summary>
+    public int? Nat { get; set; }
+
+    /// <summary>
+    /// 仅限好友加入
+    /// </summary>
+    public bool? IsFriendsOnly { get; set; }
 }
 
 /// <summary>

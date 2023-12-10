@@ -38,7 +38,11 @@ public class DstVersionService : IDisposable
                 //等待Login,设置超时时间
                 _ = Task.Run(async () =>
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(60), TokenSource.Token); //60秒超时
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(60), TokenSource.Token); //60秒超时
+                    }
+                    catch (Exception) { }
                     if (ok) return;
                     dst.Dispose();
                     log.Warning("饥荒版本获取失败");

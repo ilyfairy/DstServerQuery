@@ -27,6 +27,7 @@ public class HelperController(
     [HttpPost("GetTagsColor")]
     [Produces("application/json")]
     [ProducesResponseType<ColorResponse>(200)]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public async Task<IActionResult> GetTagsColor([FromBody] string[] tags)
     {
         var colors = await _dbContext.TagColors.Where(v => tags.Contains(v.Name)).ToArrayAsync();

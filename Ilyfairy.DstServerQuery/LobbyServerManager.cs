@@ -187,7 +187,7 @@ public class LobbyServerManager : IDisposable
                 try
                 {
                     var updated = await LobbyDownloader.UpdateToDetails(arr, HttpTokenSource.Token);
-                    if (updated.Count > arr.Count * 0.8f) // 更新数量大于80%
+                    if (updated.Count > arr.Count * 0.6f) // 更新数量大于60%
                     {
                         Updated?.Invoke(this, new DstUpdatedEventArgs(updated, true, LastUpdate));
                     }

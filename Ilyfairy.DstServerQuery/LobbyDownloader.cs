@@ -203,7 +203,7 @@ namespace Ilyfairy.DstServerQuery
 
             //int updatedCount = 0;
             //int requestCount = 0;
-            ConcurrentBag<LobbyServerDetailed> updated = new();
+            ConcurrentBag<LobbyServerDetailed> updatedClone = new();
 
             var proxyUrl = GetProxyUrl();
             if (string.IsNullOrWhiteSpace(proxyUrl))
@@ -213,7 +213,7 @@ namespace Ilyfairy.DstServerQuery
                     //requestCount++;
                     if (await UpdateToDetails(item, cancellationToken))
                     {
-                        updated.Add(item);
+                        updatedClone.Add(item);
                         //Interlocked.Increment(ref  updatedCount);
                     }
                 }
@@ -279,6 +279,7 @@ namespace Ilyfairy.DstServerQuery
                         //throw;
                         return;
                     }
+                    var dateTime = DateTimeOffset.Now;
 
                     //Interlocked.Increment(ref requestCount);
                     if (get is null || get.Data is null) return;
@@ -286,17 +287,19 @@ namespace Ilyfairy.DstServerQuery
                     {
                         if (rowIdMap.TryGetValue(newServer.RowId, out var server))
                         {
-                            updated.Add(server);
                             //Interlocked.Increment(ref updatedCount);
+                            newServer._IsDetails = true; //标记为详细数据
+                            newServer._LastUpdate = dateTime;
                             newServer.CopyTo(server); //更新数据
-                            server._IsDetails = true; //标记为详细数据
-                            server._LastUpdate = DateTimeOffset.Now;
+                            server._IsDetails = true;
+                            server._LastUpdate = dateTime;
+                            updatedClone.Add(newServer);
                         }
                     }
                 });
             }
 
-            return updated.ToArray();
+            return updatedClone.ToArray();
         }
 
         public async IAsyncEnumerable<LobbyServerDetailed> DownloadAllBriefs([EnumeratorCancellation] CancellationToken cancellationToken = default)

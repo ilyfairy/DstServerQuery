@@ -42,7 +42,6 @@ public class DstHistoryService
         if (e.Servers.Count == 0) return;
 
         DateTimeOffset updateDateTime = e.UpdatedDateTime;
-        LobbyServerDetailed[] servers = e.Servers.Select(s => s.Clone()).ToArray();
 
         lock (this)
         {
@@ -65,6 +64,11 @@ public class DstHistoryService
         using var scope = serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
 
+        ICollection<LobbyServerDetailed> servers = e.Servers;
+        if (!e.IsDetailed) // Detailed已经被克隆
+        {
+            servers = servers.Select(s => s.Clone()).ToArray();
+        }
 
         try
         {
@@ -87,7 +91,7 @@ public class DstHistoryService
 
     private async Task EnsureServersCreated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTimeOffset createDateTime)
     {
-        List<DstServerHistory> list = new();
+        List<DstServerHistory> list = new(servers.Count);
         foreach (var server in servers)
         {
             //var server = allMap[unKey];
