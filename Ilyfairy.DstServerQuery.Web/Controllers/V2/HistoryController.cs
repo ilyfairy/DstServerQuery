@@ -201,7 +201,7 @@ public class HistoryController : ControllerBase
     }
 
     /// <summary>
-    /// 获取玩家存在于哪个服务器中
+    /// 获取玩家存在过的服务器
     /// </summary>
     /// <param name="playerId">玩家的NetId</param>
     /// <returns></returns>

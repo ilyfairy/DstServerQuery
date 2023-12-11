@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 
 namespace Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer;
 
-public class LobbyServerQueryerV2
+public partial class LobbyServerQueryerV2
 {
     private readonly ListQueryParams queryParams;
     private readonly ICollection<LobbyServerDetailed> servers;
@@ -305,13 +305,22 @@ public class LobbyServerQueryerV2
         if (queryParams.IP is "string")
             return;
 
+        //如果是IP
         if (IPAddress.TryParse(queryParams.IP, out var ipAddress))
         {
             current = current.Where(v => v.Address.IP == queryParams.IP);
             return;
         }
+        
+        //如果是CIDR
+        if (IPNetwork.TryParse(queryParams.IP, out var network))
+        {
+            current = current.Where(v => network.Contains(v.Address.IPAddress));
+            return;
+        }
 
-        Match match = Regex.Match(queryParams.IP, @"(?<a>(\d+|\*))\.(?<b>\d+|\*)\.(?<c>\d+|\*)\.(?<d>\d+|\*)");
+        //如果是*.*.*.*
+        Match match = IPRegex().Match(queryParams.IP);
         if (!match.Success)
         {
             throw new QueryArgumentException("'IP' syntax error");
@@ -778,6 +787,9 @@ public class LobbyServerQueryerV2
             throw new QueryArgumentException(ex.Message);
         }
     }
+
+    [GeneratedRegex(@"(?<a>(\d+|\*))\.(?<b>\d+|\*)\.(?<c>\d+|\*)\.(?<d>\d+|\*)")]
+    private static partial Regex IPRegex();
 }
 
 /// <summary>
@@ -856,7 +868,7 @@ public class ListQueryParams
     public StringArray? Intent { get; set; }
 
     /// <summary>
-    /// IP地址, 可以使用通配符\*.\*.\*.\*
+    /// IP地址, 可以使用CIDR或者通配符\*.\*.\*.\*
     /// </summary>
     public string? IP { get; set; }
 

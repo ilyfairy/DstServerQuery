@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -16,6 +17,11 @@ namespace Ilyfairy.DstServerQuery.LobbyJson.Converter;
 public abstract class IPAddressReadConverter : JsonConverter<IPAddressInfo>
 {
     public GeoIPService? GeoIPService { get; }
+    private readonly IPAddressInfo local = new()
+    {
+        CountryInfo = null,
+        IPAddress = IPAddress.Loopback,
+    };
 
     public IPAddressReadConverter(GeoIPService? geoIPService)
     {
@@ -33,18 +39,38 @@ public abstract class IPAddressReadConverter : JsonConverter<IPAddressInfo>
         string? ip = reader.GetString();
         if (reader.TokenType != JsonTokenType.String || string.IsNullOrWhiteSpace(ip)) return null;
 
-        IPAddressInfo info = new(ip.Trim());
-        if (ip == "127.0.0.1") return info;
-
+        ip = ip.Trim();
+        if (ip == "127.0.0.1") return local;
+        
+        IPAddressInfo info;
+        IPAddress? ipAddress = null;
         try
         {
-            if (GeoIPService?.TryCity(info.IP, out var city) == true)
+            ipAddress = IPAddress.Parse(ip);
+            if (GeoIPService?.TryCity(ip, out var city) == true)
             {
-                info.CountryInfo = city?.Country;
+                info = new IPAddressInfo()
+                {
+                    IPAddress = ipAddress,
+                    CountryInfo = city?.Country,
+                    CityInfo = city?.City,
+                };
+            }
+            else
+            {
+                info = new IPAddressInfo()
+                {
+                    IPAddress = ipAddress,
+                };
             }
         }
-        catch (Exception)
+        catch
         {
+            info = new IPAddressInfo()
+            {
+                CountryInfo = null,
+                IPAddress = ipAddress,
+            };
         }
 
         return info;

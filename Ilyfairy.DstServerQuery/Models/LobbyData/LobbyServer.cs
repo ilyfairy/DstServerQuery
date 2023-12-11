@@ -87,7 +87,7 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
         LobbyServer obj = new();
 
         obj.Name = this.Name;
-        obj.Address = this.Address with { };
+        obj.Address = this.Address;
         obj.Port = this.Port;
         obj.RowId = this.RowId;
         obj.Connected = this.Connected;

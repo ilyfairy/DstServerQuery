@@ -110,7 +110,7 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
         LobbyServerDetailed obj = new();
 
         obj.Name = this.Name;
-        obj.Address = this.Address with { };
+        obj.Address = this.Address;
         obj.Port = this.Port;
         obj.RowId = this.RowId;
         obj.Connected = this.Connected;
