@@ -237,7 +237,7 @@ namespace Ilyfairy.DstServerQuery
 
                 ParallelOptions opt = new()
                 {
-                    MaxDegreeOfParallelism = 5,
+                    MaxDegreeOfParallelism = dstWebConfig.UpdateThreads ?? 6,
                     CancellationToken = cancellationToken
                 };
                 await Parallel.ForEachAsync(requests.Chunk(50), opt, async (chunk, ct) =>

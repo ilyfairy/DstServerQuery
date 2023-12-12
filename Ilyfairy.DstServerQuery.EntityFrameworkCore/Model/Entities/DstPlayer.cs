@@ -1,4 +1,5 @@
 ﻿using Ilyfairy.DstServerQuery.Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -13,6 +14,7 @@ namespace Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
 /// <summary>
 /// 服务器玩家
 /// </summary>
+[Index(nameof(Name), nameof(Platform))]
 public class DstPlayer
 {
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]

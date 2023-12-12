@@ -10,7 +10,7 @@ namespace Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
 /// <summary>
 /// 服务器, 保存了几乎不可变的字段
 /// </summary>
-[Index(nameof(Id), nameof(UpdateTime))]
+[Index(nameof(Id), nameof(UpdateTime), nameof(Name))]
 public class DstServerHistory
 {
     /// <summary>

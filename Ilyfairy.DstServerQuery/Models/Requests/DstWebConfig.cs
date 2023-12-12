@@ -11,4 +11,9 @@ public class DstWebConfig
     public int? HistoryUpdateInterval { get; set; }
     public int? DetailsUpdateInterval { get; set; }
     public bool? IsDisabledInsertDatabase { get; set; }
+
+    /// <summary>
+    /// 详细信息更新的线程数
+    /// </summary>
+    public int? UpdateThreads { get; set; }
 }
