@@ -24,7 +24,6 @@ public class LobbyWorldLevel : ILobbyWorldLevel
     public string SteamId { get; set; }
 }
 
-[JsonConverter(typeof(WorldLevelConverter))]
 public interface ILobbyWorldLevel
 {
     public string Address { get; set; }
