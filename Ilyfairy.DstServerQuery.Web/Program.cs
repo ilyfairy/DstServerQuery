@@ -1,5 +1,6 @@
 //入口点
 using AspNetCoreRateLimit;
+using HoneyChat.WebApi.Database;
 using Ilyfairy.DstServerQuery;
 using Ilyfairy.DstServerQuery.EntityFrameworkCore;
 using Ilyfairy.DstServerQuery.LobbyJson;
@@ -61,21 +62,24 @@ builder.Services.AddSerilog((service, loggerConfiguration) =>
 
 #region DbContext
 //DbContext
-string? sqlType = builder.Configuration.GetValue<string>("SqlType")!;
+DatabaseType databaseType = builder.Configuration.GetValue<DatabaseType>("SqlType")!;
 //使用SqlServer
-if (sqlType is "SqlServer" && builder.Configuration.GetConnectionString("SqlServer") is string sqlServerConnection && !string.IsNullOrWhiteSpace(sqlServerConnection))
+if (databaseType is DatabaseType.SqlServer)
 {
     Log.Logger.Information("使用SqlServer数据库");
-    builder.Services.AddSqlServer<DstDbContext>(sqlServerConnection, options =>
+    string connectionString = builder.Configuration.GetConnectionString(databaseType.ToString())!;
+    builder.Services.AddSqlServer<SqlServerDstDbContext>(connectionString, options =>
     {
         options.MigrationsAssembly("Ilyfairy.DstServerQuery.Web");
     });
+    builder.Services.AddScoped<DstDbContext>(v => v.GetRequiredService<SqlServerDstDbContext>());
 }
 //使用MySql
-else if(sqlType is "MySql" && builder.Configuration.GetConnectionString("MySql") is string mysqlConnection && !string.IsNullOrWhiteSpace(mysqlConnection))
+else if (databaseType is DatabaseType.MySql)
 {
     Log.Logger.Information("使用MySql数据库");
-    builder.Services.AddMySql<DstDbContext>(mysqlConnection, ServerVersion.AutoDetect(mysqlConnection), options =>
+    string connectionString = builder.Configuration.GetConnectionString(databaseType.ToString())!;
+    builder.Services.AddMySql<MySqlDstDbContext>(connectionString, ServerVersion.AutoDetect(connectionString), options =>
     {
         options.MigrationsAssembly("Ilyfairy.DstServerQuery.Web");
     });
@@ -83,23 +87,42 @@ else if(sqlType is "MySql" && builder.Configuration.GetConnectionString("MySql")
     //{
     //    options.UseMySQL(mysqlConnection);
     //});
+    builder.Services.AddScoped<DstDbContext>(v => v.GetRequiredService<MySqlDstDbContext>());
 }
 //使用Sqlite
-else if (sqlType is "Sqlite" && builder.Configuration.GetConnectionString("Sqlite") is string sqliteConnection && !string.IsNullOrWhiteSpace(sqliteConnection))
+else if (databaseType is DatabaseType.Sqlite)
 {
     Log.Logger.Information("使用Sqlite数据库");
-    builder.Services.AddSqlite<DstDbContext>(sqliteConnection, options =>
+    string connectionString = builder.Configuration.GetConnectionString(databaseType.ToString())!;
+    builder.Services.AddSqlite<SqliteDstDbContext>(connectionString, options =>
     {
         options.MigrationsAssembly("Ilyfairy.DstServerQuery.Web");
     });
+    builder.Services.AddScoped<DstDbContext>(v => v.GetRequiredService<SqliteDstDbContext>());
+}
+//使用PostgreSql
+else if (databaseType is DatabaseType.PostgreSql)
+{
+    Log.Logger.Information("使用PostgreSql数据库");
+    string connectionString = builder.Configuration.GetConnectionString(databaseType.ToString())!;
+    builder.Services.AddNpgsql<PostgreSqlDstDbContext>(connectionString, options =>
+    {
+        options.MigrationsAssembly("Ilyfairy.DstServerQuery.Web");
+    });
+    builder.Services.AddScoped<DstDbContext>(v => v.GetRequiredService<PostgreSqlDstDbContext>());
+}
+else if(databaseType is DatabaseType.Memory)
+{
+    Log.Logger.Information("使用内存数据库");
+    builder.Services.AddDbContext<MemoryDstDbContext>(v =>
+    {
+        v.UseInMemoryDatabase("Dst");
+    });
+    builder.Services.AddScoped<DstDbContext>(v => v.GetRequiredService<MemoryDstDbContext>());
 }
 else
 {
-    Log.Logger.Information("使用内存数据库");
-    builder.Services.AddDbContext<DstDbContext>(v =>
-    {
-        v.UseInMemoryDatabase("dst");
-    });
+    throw new Exception("unknown database type");
 }
 ////使用内存数据库
 //else if (builder.Configuration.GetConnectionString("InMemory") != null)
@@ -107,7 +130,11 @@ else
 //    builder.Services.AddSqlServer<DstDbContext>(@"Server=(localdb)\mssqllocaldb;Database=EFProviders.InMemory;Trusted_Connection=True;ConnectRetryCount=0");
 //}
 
-builder.Services.AddSqlite<SimpleCacheDatabase>($"Data Source={Path.Join(AppContext.BaseDirectory, "cache.db")}");
+builder.Services.AddSqlite<SimpleCacheDatabase>($"Data Source={Path.Join(AppContext.BaseDirectory, "cache.db")}"); // 临时缓存数据库
+//builder.Services.AddDatabaseSelector(v =>
+//{
+//    v.DatabaseType = databaseType;
+//});
 #endregion
 
 //流量速率限制
@@ -125,7 +152,7 @@ builder.Services.AddTrafficLimiter(options =>
 
 builder.Services.AddMemoryCache();
 
-builder.Services.AddSingleton<HistoryCountManager>();
+builder.Services.AddSingleton<HistoryCountService>();
 builder.Services.AddSingleton(builder.Configuration.GetSection("DstConfig").Get<DstWebConfig>()!);
 builder.Services.AddSingleton<LobbyServerManager>();
 builder.Services.AddSingleton<LobbyServerManager>();
@@ -270,14 +297,9 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     //数据库迁移
     var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
     bool isMigration = false;
-    if (dbContext.Database.ProviderName?.Contains("sqlserver", StringComparison.OrdinalIgnoreCase) == true)
-    {
-        isMigration = true;
-    }
     try
     {   
-        if (isMigration)
-            isMigration = dbContext.Database.GetPendingMigrations().Any();
+        isMigration = dbContext.Database.GetPendingMigrations().Any();
     }
     catch { }
     if (isMigration)

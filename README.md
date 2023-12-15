@@ -16,12 +16,13 @@
 
 ### 数据库
 
-可以使用SqlServer或者MySql
+数据库用来储存服务器的历史记录  
+支持SqlServer,MySql,Sqlite,PostgreSql  
 并且数据库的排序规则`Collation`需要区分大小写  
 如果是MySql,则首次需要执行`SET GLOBAL local_infile = true;`  
 
 ### Token
-需要开服的Token, 否则是不能获取详细信息的, 比如玩家信息
+需要开服的Token, 否则是不能获取详细信息的, 例如玩家信息
 
 ### 代理(可选)
 DstDetailsProxyUrl 是一个批量请求详细数据的代理服务器的Url  
@@ -31,6 +32,4 @@ DstDetailsProxyUrl 是一个批量请求详细数据的代理服务器的Url
 
 ## 接口
 
-- `/api/server/version` 获取饥荒联机版最新版本号  
-- `/api/list` 服务器列表  
-- `/api/details/{id}` 通过RowId服务器详细信息
+https://dstserverlist.top/api

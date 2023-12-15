@@ -10,9 +10,9 @@ namespace Ilyfairy.DstServerQuery.EntityFrameworkCore;
 /// <summary>
 /// 大厅服务器历史房间数量管理器
 /// </summary>
-public class HistoryCountManager
+public class HistoryCountService
 {
-    private readonly ILogger<HistoryCountManager> _logger;
+    private readonly ILogger<HistoryCountService> _logger;
     private readonly IServiceScopeFactory serviceScopeFactory;
     private readonly Queue<ServerCountInfo> cache = new(10100);
 
@@ -20,7 +20,7 @@ public class HistoryCountManager
     public DateTimeOffset First => cache.FirstOrDefault()?.UpdateDate ?? DateTimeOffset.Now;
     public IEnumerable<ServerCountInfo> Cache => cache;
 
-    public HistoryCountManager(IServiceScopeFactory serviceScopeFactory, ILogger<HistoryCountManager> logger)
+    public HistoryCountService(IServiceScopeFactory serviceScopeFactory, ILogger<HistoryCountService> logger)
     {
         _logger = logger;
         this.serviceScopeFactory = serviceScopeFactory;

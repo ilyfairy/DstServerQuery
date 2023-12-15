@@ -28,7 +28,7 @@ public class ServerController : ControllerBase
     private readonly ILogger _logger;
     private readonly LobbyServerManager lobbyServerManager;
     private readonly DstVersionService dstVersionGetter;
-    private readonly HistoryCountManager historyCountManager;
+    private readonly HistoryCountService historyCountManager;
     private readonly DstJsonOptions dstJsonOptions;
     private readonly DstDbContext dbContext;
 
@@ -36,7 +36,7 @@ public class ServerController : ControllerBase
         ILogger<ServerController> logger,
         LobbyServerManager lobbyDetailsManager,
         DstVersionService dstVersionGetter,
-        HistoryCountManager historyCountManager,
+        HistoryCountService historyCountManager,
         DstJsonOptions dstJsonOptions,
         DstDbContext dbContext
         )

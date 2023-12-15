@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 {
-    [DbContext(typeof(DstDbContext))]
+    [DbContext(typeof(SqlServerDstDbContext))]
     [Migration("20231209045633_ToDateTimeOffset")]
     partial class ToDateTimeOffset
     {

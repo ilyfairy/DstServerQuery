@@ -1,4 +1,5 @@
 ﻿using Ilyfairy.DstServerQuery.LobbyJson.Converter;
+using Ilyfairy.DstServerQuery.LobbyJson.Converters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace Ilyfairy.DstServerQuery.Models;
 public class LobbyWorldLevel : ILobbyWorldLevel
 {
     [JsonPropertyName("__addr")]
-    public string Address { get; set; }
+    public string? Address { get; set; }
 
     [JsonPropertyName("port")]
     public int Port { get; set; }
@@ -21,7 +22,8 @@ public class LobbyWorldLevel : ILobbyWorldLevel
     public string Id { get; set; }
 
     [JsonPropertyName("steamid")]
-    public string SteamId { get; set; }
+    [JsonConverter(typeof(PrefixRemoveConverter))]
+    public string? SteamId { get; set; } // 有前缀
 }
 
 public interface ILobbyWorldLevel

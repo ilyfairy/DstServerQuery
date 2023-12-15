@@ -3,228 +3,217 @@ using System;
 using Ilyfairy.DstServerQuery.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
+namespace Ilyfairy.DstServerQuery.Web.Migrations.Sqlite
 {
-    [DbContext(typeof(SqlServerDstDbContext))]
-    partial class DstDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(SqliteDstDbContext))]
+    partial class SqliteDstDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .UseCollation("Chinese_PRC_BIN")
-                .HasAnnotation("ProductVersion", "8.0.0")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
-
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+                .UseCollation("BINARY")
+                .HasAnnotation("ProductVersion", "8.0.0");
 
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstDaysInfo", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Day")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("DaysElapsedInSeason")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("DaysLeftInSeason")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.ToTable("DaysInfos", (string)null);
+                    b.ToTable("DaysInfos");
                 });
 
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstPlayer", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Platform")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Name", "Platform");
 
-                    b.ToTable("Players", (string)null);
+                    b.ToTable("Players");
                 });
 
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistory", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("GameMode")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Host")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("IP")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Intent")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Platform")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Port")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset>("UpdateTime")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<long>("UpdateTime")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Id", "UpdateTime", "Name");
 
-                    b.ToTable("ServerHistories", (string)null);
+                    b.ToTable("ServerHistories");
                 });
 
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistoryItem", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("INTEGER");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTimeOffset>("DateTime")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<long>("DateTime")
+                        .HasColumnType("INTEGER");
 
                     b.Property<long?>("DaysInfoId")
-                        .HasColumnType("bigint");
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsDetailed")
-                        .HasColumnType("bit");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("PlayerCount")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Season")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("ServerId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
                     b.HasIndex("DaysInfoId")
-                        .IsUnique()
-                        .HasFilter("[DaysInfoId] IS NOT NULL");
+                        .IsUnique();
 
                     b.HasIndex("ServerId");
 
                     b.HasIndex("Id", "DateTime");
 
-                    b.ToTable("ServerHistoryItems", (string)null);
+                    b.ToTable("ServerHistoryItems");
                 });
 
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.HistoryServerItemPlayer", b =>
                 {
                     b.Property<long>("HistoryServerItemId")
-                        .HasColumnType("bigint");
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("PlayerId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("HistoryServerItemId", "PlayerId");
 
                     b.HasIndex("PlayerId");
 
-                    b.ToTable("HistoryServerItemPlayerPair", (string)null);
+                    b.ToTable("HistoryServerItemPlayerPair");
                 });
 
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.ServerCountInfo", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("AllPlayerCount")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("AllServerCount")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("PlayStationPlayerCount")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("PlayStationServerCount")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("SteamPlayerCount")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("SteamServerCount")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int?>("SwitchPlayerCount")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int?>("SwitchServerCount")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
-                    b.Property<DateTimeOffset>("UpdateDate")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<long>("UpdateDate")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("WeGamePlayerCount")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("WeGameServerCount")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("XboxPlayerCount")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("XboxServerCount")
-                        .HasColumnType("int");
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.ToTable("ServerHistoryCountInfos", (string)null);
+                    b.ToTable("ServerHistoryCountInfos");
                 });
 
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.TagColorItem", b =>
                 {
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Color")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Name");
 
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("TagColors", (string)null);
+                    b.ToTable("TagColors");
                 });
 
             modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistoryItem", b =>

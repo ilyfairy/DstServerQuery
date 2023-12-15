@@ -16,7 +16,7 @@ public class LobbyServerManager : IDisposable
     private readonly ILogger _logger = Log.ForContext<LobbyServerManager>();
     public ConcurrentDictionary<string, LobbyServerDetailed> ServerMap { get; } = new(2, 40000);
     private ICollection<LobbyServerDetailed> serverCache = Array.Empty<LobbyServerDetailed>();
-    public bool Running => !HttpTokenSource.IsCancellationRequested;
+    public bool Running => !HttpCancellationToken.IsCancellationRequested;
     public LobbyDownloader LobbyDownloader { get; private set; }
 
     /// <summary>
@@ -27,7 +27,7 @@ public class LobbyServerManager : IDisposable
     private readonly Stopwatch sw = Stopwatch.StartNew();
     private readonly DstWebConfig dstConfig;
 
-    public CancellationTokenSource HttpTokenSource { get; private set; } = new(0);
+    public CancellationTokenSource HttpCancellationToken { get; private set; } = new(0);
 
     public event DstDataUpdatedHandler? Updated;
 
@@ -43,7 +43,7 @@ public class LobbyServerManager : IDisposable
 
     public async Task Start()
     {
-        HttpTokenSource = new();
+        HttpCancellationToken = new();
 
         await LobbyDownloader.Initialize();
 
@@ -59,7 +59,7 @@ public class LobbyServerManager : IDisposable
             }
             catch (Exception e)
             {
-                HttpTokenSource.Cancel();
+                HttpCancellationToken.Cancel();
                 _logger.Error("DownloadLoopException: {Exception}", e.Message);
             }
         });
@@ -70,7 +70,7 @@ public class LobbyServerManager : IDisposable
 
     public void Dispose()
     {
-        HttpTokenSource.Cancel();
+        HttpCancellationToken.Cancel();
         GC.SuppressFinalize(this);
         _logger.Information("LobbyDetailsManager Dispose");
     }
@@ -89,7 +89,7 @@ public class LobbyServerManager : IDisposable
                 _logger.Information("开始 Download");
 
                 int count = 0;
-                await foreach (var item in LobbyDownloader.DownloadAllBriefs(CancellationTokenSource.CreateLinkedTokenSource(cts.Token, HttpTokenSource.Token).Token))
+                await foreach (var item in LobbyDownloader.DownloadAllBriefs(CancellationTokenSource.CreateLinkedTokenSource(cts.Token, HttpCancellationToken.Token).Token))
                 {
                     tempServerRowIdMap[item.RowId] = item;
                     count++;
@@ -99,7 +99,7 @@ public class LobbyServerManager : IDisposable
             }
             catch (Exception e)
             {
-                if (!Running || HttpTokenSource.IsCancellationRequested)
+                if (!Running || HttpCancellationToken.IsCancellationRequested)
                 {
                     _logger.Warning("中断请求,结束");
                     break;
@@ -155,7 +155,7 @@ public class LobbyServerManager : IDisposable
 
             try
             {
-                await Task.Delay(20000, HttpTokenSource.Token);
+                await Task.Delay(20000, HttpCancellationToken.Token);
             }
             catch (Exception)
             {
@@ -175,24 +175,23 @@ public class LobbyServerManager : IDisposable
         {
             if (DateTimeOffset.Now - lastUpdated < TimeSpan.FromSeconds(dstConfig.DetailsUpdateInterval ?? 600))
             {
-                await Task.Delay(2000, HttpTokenSource.Token);
+                await Task.Delay(2000, HttpCancellationToken.Token);
                 continue;
             }
 
-            s.Restart();
             ICollection<LobbyServerDetailed> arr = ServerMap.Values;
             if (arr.Count != 0)
             {
-                lastUpdated = DateTimeOffset.Now;
+                s.Restart();
                 try
                 {
-                    var updated = await LobbyDownloader.UpdateToDetails(arr, HttpTokenSource.Token);
+                    var updated = await LobbyDownloader.UpdateToDetails(arr, HttpCancellationToken.Token);
                     if (updated.Count > arr.Count * 0.6f) // 更新数量大于60%
                     {
                         Updated?.Invoke(this, new DstUpdatedEventArgs(updated, true, LastUpdate));
                     }
 
-                    _logger.Information("所有详细信息已更新 在{OriginCount}个中更新了{UpdateCount} 耗时:{ElapsedMilliseconds:0.00}分钟", arr.Count, updated.Count, s.ElapsedMilliseconds / 1000 / 60.0);
+                    _logger.Information("所有详细信息已更新  在{OriginCount}个中更新了{UpdateCount}  耗时:{ElapsedMilliseconds:0.00}分钟  距离上次更新{LateUpdate:0.00}分钟", arr.Count, updated.Count, s.ElapsedMilliseconds / 1000 / 60.0, (DateTimeOffset.Now - lastUpdated).TotalMinutes);
 
                     s.Stop();
                 }
@@ -201,6 +200,7 @@ public class LobbyServerManager : IDisposable
                     _logger.Warning("服务器详细信息更新异常: {Exception}", ex.Message);
                 }
 
+                lastUpdated = DateTimeOffset.Now;
             }
         }
     }
@@ -231,13 +231,13 @@ public class LobbyServerManager : IDisposable
         {
             server._Lock ??= new SemaphoreSlim(1);
         }
-        var token = CancellationTokenSource.CreateLinkedTokenSource(HttpTokenSource.Token, cancellationToken).Token;
+        var token = CancellationTokenSource.CreateLinkedTokenSource(HttpCancellationToken.Token, cancellationToken).Token;
         try
         {
             await server._Lock.WaitAsync(token);
             if (forceUpdate || !server._IsDetails || (DateTimeOffset.Now - server._LastUpdate) > TimeSpan.FromSeconds(20))
             {
-                await LobbyDownloader.UpdateToDetails(server, HttpTokenSource.Token);
+                await LobbyDownloader.UpdateToDetails(server, HttpCancellationToken.Token);
             }
         }
         finally

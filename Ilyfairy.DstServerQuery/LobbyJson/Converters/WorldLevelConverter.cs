@@ -10,7 +10,8 @@ public class WorldLevelConverter : JsonConverter<ILobbyWorldLevel[]>
     public override ILobbyWorldLevel[]? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var dic = JsonSerializer.Deserialize<Dictionary<string, LobbyWorldLevel>>(ref reader);
-        return dic?.Values.ToArray();
+        if (dic is null) return null;
+        return dic.Values.ToArray();
     }
 
     public override void Write(Utf8JsonWriter writer, ILobbyWorldLevel[] value, JsonSerializerOptions options)

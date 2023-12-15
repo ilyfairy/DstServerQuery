@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
 {
-    [DbContext(typeof(DstDbContext))]
+    [DbContext(typeof(SqlServerDstDbContext))]
     [Migration("20231207104123_AddTagColor")]
     partial class AddTagColor
     {

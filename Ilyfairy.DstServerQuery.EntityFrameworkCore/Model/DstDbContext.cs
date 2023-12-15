@@ -1,10 +1,12 @@
 ﻿using EFCore.BulkExtensions;
+using Ilyfairy.DstServerQuery.EntityFrameworkCore.Helpers;
 using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Ilyfairy.DstServerQuery.Models;
 
-public class DstDbContext : DbContext
+public abstract class DstDbContext(DbContextOptions options) : DbContext(options)
 {
     public DbSet<ServerCountInfo> ServerHistoryCountInfos { get; set; }
     public DbSet<DstPlayer> Players { get; set; }
@@ -13,10 +15,6 @@ public class DstDbContext : DbContext
     public DbSet<HistoryServerItemPlayer> HistoryServerItemPlayerPair { get; set; }
     public DbSet<DstDaysInfo> DaysInfos { get; set; }
     public DbSet<TagColorItem> TagColors { get; set; }
-
-    public DstDbContext(DbContextOptions<DstDbContext> options) : base(options)
-    {
-    }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -40,7 +38,38 @@ public class DstDbContext : DbContext
         {
             modelBuilder.UseCollation("utf8mb4_bin");
         }
-
+        else if (provider.Contains("sqlite", StringComparison.OrdinalIgnoreCase))
+        {
+            modelBuilder.UseCollation("BINARY");
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                var properties = entityType.ClrType.GetProperties()
+                    .Where(p => p.PropertyType == typeof(DateTimeOffset) || p.PropertyType == typeof(DateTimeOffset?));
+                foreach (var property in properties)
+                {
+                    modelBuilder
+                        .Entity(entityType.Name)
+                        .Property(property.Name)
+                        .HasConversion(new DateTimeOffsetToBinaryConverter());
+                }
+            }
+        }
+        else if (provider.Contains("postgresql", StringComparison.OrdinalIgnoreCase))
+        {
+            //modelBuilder.UseCollation("C");
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                var properties = entityType.ClrType.GetProperties()
+                    .Where(p => p.PropertyType == typeof(DateTimeOffset) || p.PropertyType == typeof(DateTimeOffset?));
+                foreach (var property in properties)
+                {
+                    modelBuilder
+                        .Entity(entityType.Name)
+                        .Property(property.Name)
+                        .HasConversion(new DateTimeOffsetUtcConverter());
+                }
+            }
+        }
 
         //服务器信息和历史记录信息的一对多
         modelBuilder.Entity<DstServerHistory>()
@@ -64,13 +93,6 @@ public class DstDbContext : DbContext
                 r => r.HasOne(v => v.HistoryServerItem).WithMany().HasForeignKey(v => v.HistoryServerItemId).OnDelete(DeleteBehavior.Restrict)
             );
     }
-
-
-
-
-
-
-
 
 
     public async Task<string?> GetTagColorAsync(string name)
@@ -105,5 +127,11 @@ public class DstDbContext : DbContext
             return new TagColorItem() { Name = v.Key, Color = v.Value };
         }));
     }
-
 }
+
+public class MemoryDstDbContext(DbContextOptions<MemoryDstDbContext> dbContextOptions) : DstDbContext(dbContextOptions);
+
+public class SqliteDstDbContext(DbContextOptions<SqliteDstDbContext> dbContextOptions) : DstDbContext(dbContextOptions);
+public class MySqlDstDbContext(DbContextOptions<MySqlDstDbContext> dbContextOptions) : DstDbContext(dbContextOptions);
+public class SqlServerDstDbContext(DbContextOptions<SqlServerDstDbContext> dbContextOptions) : DstDbContext(dbContextOptions);
+public class PostgreSqlDstDbContext(DbContextOptions<PostgreSqlDstDbContext> dbContextOptions) : DstDbContext(dbContextOptions);

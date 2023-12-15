@@ -1,4 +1,5 @@
 ﻿using Ilyfairy.DstServerQuery.LobbyJson.Converter;
+using Ilyfairy.DstServerQuery.LobbyJson.Converters;
 using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
 using System.Text.Json.Serialization;
 
@@ -41,7 +42,8 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
     public bool IsClientHosted { get; set; } //是否是客户端主机
 
     [JsonPropertyName("ownernetid")]
-    public string? OwnerNetId { get; set; } //steamid
+    [JsonConverter(typeof(PrefixRemoveConverter))]
+    public string? OwnerNetId { get; set; } //steamid   有前缀
 
     [JsonPropertyName("tags")]
     [JsonConverter(typeof(TagsConverter))] // NOTE:自定义转换
@@ -93,7 +95,8 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
     public object? WorldGen { get; set; } //世界配置
 
     [JsonPropertyName("steamid")]
-    public string? SteamId { get; set; }
+    [JsonConverter(typeof(PrefixRemoveConverter))]
+    public string? SteamId { get; set; } // 有前缀
 
     [JsonPropertyName("steamroom")]
     public string? SteamRoom { get; set; }

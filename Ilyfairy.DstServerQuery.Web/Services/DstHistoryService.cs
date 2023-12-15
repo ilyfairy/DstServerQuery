@@ -13,13 +13,13 @@ public class DstHistoryService
 {
     private readonly ILogger<DstHistoryService> logger;
     private readonly IServiceScopeFactory serviceScopeFactory;
-    private readonly HistoryCountManager historyCountManager;
+    private readonly HistoryCountService historyCountManager;
 
     private DateTimeOffset lastServerUpdateDateTime;
     private readonly int historyUpdateInterval = 10 * 60;
     private bool lastIsDetailed = false;
 
-    public DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig config, IServiceScopeFactory serviceScopeFactory, LobbyServerManager lobbyDetailsManager, HistoryCountManager historyCountManager)
+    public DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig config, IServiceScopeFactory serviceScopeFactory, LobbyServerManager lobbyDetailsManager, HistoryCountService historyCountManager)
     {
         this.logger = logger;
         this.serviceScopeFactory = serviceScopeFactory;

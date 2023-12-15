@@ -25,7 +25,7 @@ public partial class ApiController : ControllerBase
 
     private readonly DstVersionService dstVersion;
     private readonly LobbyServerManager lobbyDetailsManager;
-    private readonly HistoryCountManager historyCountManager;
+    private readonly HistoryCountService historyCountManager;
     private readonly DstJsonOptions dstJsonOptions;
     private readonly JsonSerializerOptions v1JsonOptions = new JsonSerializerOptions()
     {
@@ -33,7 +33,7 @@ public partial class ApiController : ControllerBase
     };
 
     //版本获取, 大厅服务器管理器, 大厅服务器历史房间数量管理器
-    public ApiController(ILogger<ApiController> logger, DstVersionService versionGetter, LobbyServerManager lobbyDetailsManager, HistoryCountManager historyCountManager, DstJsonOptions dstJsonOptions)
+    public ApiController(ILogger<ApiController> logger, DstVersionService versionGetter, LobbyServerManager lobbyDetailsManager, HistoryCountService historyCountManager, DstJsonOptions dstJsonOptions)
     {
         _logger = logger;
         dstVersion = versionGetter;
