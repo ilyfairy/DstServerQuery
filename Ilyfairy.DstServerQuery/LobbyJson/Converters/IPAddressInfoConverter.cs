@@ -77,16 +77,11 @@ public abstract class IPAddressReadConverter : JsonConverter<IPAddressInfo>
     }
 }
 
-public class IPAddressStringConverter : IPAddressReadConverter
+public class IPAddressRawConverter : IPAddressReadConverter
 {
-    public IPAddressStringConverter(GeoIPService geoIPService) : base(geoIPService)
-    {
-    }
+    public IPAddressRawConverter(GeoIPService geoIPService) : base(geoIPService) { }
 
-    public IPAddressStringConverter() : base(null)
-    {
-        
-    }
+    public IPAddressRawConverter() : base(null) { }
 
     public override void Write(Utf8JsonWriter writer, IPAddressInfo value, JsonSerializerOptions options)
     {
@@ -97,9 +92,7 @@ public class IPAddressStringConverter : IPAddressReadConverter
 
 public class IPAddressInfoConverter : IPAddressReadConverter
 {
-    public IPAddressInfoConverter(GeoIPService? geoIPService) : base(geoIPService)
-    {
-    }
+    public IPAddressInfoConverter(GeoIPService? geoIPService) : base(geoIPService) { }
 
     public override void Write(Utf8JsonWriter writer, IPAddressInfo value, JsonSerializerOptions options)
     {

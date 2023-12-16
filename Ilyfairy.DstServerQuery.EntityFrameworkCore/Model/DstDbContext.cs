@@ -23,6 +23,7 @@ public abstract class DstDbContext(DbContextOptions options) : DbContext(options
 #if DEBUG
         //显示更详细的日志
         //optionsBuilder.EnableDetailedErrors();
+        optionsBuilder.EnableSensitiveDataLogging();
 #endif
 
     }

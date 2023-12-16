@@ -10,7 +10,9 @@ using System.Threading.Tasks;
 
 namespace Ilyfairy.DstServerQuery.Models;
 
-public class LobbyWorldLevel : ILobbyWorldLevel
+public class LobbyWorldLevel : Dictionary<string, WorldLevelItem>;
+
+public class WorldLevelItem : IWorldLevelItem
 {
     [JsonPropertyName("__addr")]
     public string? Address { get; set; }
@@ -26,13 +28,14 @@ public class LobbyWorldLevel : ILobbyWorldLevel
     public string? SteamId { get; set; } // 有前缀
 }
 
-public interface ILobbyWorldLevel
+public interface IWorldLevelItem
 {
-    public string Address { get; set; }
+    public string? Address { get; set; }
 
     public int Port { get; set; }
 
     public string Id { get; set; }
 
-    public string SteamId { get; set; }
+    [JsonConverter(typeof(PrefixRemoveConverter))]
+    public string? SteamId { get; set; } // 有前缀
 }

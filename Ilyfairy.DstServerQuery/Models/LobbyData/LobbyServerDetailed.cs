@@ -22,12 +22,12 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
     public string? SteamClanId { get; set; } //steam群组gid
 
     [JsonPropertyName("slaves")]
-    [JsonConverter(typeof(WorldLevelConverter))]
-    public ILobbyWorldLevel[]? Slaves { get; set; } //json
+    [JsonConverter(typeof(WorldLevelRawConverter))]
+    public LobbyWorldLevel? Slaves { get; set; } //json
 
     [JsonPropertyName("secondaries")]
-    [JsonConverter(typeof(WorldLevelConverter))]
-    public ILobbyWorldLevel[]? Secondaries { get; set; } //json
+    [JsonConverter(typeof(WorldLevelRawConverter))]
+    public LobbyWorldLevel? Secondaries { get; set; } //json
 
     [JsonPropertyName("clanonly")]
     public bool IsClanOnly { get; set; } //仅限steam群组成员加入
@@ -46,7 +46,7 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
     public string? OwnerNetId { get; set; } //steamid   有前缀
 
     [JsonPropertyName("tags")]
-    [JsonConverter(typeof(TagsConverter))] // NOTE:自定义转换
+    [JsonConverter(typeof(TagsRawConverter))] // NOTE:自定义转换
     public string[]? Tags { get; set; } //Tags
 
     [JsonPropertyName("lanonly")]

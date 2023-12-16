@@ -3,9 +3,8 @@ using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.LobbyJson.Converter;
 
-public class TagsConverter : JsonConverter<string[]>
+public class TagsRawConverter : JsonConverter<string[]>
 {
-    
     public override string[]? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.GetString() is not string str) return Array.Empty<string>();
@@ -20,6 +19,6 @@ public class TagsConverter : JsonConverter<string[]>
 
     public override void Write(Utf8JsonWriter writer, string[] value, JsonSerializerOptions options)
     {
-        JsonSerializer.Serialize(writer, value);
+        writer.WriteStringValue(string.Join(',', value));
     }
 }

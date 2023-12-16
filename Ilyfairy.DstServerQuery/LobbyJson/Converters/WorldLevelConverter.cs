@@ -5,17 +5,40 @@ using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.LobbyJson.Converter;
 
-public class WorldLevelConverter : JsonConverter<ILobbyWorldLevel[]>
+
+public class WorldLevelRawConverter : JsonConverter<LobbyWorldLevel>
 {
-    public override ILobbyWorldLevel[]? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override LobbyWorldLevel? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var dic = JsonSerializer.Deserialize<Dictionary<string, LobbyWorldLevel>>(ref reader);
-        if (dic is null) return null;
-        return dic.Values.ToArray();
+        return JsonSerializer.Deserialize<LobbyWorldLevel>(ref reader);
     }
 
-    public override void Write(Utf8JsonWriter writer, ILobbyWorldLevel[] value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, LobbyWorldLevel value, JsonSerializerOptions options)
     {
         JsonSerializer.Serialize(writer, value);
+    }
+}
+
+public class WorldLevelConverter : JsonConverter<LobbyWorldLevel>
+{
+    public override LobbyWorldLevel? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        //while (reader.Read())
+        //{
+            
+        //}
+
+        //var levels = JsonSerializer.Deserialize<IWorldLevelItem[]>(ref reader);
+        //if (levels is null) return null;
+
+        LobbyWorldLevel lobbyWorldLevels = new();
+        //lobbyWorldLevels.Levels = levels.ToDictionary(v => v.Id);
+
+        return lobbyWorldLevels;
+    }
+
+    public override void Write(Utf8JsonWriter writer, LobbyWorldLevel value, JsonSerializerOptions options)
+    {
+        JsonSerializer.Serialize(writer, value.Values.AsEnumerable<IWorldLevelItem>());
     }
 }

@@ -11,7 +11,7 @@ public interface ILobbyServerV1
     public string Name { get; set; } //房间名称
 
     [JsonPropertyName("Address")]
-    [JsonConverter(typeof(IPAddressStringConverter))]
+    [JsonConverter(typeof(IPAddressRawConverter))]
     public IPAddressInfo Address { get; set; } //ip地址信息
 
     [JsonPropertyName("Port")]

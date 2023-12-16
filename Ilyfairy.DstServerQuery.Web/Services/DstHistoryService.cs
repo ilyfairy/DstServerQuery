@@ -89,6 +89,8 @@ public class DstHistoryService
         }
     }
 
+
+
     private async Task EnsureServersCreated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTimeOffset createDateTime)
     {
         List<DstServerHistory> list = new(servers.Count);
@@ -123,29 +125,6 @@ public class DstHistoryService
             throw;
         }
     }
-
-    private async Task Updated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTimeOffset updateDateTime)
-    {
-        await EnsureServersCreated(dbContext, servers, updateDateTime);
-
-        List<DstServerHistoryItem> updateList = new(servers.Count);
-        foreach (var item in servers)
-        {
-            DstServerHistoryItem hItem = new()
-            {
-                ServerId = item.RowId,
-                DateTime = item.GetUpdateTime(),
-                PlayerCount = item.Connected,
-                Season = item.Season.Value,
-            };
-
-            updateList.Add(hItem);
-        }
-
-        await dbContext.BulkInsertAsync(updateList);
-        await dbContext.BulkSaveChangesAsync();
-    }
-
     private async Task EnsurePlayersCreated(DstDbContext dbContext, IEnumerable<KeyValuePair<LobbyServerDetailed, LobbyPlayerInfo>> players)
     {
         HashSet<DstPlayer> updatePlayers = new(10000, DstPlayerEqualityComparer.Instance);
@@ -175,6 +154,30 @@ public class DstHistoryService
     }
 
 
+
+    private async Task Updated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTimeOffset updateDateTime)
+    {
+        dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+
+        await EnsureServersCreated(dbContext, servers, updateDateTime);
+
+        List<DstServerHistoryItem> updateList = new(servers.Count);
+        foreach (var item in servers)
+        {
+            DstServerHistoryItem hItem = new()
+            {
+                ServerId = item.RowId,
+                DateTime = item.GetUpdateTime(),
+                PlayerCount = item.Connected,
+                Season = item.Season.Value,
+            };
+
+            updateList.Add(hItem);
+        }
+
+        await dbContext.BulkInsertAsync(updateList);
+        await dbContext.BulkSaveChangesAsync();
+    }
     private async Task UpdatedDetailed(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTimeOffset updateDateTime)
     {
         await EnsureServersCreated(dbContext, servers, updateDateTime);
@@ -209,12 +212,29 @@ public class DstHistoryService
             }) ?? []);
         }
 
-
         try
         {
             dbContext.ServerHistoryItems.AddRange(items);
-            dbContext.HistoryServerItemPlayerPair.AddRange(pairs);
 
+            await dbContext.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning("History更新失败 {Exception}", ex.Message);
+        }
+
+        var pairsKvs = pairs.Select(v => new
+        {
+            v.PlayerId,
+            v.HistoryServerItem.Id,
+        }).ToArray();
+
+        //有重复的服务器和玩家
+        var uniquePairs = pairs.GroupBy(v => (v.PlayerId, v.HistoryServerItem.Id)).Select(v => v.First());
+
+        try
+        {
+            dbContext.HistoryServerItemPlayerPair.AddRange(uniquePairs);
             await dbContext.SaveChangesAsync();
         }
         catch (Exception ex)
