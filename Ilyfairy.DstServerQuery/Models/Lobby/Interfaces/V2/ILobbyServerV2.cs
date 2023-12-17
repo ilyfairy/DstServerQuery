@@ -1,4 +1,4 @@
-﻿using Ilyfairy.DstServerQuery.LobbyJson.Converters;
+﻿using Ilyfairy.DstServerQuery.Helpers.Converters;
 using Ilyfairy.DstServerQuery.Models.LobbyData.Units;
 using System.Text.Json.Serialization;
 

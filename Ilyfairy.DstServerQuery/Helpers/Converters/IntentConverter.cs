@@ -1,9 +1,9 @@
 ﻿using Ilyfairy.DstServerQuery.Models.LobbyData.Units;
-using Ilyfairy.DstServerQuery.Utils;
+using Ilyfairy.DstServerQuery.Helpers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.LobbyJson.Converters;
+namespace Ilyfairy.DstServerQuery.Helpers.Converters;
 
 public class IntentConverter : JsonConverter<IntentionType>
 {

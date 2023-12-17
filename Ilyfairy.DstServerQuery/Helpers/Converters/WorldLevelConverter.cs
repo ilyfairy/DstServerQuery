@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.LobbyJson.Converter;
+namespace Ilyfairy.DstServerQuery.Helpers.Converters;
 
 
 public class WorldLevelRawConverter : JsonConverter<LobbyWorldLevel>
@@ -25,7 +25,7 @@ public class WorldLevelConverter : JsonConverter<LobbyWorldLevel>
     {
         //while (reader.Read())
         //{
-            
+
         //}
 
         //var levels = JsonSerializer.Deserialize<IWorldLevelItem[]>(ref reader);

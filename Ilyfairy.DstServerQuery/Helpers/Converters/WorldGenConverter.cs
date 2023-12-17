@@ -1,5 +1,5 @@
 ﻿using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Utils;
+using Ilyfairy.DstServerQuery.Helpers;
 using Neo.IronLua;
 using System;
 using System.Collections.Generic;
@@ -11,7 +11,7 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Ilyfairy.DstServerQuery.LobbyJson.Converter;
+namespace Ilyfairy.DstServerQuery.Helpers.Converters;
 
 public class WorldGenConverter : JsonConverter<object>
 {

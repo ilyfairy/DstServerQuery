@@ -1,8 +1,6 @@
 ﻿using Neo.IronLua;
-using System;
-using System.Collections.Generic;
 
-namespace Ilyfairy.DstServerQuery.Utils;
+namespace Ilyfairy.DstServerQuery.Helpers;
 
 public class LuaTempEnvironment
 {

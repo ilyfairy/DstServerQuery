@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.LobbyJson.Converter;
+namespace Ilyfairy.DstServerQuery.Helpers.Converters;
 
 public class TagsRawConverter : JsonConverter<string[]>
 {

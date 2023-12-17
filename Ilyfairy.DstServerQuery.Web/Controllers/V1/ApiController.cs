@@ -1,7 +1,7 @@
 ﻿using Asp.Versioning;
 using Ilyfairy.DstServerQuery.EntityFrameworkCore;
 using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
-using Ilyfairy.DstServerQuery.LobbyJson;
+using Ilyfairy.DstServerQuery.Helpers;
 using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
 using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;

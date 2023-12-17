@@ -1,5 +1,4 @@
-﻿using Ilyfairy.DstServerQuery.LobbyJson.Converter;
-using Ilyfairy.DstServerQuery.LobbyJson.Converters;
+﻿using Ilyfairy.DstServerQuery.Helpers.Converters;
 using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
 using Ilyfairy.DstServerQuery.Models.LobbyData.Units;
 using System.Text.Json.Serialization;
@@ -16,6 +15,8 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
     internal LobbyPlatform _LobbyPlatform;
     internal DateTimeOffset _LastUpdate;
     internal SemaphoreSlim? _Lock;
+
+    public virtual LobbyServerRaw Raw { get; set; }
 
     public DateTimeOffset GetUpdateTime() => _LastUpdate;
 
@@ -80,6 +81,66 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
     [JsonIgnore]
     public string? Country => Address?.IsoCode;
 
+
+
+
+
+    [JsonPropertyName("clanonly")]
+    public bool IsClanOnly { get; set; } //仅限steam群组成员加入
+
+    [JsonPropertyName("fo")]
+    public bool IsFriendsOnly { get; set; } //是否仅限好友加入
+
+    [JsonPropertyName("slaves")]
+    [JsonConverter(typeof(WorldLevelRawConverter))]
+    public LobbyWorldLevel? Slaves { get; set; } //json
+
+    [JsonPropertyName("secondaries")]
+    [JsonConverter(typeof(WorldLevelRawConverter))]
+    public LobbyWorldLevel? Secondaries { get; set; } //json
+
+    [JsonPropertyName("allownewplayers")]
+    public bool IsAllowNewPlayers { get; set; } //是否允许新玩家加入
+
+    [JsonPropertyName("serverpaused")]
+    public bool IsServerPaused { get; set; } //世界是否暂停
+
+    [JsonPropertyName("steamid")]
+    [JsonConverter(typeof(PrefixRemoveConverter))]
+    public string? SteamId { get; set; } // 有前缀
+
+    [JsonPropertyName("steamroom")]
+    public string? SteamRoom { get; set; }
+
+    [JsonPropertyName("tags")]
+    [JsonConverter(typeof(TagsRawConverter))] // NOTE:自定义转换
+    public string[]? Tags { get; set; } //Tags
+
+    [JsonPropertyName("clienthosted")]
+    public bool IsClientHosted { get; set; } //是否是客户端主机
+
+    [JsonPropertyName("guid")]
+    public string? Guid { get; set; } //GUID
+
+    [JsonPropertyName("ownernetid")]
+    [JsonConverter(typeof(PrefixRemoveConverter))]
+    public string? OwnerNetId { get; set; } //steamid   有前缀
+
+    [JsonPropertyName("steamclanid")]
+    public string? SteamClanId { get; set; } //steam群组gid
+
+    [JsonPropertyName("lanonly")]
+    public bool IsLanOnly { get; set; } //是否仅局域网
+
+
+
+
+
+
+
+
+
+
     object ICloneable.Clone() => Clone();
 
     public virtual LobbyServer Clone()
@@ -104,12 +165,28 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
         obj.Version = this.Version;
         obj.Session = this.Session;
 
+        obj.IsClanOnly = this.IsClanOnly;
+        obj.IsFriendsOnly = this.IsFriendsOnly;
+        obj.Slaves = this.Slaves;
+        obj.Secondaries = this.Secondaries;
+        obj.IsAllowNewPlayers = this.IsAllowNewPlayers;
+        obj.IsServerPaused = this.IsServerPaused;
+        obj.SteamId = this.SteamId;
+        obj.SteamRoom = this.SteamRoom;
+        obj.Tags = this.Tags;
+        obj.IsClientHosted = this.IsClientHosted;
+        obj.Guid = this.Guid;
+        obj.OwnerNetId = this.OwnerNetId;
+        obj.IsLanOnly = this.IsLanOnly;
+        obj.SteamClanId = this.SteamClanId;
+
         return obj;
     }
 
     public void CopyTo(LobbyServer dest)
     {
         if (dest is null) return;
+
         dest.Name = this.Name;
         dest.Address = this.Address;
         dest.Port = this.Port;
@@ -127,6 +204,21 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
         dest.IsPvp = this.IsPvp;
         dest.Version = this.Version;
         dest.Session = this.Session;
+
+        dest.IsClanOnly = this.IsClanOnly;
+        dest.IsFriendsOnly = this.IsFriendsOnly;
+        dest.Slaves = this.Slaves;
+        dest.Secondaries = this.Secondaries;
+        dest.IsAllowNewPlayers = this.IsAllowNewPlayers;
+        dest.IsServerPaused = this.IsServerPaused;
+        dest.SteamId = this.SteamId;
+        dest.SteamRoom = this.SteamRoom;
+        dest.Tags = this.Tags;
+        dest.IsClientHosted = this.IsClientHosted;
+        dest.Guid = this.Guid;
+        dest.OwnerNetId = this.OwnerNetId;
+        dest.IsLanOnly = this.IsLanOnly;
+        dest.SteamClanId = this.SteamClanId;
 
         dest._LastUpdate = this._LastUpdate;
     }

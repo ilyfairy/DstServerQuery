@@ -1,5 +1,5 @@
 ﻿using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Utils;
+using Ilyfairy.DstServerQuery.Helpers;
 using Neo.IronLua;
 using System.Collections.Frozen;
 using System.Diagnostics;
@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.LobbyJson.Converter;
+namespace Ilyfairy.DstServerQuery.Helpers.Converters;
 
 public class PlayersInfoConverter : JsonConverter<LobbyPlayerInfo[]>
 {
@@ -18,7 +18,7 @@ public class PlayersInfoConverter : JsonConverter<LobbyPlayerInfo[]>
             _ = JsonNode.Parse(ref reader);
             return [];
         }
-        if(reader.ValueSpan.Length > 200000) return []; // 玩家列表过长, 不解析
+        if (reader.ValueSpan.Length > 200000) return []; // 玩家列表过长, 不解析
 
         var playerLua = reader.GetString();
         if (playerLua == null) return [];
@@ -40,7 +40,7 @@ public class PlayersInfoConverter : JsonConverter<LobbyPlayerInfo[]>
         {
             return [];
         }
-        
+
         List<LobbyPlayerInfo> list = new(table.Length);
         foreach (var item in table.Select(v => v.Value as LuaTable))
         {
@@ -67,7 +67,7 @@ public class PlayersInfoConverter : JsonConverter<LobbyPlayerInfo[]>
             info.Prefab = item.GetOptionalValue("prefab", "", true); //玩家选择的角色, 如果没有选择角色则为空字符串
             list.Add(info);
         }
-        
+
         return list.ToArray();
     }
 
@@ -119,7 +119,7 @@ public class PlayersInfoWitTranslateConverter : PlayersInfoConverter
             writer.WriteString("Color", item.Color);
             writer.WriteNumber("EventLevel", item.EventLevel);
             writer.WriteString("NetId", item.NetId);
-            if (PrefabTranslations.TryGetValue(item.Prefab,out var translation))
+            if (PrefabTranslations.TryGetValue(item.Prefab, out var translation))
             {
                 writer.WriteString("Prefab", translation);
             }

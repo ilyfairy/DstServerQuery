@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
-namespace Ilyfairy.DstServerQuery.LobbyJson.Converters;
+namespace Ilyfairy.DstServerQuery.Helpers.Converters;
 
 /// <summary>
 /// 自定义名称序列化转换器, 仅允许序列化

@@ -11,7 +11,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace Ilyfairy.DstServerQuery.LobbyJson.Converter;
+namespace Ilyfairy.DstServerQuery.Helpers.Converters;
 
 
 public abstract class IPAddressReadConverter : JsonConverter<IPAddressInfo>
@@ -41,7 +41,7 @@ public abstract class IPAddressReadConverter : JsonConverter<IPAddressInfo>
 
         ip = ip.Trim();
         if (ip == "127.0.0.1") return local;
-        
+
         IPAddressInfo info;
         IPAddress? ipAddress = null;
         try
