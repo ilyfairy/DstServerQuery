@@ -6,8 +6,8 @@
 public record LobbyModInfo
 {
     public long Id { get; set; }
-    public string Name { get; set; }
-    public string CurrentVersion { get; set; }
-    public string NewVersion { get; set; }
+    public string? Name { get; set; }
+    public string? CurrentVersion { get; set; }
+    public string? NewVersion { get; set; }
     public bool IsClientDownload { get; set; }
 }

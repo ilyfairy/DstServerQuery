@@ -5,12 +5,15 @@ using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
 using Ilyfairy.DstServerQuery.Models.LobbyData.Units;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer;
 
 public class LobbyServerQueryerV1
 {
+    //private static JsonSerializerOptions()
+
     public ICollection<LobbyServerDetailed> LobbyDetailDatas { get; private set; }
     public List<LobbyServerDetailed> Result { get; private set; }
     /// <summary>
@@ -46,28 +49,16 @@ public class LobbyServerQueryerV1
     public string ToJson(JsonSerializerOptions? jsonSerializerOptions = null)
     {
         JsonObject jsonString;
-        if (IsDetails)
+        if (IsDetails || IsPlayerQuery)
         {
             jsonString = CreateJson<ILobbyServerDetailedV1>(jsonSerializerOptions);
-        }
-        else if (IsPlayerQuery)
-        {
-            jsonString = CreateJson<ILobbyServerWithPlayerV1>(jsonSerializerOptions);
         }
         else
         {
             jsonString = CreateJson<ILobbyServerV1>(jsonSerializerOptions);
         }
 
-        var opts = new JsonSerializerOptions(jsonSerializerOptions ?? new());
-
-        var ipConv = opts.Converters.OfType<IPAddressReadConverter>().FirstOrDefault();
-        if (ipConv != null)
-        {
-            opts.Converters.Remove(ipConv);
-        }
-
-        return jsonString.ToJsonString(opts);
+        return jsonString.ToJsonString(jsonSerializerOptions);
     }
 
 
@@ -140,7 +131,10 @@ public class LobbyServerQueryerV1
             JsonArray array = new();
             foreach (var item in list)
             {
-                var obj = JsonSerializer.SerializeToNode(item, jsonSerializerOptions)?.AsObject();
+                var obj = JsonSerializer.SerializeToNode(item, new JsonSerializerOptions()
+                {
+                    Converters = { new JsonStringEnumConverter() }
+                })?.AsObject();
                 if (obj is null) continue;
                 foreach (var property in PropertiesRemove)
                 {

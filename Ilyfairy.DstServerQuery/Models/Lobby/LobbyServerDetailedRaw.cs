@@ -1,14 +1,16 @@
-﻿using System.Text.Json.Serialization;
+﻿using Ilyfairy.DstServerQuery.Helpers.Converters.Cache;
+using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.Models.LobbyData;
 
 public class LobbyServerDetailedRaw : LobbyServerRaw
 {
     [JsonPropertyName("players")]
+    [JsonConverter(typeof(PlayersRawCacheConverter))]
     public string? Players { get; set; } //玩家信息
 
-    [JsonPropertyName("__lastPing")]
-    public long LastPing { get; set; } //上次与大厅通信时间
+    //[JsonPropertyName("__lastPing")]
+    //public long LastPing { get; set; } //上次与大厅通信时间
 
     [JsonPropertyName("desc")]
     public string? Description { get; set; } //房间描述
@@ -38,9 +40,11 @@ public class LobbyServerDetailedRaw : LobbyServerRaw
     public bool IsKleiOfficial { get; set; } //是否是官方服务器
 
     [JsonPropertyName("data")]
+    [JsonConverter(typeof(DaysRawCacheConverter))]
     public string? DaysInfo { get; set; } //天数信息
 
     [JsonPropertyName("worldgen")]
+    [JsonConverter(typeof(WorldGenRawCacheConverter))]
     public string? WorldGen { get; set; } //世界配置
 
 
@@ -48,5 +52,6 @@ public class LobbyServerDetailedRaw : LobbyServerRaw
     public object? Users { get; set; } //始终为null
 
     [JsonPropertyName("mods_info")]
+    [JsonConverter(typeof(ModsInfoRawCacheConverter))]
     public object[]? ModsInfo { get; set; } // bool or string
 }

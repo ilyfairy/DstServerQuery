@@ -8,8 +8,8 @@
 		<RootNamespace>Ilyfairy.DstServerQuery.Web</RootNamespace>
 		<ServerGarbageCollection>false</ServerGarbageCollection>
 		<LangVersion>preview</LangVersion>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>

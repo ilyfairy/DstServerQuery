@@ -10,5 +10,5 @@ namespace Ilyfairy.DstServerQuery.Models;
 public class GET<T>
 {
     [JsonPropertyName("GET")]
-    public T[]? Data { get; set; }
+    public List<T>? Data { get; set; }
 }

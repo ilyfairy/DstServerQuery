@@ -25,7 +25,6 @@ public abstract class DstDbContext(DbContextOptions options) : DbContext(options
         //optionsBuilder.EnableDetailedErrors();
         optionsBuilder.EnableSensitiveDataLogging();
 #endif
-
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

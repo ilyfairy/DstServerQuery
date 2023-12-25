@@ -26,7 +26,6 @@ public class ServerController : ControllerBase
     private readonly LobbyServerManager lobbyServerManager;
     private readonly DstVersionService dstVersionGetter;
     private readonly HistoryCountService historyCountManager;
-    private readonly DstJsonOptions dstJsonOptions;
     private readonly DstDbContext dbContext;
 
     public ServerController(
@@ -34,7 +33,6 @@ public class ServerController : ControllerBase
         LobbyServerManager lobbyDetailsManager,
         DstVersionService dstVersionGetter,
         HistoryCountService historyCountManager,
-        DstJsonOptions dstJsonOptions,
         DstDbContext dbContext
         )
     {
@@ -42,7 +40,6 @@ public class ServerController : ControllerBase
         this.lobbyServerManager = lobbyDetailsManager;
         this.dstVersionGetter = dstVersionGetter;
         this.historyCountManager = historyCountManager;
-        this.dstJsonOptions = dstJsonOptions;
         this.dbContext = dbContext;
     }
 
@@ -114,7 +111,7 @@ public class ServerController : ControllerBase
             LastUpdate = lastUpdate,
         };
 
-        return response.ToJsonResult(dstJsonOptions.SerializerOptions);
+        return response.ToJsonResult();
     }
 
     /// <summary>
@@ -228,20 +225,16 @@ public class ServerController : ControllerBase
         }
 
         ResponseBase resonse;
-        if (query.IsDetailed is true)
+        if (query.IsDetailed is true || query.PlayerName is not null || query.PlayerPrefab is not null)
         {
             resonse = CreateResponse<ILobbyServerDetailedV2>();
-        }
-        else if (query.PlayerName is not null || query.PlayerPrefab is not null)
-        {
-            resonse = CreateResponse<ILobbyServerWithPlayerV2>();
         }
         else
         {
             resonse = CreateResponse<ILobbyServerV2>();
         }
 
-        return resonse.ToJsonResult(dstJsonOptions.SerializerOptions);
+        return resonse.ToJsonResult();
     }
 
     /// <summary>

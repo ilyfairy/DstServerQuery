@@ -24,7 +24,6 @@ public class HistoryController : ControllerBase
     private readonly LobbyServerManager lobbyDetailsManager;
     private readonly DstVersionService dstVersionGetter;
     private readonly HistoryCountService historyCountManager;
-    private readonly DstJsonOptions dstJsonOptions;
     private readonly DstDbContext dbContext;
 
     public HistoryController(
@@ -32,7 +31,6 @@ public class HistoryController : ControllerBase
         LobbyServerManager lobbyDetailsManager,
         DstVersionService dstVersionGetter,
         HistoryCountService historyCountManager,
-        DstJsonOptions dstJsonOptions,
         DstDbContext dbContext
         )
     {
@@ -40,7 +38,6 @@ public class HistoryController : ControllerBase
         this.lobbyDetailsManager = lobbyDetailsManager;
         this.dstVersionGetter = dstVersionGetter;
         this.historyCountManager = historyCountManager;
-        this.dstJsonOptions = dstJsonOptions;
         this.dbContext = dbContext;
     }
 
@@ -181,10 +178,11 @@ public class HistoryController : ControllerBase
 
         if (pageIndex < 0)
             pageIndex = 0;
-        if(pageIndex > maxPageIndex)
+        if (pageIndex > maxPageIndex)
             pageIndex = maxPageIndex;
 
         var players = await query
+            .OrderBy(v => v.Id)
             .Skip(pageIndex * pageCount)
             .Take(pageCount)
             .ToArrayAsync();

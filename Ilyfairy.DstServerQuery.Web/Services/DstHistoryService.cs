@@ -6,92 +6,109 @@ using Ilyfairy.DstServerQuery.Models.LobbyData;
 using Ilyfairy.DstServerQuery.Models.Requests;
 using Ilyfairy.DstServerQuery.Web.Helpers;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
 
 namespace Ilyfairy.DstServerQuery.Web.Services;
 
-public class DstHistoryService
+public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig config, IServiceScopeFactory serviceScopeFactory, LobbyServerManager lobbyServerManager, HistoryCountService historyCountManager) : IHostedService
 {
-    private readonly ILogger<DstHistoryService> logger;
-    private readonly IServiceScopeFactory serviceScopeFactory;
-    private readonly HistoryCountService historyCountManager;
+    private readonly CancellationTokenSource cts = new();
+    private readonly int historyUpdateInterval = config.HistoryUpdateInterval ?? 10 * 60;
+    private readonly ConcurrentDictionary<string, LobbyServerDetailed> working = new();
+    private readonly SemaphoreSlim chunkUpdateLock = new(1);
+    private bool serverWorking = false;
 
-    private DateTimeOffset lastServerUpdateDateTime;
-    private readonly int historyUpdateInterval = 10 * 60;
-    private bool lastIsDetailed = false;
 
-    public DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig config, IServiceScopeFactory serviceScopeFactory, LobbyServerManager lobbyDetailsManager, HistoryCountService historyCountManager)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
-        this.logger = logger;
-        this.serviceScopeFactory = serviceScopeFactory;
-        this.historyCountManager = historyCountManager;
-
-        if (config.HistoryUpdateInterval is int updateInterval)
-        {
-            historyUpdateInterval = updateInterval;
-        }
-
-
         if (config.IsDisabledInsertDatabase is not true)
         {
-            lobbyDetailsManager.Updated += LobbyDetailsManager_Updated;
+            lobbyServerManager.DetailsChunkUpdated += LobbyServerManager_DetailsChunkUpdated;
+            lobbyServerManager.ServerUpdated += LobbyServerManager_Updated;
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        cts.Cancel();
+        return Task.CompletedTask;
+    }
+
+
+    private async void LobbyServerManager_DetailsChunkUpdated(object? sender, DstUpdatedDetailsChunk e)
+    {
+        var chunk = e.Chunk;
+        using var scope = serviceScopeFactory.CreateScope();
+        using var db = scope.ServiceProvider.GetRequiredService<DstDbContext>();
+        db.Database.SetCommandTimeout(TimeSpan.FromSeconds(60));
+
+
+        try
+        {
+            await chunkUpdateLock.WaitAsync(cts.Token);
+#if DEBUG
+            foreach (var item in chunk)
+            {
+                if (!working.TryAdd(item.RowId, item))
+                {
+                    var err = e.Chunk.GroupBy(v => v.RowId).Where(v => v.Count() > 1).ToArray();
+                }
+            }
+#endif
+            await UpdatedDetailed(db, chunk);
+#if DEBUG
+            foreach (var item in chunk)
+            {
+                if (!working.TryRemove(item.RowId, out var server))
+                {
+                    var a = working.Where(v => v.Key == "KU_1W-yHDWL");
+                }
+            }
+#endif
+        }
+        catch (Exception ex)
+        {
+            logger.LogError("Chunk更新异常");
+        }
+        finally
+        {
+            chunkUpdateLock.Release();
         }
     }
 
-    private async void LobbyDetailsManager_Updated(object sender, DstUpdatedEventArgs e)
+    private async void LobbyServerManager_Updated(object? sender, DstUpdatedEventArgs e)
     {
+        if (cts.Token.IsCancellationRequested) return;
         if (e.Servers.Count == 0) return;
 
         DateTimeOffset updateDateTime = e.UpdatedDateTime;
 
-        lock (this)
-        {
-            if (!lastIsDetailed && e.IsDetailed)
-            {
-                lastServerUpdateDateTime = DateTimeOffset.Now;
-            }
-            else if (DateTimeOffset.Now - lastServerUpdateDateTime > TimeSpan.FromSeconds(historyUpdateInterval))
-            {
-                lastServerUpdateDateTime = DateTimeOffset.Now;
-            }
-            else
-            {
-                return;
-            }
-            lastIsDetailed = e.IsDetailed;
-        }
-
-        logger.LogInformation("历史信息储存数据库 IsDetailed:{IsDetailed}", e.IsDetailed);
+        logger.LogInformation("历史信息储存数据库");
         using var scope = serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
 
-        ICollection<LobbyServerDetailed> servers = e.Servers;
-        if (!e.IsDetailed) // Detailed已经被克隆
-        {
-            servers = servers.Select(s => s.Clone()).ToArray();
-        }
+        ICollection<LobbyServerDetailed> servers = e.Servers.Select(v => v.Clone()).ToArray();
 
         try
         {
-            await historyCountManager.AddAsync(servers, updateDateTime);
-
-            if (e.IsDetailed)
-            {
-                await UpdatedDetailed(dbContext, servers, updateDateTime);
-            }
-            else
-            {
-                await Updated(dbContext, servers, updateDateTime);
-            }
+            await historyCountManager.AddAsync(servers, updateDateTime, cts.Token);
+            serverWorking = true;
+            await Updated(dbContext, servers);
+            serverWorking = false;
         }
         catch (Exception ex)
         {
-            logger.LogError("UpdatedServer失败 IsDetailed:{IsDetailed} Exception:{Exception}", e.IsDetailed, ex.Message);
+#if DEBUG
+            Console.WriteLine(ex);
+#endif
+            logger.LogError("UpdatedServer失败 Exception:{Exception}", ex.Message);
         }
     }
 
 
 
-    private async Task EnsureServersCreated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTimeOffset createDateTime)
+    private async Task EnsureServersCreated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers)
     {
         List<DstServerHistory> list = new(servers.Count);
         foreach (var server in servers)
@@ -117,11 +134,12 @@ public class DstHistoryService
             await dbContext.BulkInsertOrUpdateAsync(list, new BulkConfig()
             {
                 SetOutputIdentity = true,
-            });
-            await dbContext.BulkSaveChangesAsync();
+            }, cancellationToken: cts.Token);
+            await dbContext.BulkSaveChangesAsync(cancellationToken: cts.Token);
         }
         catch (Exception e)
         {
+            Console.WriteLine(e);
             throw;
         }
     }
@@ -155,11 +173,11 @@ public class DstHistoryService
 
 
 
-    private async Task Updated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTimeOffset updateDateTime)
+    private async Task Updated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers)
     {
         dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 
-        await EnsureServersCreated(dbContext, servers, updateDateTime);
+        await EnsureServersCreated(dbContext, servers);
 
         List<DstServerHistoryItem> updateList = new(servers.Count);
         foreach (var item in servers)
@@ -175,18 +193,18 @@ public class DstHistoryService
             updateList.Add(hItem);
         }
 
-        await dbContext.BulkInsertAsync(updateList);
-        await dbContext.BulkSaveChangesAsync();
+        await dbContext.BulkInsertAsync(updateList, cancellationToken: cts.Token);
+        await dbContext.BulkSaveChangesAsync(cancellationToken: cts.Token);
     }
-    private async Task UpdatedDetailed(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers, DateTimeOffset updateDateTime)
+    private async Task UpdatedDetailed(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers)
     {
-        await EnsureServersCreated(dbContext, servers, updateDateTime);
+        dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+        await EnsureServersCreated(dbContext, servers);
 
         var ServerPlayerKV = servers.SelectMany(s =>
             s.Players?.Select(v => KeyValuePair.Create(s, v)) ?? []
             );
         await EnsurePlayersCreated(dbContext, ServerPlayerKV);
-
 
         List<DstServerHistoryItem> items = new();
         List<HistoryServerItemPlayer> pairs = new();
@@ -214,33 +232,40 @@ public class DstHistoryService
 
         try
         {
-            dbContext.ServerHistoryItems.AddRange(items);
-
-            await dbContext.SaveChangesAsync();
+            dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.TrackAll;
+            await dbContext.ServerHistoryItems.AddRangeAsync(items, cts.Token);
+            await dbContext.SaveChangesAsync(cts.Token);
         }
         catch (Exception ex)
         {
-            logger.LogWarning("History更新失败 {Exception}", ex.Message);
+            logger.LogError("History Item更新失败 {Exception}", ex.Message);
         }
 
-        var pairsKvs = pairs.Select(v => new
+        foreach (var item in pairs)
         {
-            v.PlayerId,
-            v.HistoryServerItem.Id,
-        }).ToArray();
-
-        //有重复的服务器和玩家
-        var uniquePairs = pairs.GroupBy(v => (v.PlayerId, v.HistoryServerItem.Id)).Select(v => v.First());
+            item.HistoryServerItemId = item.HistoryServerItem.Id;
+        }
 
         try
         {
-            dbContext.HistoryServerItemPlayerPair.AddRange(uniquePairs);
-            await dbContext.SaveChangesAsync();
+            dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+            await dbContext.HistoryServerItemPlayerPair.AddRangeAsync(pairs, cts.Token);
+            await dbContext.SaveChangesAsync(cts.Token);
         }
         catch (Exception ex)
         {
-            logger.LogWarning("History更新失败 {Exception}", ex.Message);
+            logger.LogError("History PlayerPair更新失败 {Exception}", ex.Message);
         }
+
+        //var pairsKvs = pairs.Select(v => new
+        //{
+        //    v.PlayerId,
+        //    v.HistoryServerItem.Id,
+        //}).ToArray();
+
+        ////有重复的服务器和玩家
+        //var uniquePairs = pairs.GroupBy(v => (v.PlayerId, v.HistoryServerItem.Id)).Select(v => v.First());
     }
+
 }
 

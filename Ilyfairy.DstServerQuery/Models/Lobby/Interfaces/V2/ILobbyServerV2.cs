@@ -10,7 +10,6 @@ public interface ILobbyServerV2
     public string Name { get; set; } //房间名称
 
     [JsonPropertyName("Address")]
-    //[JsonConverter(typeof(IPAddressInfoConverter))]
     public IPAddressInfo Address { get; set; } //ip地址信息
 
     [JsonPropertyName("Port")]
@@ -29,14 +28,14 @@ public interface ILobbyServerV2
     public string Host { get; set; } //房主KleiID
 
     [JsonPropertyName("Intent")]
-    [JsonConverter(typeof(IntentConverter))]
+    [JsonConverter(typeof(IntentWriteConverter))]
     public IntentionType Intent { get; set; } //风格
 
     [JsonPropertyName("MaxConnections")]
     public int MaxConnections { get; set; } //最大玩家限制
 
     [JsonPropertyName("Mode")]
-    [JsonConverter(typeof(ModeConverter))]
+    [JsonConverter(typeof(GameModeWriteConverter))]
     public GameMode Mode { get; set; } //模式
 
     [JsonPropertyName("IsMods")]
@@ -46,11 +45,10 @@ public interface ILobbyServerV2
     public bool IsPassword { get; set; } //是否需要密码
 
     [JsonPropertyName("Platform")]
-    //[JsonConverter(typeof(EnumConverter<Platform>))]
     public Platform Platform { get; set; } //平台信息
 
     [JsonPropertyName("Season")]
-    [JsonConverter(typeof(SeasonConverter))]
+    [JsonConverter(typeof(SeasonWriteConverter))]
     public Season Season { get; set; } //季节
 
     [JsonPropertyName("IsPvp")]
@@ -61,4 +59,49 @@ public interface ILobbyServerV2
 
     [JsonPropertyName("Session")]
     public string Session { get; set; } //会话id
+
+
+
+
+    [JsonPropertyName("IsClanOnly")]
+    public bool IsClanOnly { get; set; } //仅限steam群组成员加入
+
+    [JsonPropertyName("IsFriendsOnly")]
+    public bool IsFriendsOnly { get; set; } //是否仅限好友加入
+
+    [JsonPropertyName("Slaves")]
+    public WorldLevelItem[]? Slaves { get; set; } //json
+
+    [JsonPropertyName("Secondaries")]
+    public WorldLevelItem[]? Secondaries { get; set; } //json
+
+    [JsonPropertyName("IsAllowNewPlayers")]
+    public bool IsAllowNewPlayers { get; set; } //是否允许新玩家加入
+
+    [JsonPropertyName("IsServerPaused")]
+    public bool IsServerPaused { get; set; } //世界是否暂停
+
+    [JsonPropertyName("SteamId")]
+    public string? SteamId { get; set; }
+
+    [JsonPropertyName("SteamRoom")]
+    public string? SteamRoom { get; set; }
+
+    [JsonPropertyName("Tags")]
+    public string[]? Tags { get; set; } //Tags
+
+    [JsonPropertyName("Guid")]
+    public string? Guid { get; set; } //GUID
+
+    [JsonPropertyName("IsClientHosted")]
+    public bool IsClientHosted { get; set; } //是否是客户端主机
+
+    [JsonPropertyName("SteamClanId")]
+    public string? SteamClanId { get; set; } //steam群组gid
+
+    [JsonPropertyName("OwnerNetId")]
+    public string? OwnerNetId { get; set; } //steamid
+
+    [JsonPropertyName("IsLanOnly")]
+    public bool IsLanOnly { get; set; } //是否仅局域网
 }

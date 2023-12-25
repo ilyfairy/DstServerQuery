@@ -4,7 +4,6 @@ using System.Collections.Concurrent;
 using Ilyfairy.DstServerQuery.Models.Requests;
 using System.Collections.Immutable;
 using Serilog;
-using Ilyfairy.DstServerQuery.Helpers;
 
 namespace Ilyfairy.DstServerQuery;
 
@@ -15,7 +14,8 @@ public class LobbyServerManager : IDisposable
 {
     private readonly ILogger _logger = Log.ForContext<LobbyServerManager>();
     public ConcurrentDictionary<string, LobbyServerDetailed> ServerMap { get; } = new(2, 40000);
-    private ICollection<LobbyServerDetailed> serverCache = Array.Empty<LobbyServerDetailed>();
+    private ICollection<LobbyServerDetailed> serverCache = [];
+
     public bool Running => !HttpCancellationToken.IsCancellationRequested;
     public LobbyDownloader LobbyDownloader { get; private set; }
 
@@ -27,19 +27,18 @@ public class LobbyServerManager : IDisposable
     private readonly Stopwatch sw = Stopwatch.StartNew();
     private readonly DstWebConfig dstConfig;
 
-    public CancellationTokenSource HttpCancellationToken { get; private set; } = new(0);
+    public CancellationTokenSource HttpCancellationToken { get; private set; } = new(0); // 初始为取消状态
 
-    public event DstDataUpdatedHandler? Updated;
+    public event EventHandler<DstUpdatedEventArgs>? ServerUpdated;
+    public event EventHandler<DstUpdatedDetailsChunk>? DetailsChunkUpdated;
 
     //参数是依赖注入
-    public LobbyServerManager(DstWebConfig requestConfig, LobbyDownloader lobbyDownloader, DstJsonOptions dstJsonOptions) : base()
+    public LobbyServerManager(DstWebConfig requestConfig, LobbyDownloader lobbyDownloader)
     {
         LobbyDownloader = lobbyDownloader;
         this.dstConfig = requestConfig;
     }
 
-
-    #region 方法
 
     public async Task Start()
     {
@@ -78,7 +77,7 @@ public class LobbyServerManager : IDisposable
     //循环获取数据  
     private async Task RequestLoop()
     {
-        Dictionary<string, LobbyServerDetailed> tempServerRowIdMap = new(40000);
+        Dictionary<string, LobbyServerRaw> tempServerRowIdMap = new(40000);
         while (Running)
         {
             try
@@ -88,14 +87,12 @@ public class LobbyServerManager : IDisposable
                 cts.CancelAfter(TimeSpan.FromMinutes(3));
                 _logger.Information("开始 Download");
 
-                int count = 0;
+                //int count = 0;
                 await foreach (var item in LobbyDownloader.DownloadAllBriefs(CancellationTokenSource.CreateLinkedTokenSource(cts.Token, HttpCancellationToken.Token).Token))
                 {
                     tempServerRowIdMap[item.RowId] = item;
-                    count++;
+                    //count++;
                 }
-
-                _logger.Information($"已获取所有服务器数据 一共{count}个");
             }
             catch (Exception e)
             {
@@ -118,9 +115,9 @@ public class LobbyServerManager : IDisposable
             List<LobbyServer> unchanged = new(10000);
             foreach (var rowId in currentRowIds.Intersect(newRowIds))
             {
-                var @new = tempServerRowIdMap[rowId];
-                var server = ServerMap[rowId];
-                (@new as LobbyServer).CopyTo(server);
+                var newRaw = tempServerRowIdMap[rowId];
+                LobbyServer server = ServerMap[rowId];
+                server.UpdateFrom(newRaw);
                 unchanged.Add(server);
             }
 
@@ -128,10 +125,12 @@ public class LobbyServerManager : IDisposable
             List<LobbyServer> added = new(1000);
             foreach (var rowId in newRowIds.Except(currentRowIds))
             {
-                var @new = tempServerRowIdMap[rowId];
-                if (ServerMap.TryAdd(rowId, @new))
+                var newRaw = tempServerRowIdMap[rowId];
+                LobbyServer server = new LobbyServerDetailed();
+                server.UpdateFrom(newRaw as LobbyServerRaw);
+                if (ServerMap.TryAdd(rowId, (server as LobbyServerDetailed)!))
                 {
-                    added.Add(@new);
+                    added.Add(server);
                 }
             }
 
@@ -145,17 +144,21 @@ public class LobbyServerManager : IDisposable
                 }
             }
 
-            serverCache = ServerMap.Values;
-            Updated?.Invoke(this, new DstUpdatedEventArgs(serverCache, false, DateTimeOffset.Now)
+            List<LobbyServerDetailed> tempServer = new(ServerMap.Count);
+            tempServer.AddRange(ServerMap.Values);
+            serverCache = tempServer;
+
+            ServerUpdated?.Invoke(this, new DstUpdatedEventArgs(serverCache, DateTimeOffset.Now)
             {
                 UnchangedServers = unchanged,
                 AddedServers = added,
                 RemovedServers = removed
             });
+            _logger.Information("已获取所有服务器数据  一共{Count}个  更新了{UnchangedCount}个  新增了{AddedCount}个  移除了{RemovedCount}个", tempServerRowIdMap.Count, unchanged.Count, added.Count, removed.Count);
 
             try
             {
-                await Task.Delay(20000, HttpCancellationToken.Token);
+                await Task.Delay(TimeSpan.FromSeconds(dstConfig.ServerUpdateInterval ?? 60), HttpCancellationToken.Token);
             }
             catch (Exception)
             {
@@ -166,16 +169,20 @@ public class LobbyServerManager : IDisposable
 
     private async Task UpdatingLoop()
     {
-        Stopwatch s = new();
+        if (dstConfig.ServerDetailsUpdateInterval is null) return;
+
         await Task.Yield();
         await Task.Delay(20000); // 延迟,等待RequestLoop更新完
 
+        Stopwatch s = new();
         DateTimeOffset lastUpdated = default;
+        DateTimeOffset lastHistoryUpdateTime = new(); // 上次更新的详细信息历史记录时间
         while (Running)
         {
-            if (DateTimeOffset.Now - lastUpdated < TimeSpan.FromSeconds(dstConfig.DetailsUpdateInterval ?? 600))
+            //更新间隔
+            if (DateTimeOffset.Now - lastUpdated < TimeSpan.FromSeconds(dstConfig.ServerDetailsUpdateInterval.Value))
             {
-                await Task.Delay(2000, HttpCancellationToken.Token);
+                await Task.Delay(1000, HttpCancellationToken.Token);
                 continue;
             }
 
@@ -185,17 +192,33 @@ public class LobbyServerManager : IDisposable
                 s.Restart();
                 try
                 {
-                    var updated = await LobbyDownloader.UpdateToDetails(arr, HttpCancellationToken.Token);
-                    if (updated.Count > arr.Count * 0.6f) // 更新数量大于60%
+                    //历史记录更新间隔
+                    bool isInsertHistory = false;
+                    if (dstConfig.HistoryDetailsUpdateInterval != null &&
+                        DateTimeOffset.Now - lastHistoryUpdateTime >= TimeSpan.FromSeconds(dstConfig.HistoryDetailsUpdateInterval ?? 600))
                     {
-                        Updated?.Invoke(this, new DstUpdatedEventArgs(updated, true, LastUpdate));
+                        lastHistoryUpdateTime = DateTimeOffset.Now;
+                        isInsertHistory = true;
                     }
 
-                    _logger.Information("所有详细信息已更新  在{OriginCount}个中更新了{UpdateCount}  耗时:{ElapsedMilliseconds:0.00}分钟  距离上次更新{LateUpdate:0.00}分钟", arr.Count, updated.Count, s.ElapsedMilliseconds / 1000 / 60.0, (DateTimeOffset.Now - lastUpdated).TotalMinutes);
+                    //开始更新
+                    var updatedCount = await LobbyDownloader.UpdateToDetails(arr, updatedChunk =>
+                    {
+                        if (isInsertHistory)
+                        {
+                            DetailsChunkUpdated?.Invoke(this, new DstUpdatedDetailsChunk(updatedChunk, DateTimeOffset.Now));
+                        }
+                    }, HttpCancellationToken.Token);
+                    if (updatedCount > arr.Count * 0.6f) // 更新数量大于60%
+                    {
+                        //Updated?.Invoke(this, new DstUpdatedEventArgs(updated, LastUpdate));
+                    }
+
+                    _logger.Information("所有详细信息已更新  在{OriginCount}个中更新了{UpdateCount}  耗时:{ElapsedMilliseconds:0.00}分钟  距离上次更新{LateUpdate:0.00}分钟", arr.Count, updatedCount, s.ElapsedMilliseconds / 1000 / 60.0, (DateTimeOffset.Now - lastUpdated).TotalMinutes);
 
                     s.Stop();
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     _logger.Warning("服务器详细信息更新异常: {Exception}", ex.Message);
                 }
@@ -226,7 +249,7 @@ public class LobbyServerManager : IDisposable
     {
         var server = ServerMap.GetValueOrDefault(rowid);
         if (server is null) return null;
- 
+
         lock (server)
         {
             server._Lock ??= new SemaphoreSlim(1);
@@ -235,7 +258,7 @@ public class LobbyServerManager : IDisposable
         try
         {
             await server._Lock.WaitAsync(token);
-            if (forceUpdate || !server._IsDetails || (DateTimeOffset.Now - server._LastUpdate) > TimeSpan.FromSeconds(20))
+            if (forceUpdate || !server.Raw!._IsDetailed || (DateTimeOffset.Now - server.Raw._LastUpdate) > TimeSpan.FromSeconds(20))
             {
                 await LobbyDownloader.UpdateToDetails(server, HttpCancellationToken.Token);
             }
@@ -247,11 +270,8 @@ public class LobbyServerManager : IDisposable
         return server;
     }
 
-    #endregion
-
 }
 
-public delegate void DstDataUpdatedHandler(object sender, DstUpdatedEventArgs e);
 
 public class DstUpdatedEventArgs : EventArgs
 {
@@ -260,13 +280,17 @@ public class DstUpdatedEventArgs : EventArgs
     public ICollection<LobbyServer>? RemovedServers { get; init; }
     public ICollection<LobbyServer>? UnchangedServers { get; init; }
 
-    public bool IsDetailed { get; init; }
     public DateTimeOffset UpdatedDateTime { get; init; }
 
-    public DstUpdatedEventArgs(ICollection<LobbyServerDetailed> data, bool isDetailed, DateTimeOffset updatedDateTime)
+    public DstUpdatedEventArgs(ICollection<LobbyServerDetailed> data, DateTimeOffset updatedDateTime)
     {
         Servers = data;
-        IsDetailed = isDetailed;
         UpdatedDateTime = updatedDateTime;
     }
+}
+
+public class DstUpdatedDetailsChunk(ICollection<LobbyServerDetailed> chunks, DateTimeOffset updatedDateTime) : EventArgs
+{
+    public ICollection<LobbyServerDetailed> Chunk { get; } = chunks;
+    public DateTimeOffset UpdatedDateTime { get; } = updatedDateTime;
 }

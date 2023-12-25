@@ -1,13 +1,21 @@
-﻿using System.Text.Json.Serialization;
+﻿using Ilyfairy.DstServerQuery.Helpers.Converters.Cache;
+using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.Models.LobbyData;
 
 public class LobbyServerRaw
 {
+    //internal bool _IsDetails;
+    internal string? _Region;
+    internal LobbyPlatform _LobbyPlatform;
+    internal DateTimeOffset _LastUpdate;
+    internal bool _IsDetailed;
+
     [JsonPropertyName("name")]
     public string Name { get; set; } //房间名称
 
     [JsonPropertyName("__addr")]
+    [JsonConverter(typeof(IPAddressRawCacheConverter))]
     public string Address { get; set; } //ip地址信息
 
     [JsonPropertyName("port")]
@@ -23,16 +31,18 @@ public class LobbyServerRaw
     public bool IsDedicated { get; set; } //是否是专用服务器
 
     [JsonPropertyName("host")]
-    public string Host { get; set; } //房主KleiID
+    public string? Host { get; set; } //房主KleiID
 
     [JsonPropertyName("intent")]
-    public string Intent { get; set; } //风格
+    [JsonConverter(typeof(IntentRawCacheConverter))]
+    public string? Intent { get; set; } //风格
 
     [JsonPropertyName("maxconnections")]
     public int MaxConnections { get; set; } //最大玩家限制
 
     [JsonPropertyName("mode")]
-    public string Mode { get; set; } //模式
+    [JsonConverter(typeof(GameModeRawCacheConverter))]
+    public string? Mode { get; set; } //模式
 
     [JsonPropertyName("mods")]
     public bool IsMods { get; set; } //是否开启mod
@@ -44,6 +54,7 @@ public class LobbyServerRaw
     public int Platform { get; set; } //平台信息
 
     [JsonPropertyName("season")]
+    [JsonConverter(typeof(SeasonCacheConverter))]
     public string Season { get; set; } //季节
 
     [JsonPropertyName("pvp")]
@@ -80,9 +91,11 @@ public class LobbyServerRaw
     public string? SteamId { get; set; } // 有前缀
 
     [JsonPropertyName("steamroom")]
+    [JsonConverter(typeof(IdRawCacheConverter))]
     public string? SteamRoom { get; set; }
 
     [JsonPropertyName("tags")]
+    [JsonConverter(typeof(TagsRawCacheConverter))]
     public string? Tags { get; set; } //Tags
 
     [JsonPropertyName("clienthosted")]

@@ -1,65 +1,72 @@
-﻿using Ilyfairy.DstServerQuery.Helpers.Converters;
+﻿using Ilyfairy.DstServerQuery.Helpers;
 using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
-using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.Models.LobbyData;
 
 /// <summary>
 /// 单个服务器列表详细信息, 用于反序列化
 /// </summary>
-public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlayerV1, ILobbyServerDetailedV1, ILobbyServerWithPlayerV2, ILobbyServerDetailedV2
+public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerDetailedV1, ILobbyServerDetailedV2
 {
-    protected new LobbyServerDetailedRaw Raw { get; set; }
-
-    [JsonPropertyName("players")]
-    [JsonConverter(typeof(PlayersInfoConverter))] // NOTE:自定义转换
     public LobbyPlayerInfo[]? Players { get; set; } //玩家信息
 
-    [JsonPropertyName("__lastPing")]
-    public long LastPing { get; set; } //上次与大厅通信时间
+    public long? LastPing { get; set; } //上次与大厅通信时间
 
-    [JsonPropertyName("desc")]
     public string? Description { get; set; } //房间描述
 
-    [JsonPropertyName("tick")]
-    public int Tick { get; set; } //Tick
+    public int? Tick { get; set; } //Tick
 
-    [JsonPropertyName("clientmodsoff")]
-    public bool IsClientModsOff { get; set; }
+    public bool? IsClientModsOff { get; set; }
 
-    [JsonPropertyName("nat")]
-    public int Nat { get; set; } //服务器网络类型  公网5内网7
+    public int? Nat { get; set; } //服务器网络类型  公网5内网7
 
-    [JsonPropertyName("event")]
-    public bool IsEvent { get; set; }
+    public bool? IsEvent { get; set; }
 
-    [JsonPropertyName("valvecloudserver")]
-    public bool IsValveCloudServer { get; set; }
+    public bool? IsValveCloudServer { get; set; }
 
-    [JsonPropertyName("valvepopid")]
     public string? ValvePopId { get; set; }
 
-    [JsonPropertyName("valveroutinginfo")]
     public string? ValveRoutingInfo { get; set; }
 
-    [JsonPropertyName("kleiofficial")]
-    public bool IsKleiOfficial { get; set; } //是否是官方服务器
+    public bool? IsKleiOfficial { get; set; } //是否是官方服务器
 
-    [JsonPropertyName("data")]
-    [JsonConverter(typeof(LobbyDayInfoConverter))] // NOTE:自定义转换
     public LobbyDaysInfo? DaysInfo { get; set; } //天数信息
 
-    //TODO: 未完成
-    [JsonPropertyName("worldgen")]
-    [JsonConverter(typeof(WorldGenConverter))]
     public object? WorldGen { get; set; } //世界配置
 
-    [JsonPropertyName("Users")]
     public object? Users { get; set; } //始终为null
 
-    [JsonPropertyName("mods_info")]
-    [JsonConverter(typeof(LobbyModInfoConverter))] // NOTE:自定义转换
     public LobbyModInfo[]? ModsInfo { get; set; } //mod信息
+
+
+
+    public void UpdateFrom(LobbyServerDetailedRaw raw)
+    {
+        Raw = raw;
+        Refresh();
+    }
+
+    public new void Refresh()
+    {
+        base.Refresh();
+
+        //LastPing = Raw.LastPing;
+        Description = Raw.Description;
+        Tick = Raw.Tick;
+        IsClientModsOff = Raw.IsClientModsOff;
+        Nat = Raw.Nat;
+        IsEvent = Raw.IsEvent;
+        IsValveCloudServer = Raw.IsValveCloudServer;
+        ValvePopId = Raw.ValvePopId;
+        ValveRoutingInfo = Raw.ValveRoutingInfo;
+        IsKleiOfficial = Raw.IsKleiOfficial;
+        WorldGen = Raw.WorldGen;
+        Users = Raw.Users;
+        DaysInfo = DstConverterHelper.ParseDays(Raw.DaysInfo);
+        ModsInfo = DstConverterHelper.ParseMods(Raw.ModsInfo);
+        Players = DstConverterHelper.ParsePlayers(Raw.Players);
+    }
+
 
     object ICloneable.Clone() => Clone();
 
@@ -116,10 +123,12 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
         obj.Users = this.Users;
         obj.ModsInfo = this.ModsInfo?.ToArray();
 
-        obj._IsDetails = this._IsDetails;
-        obj._LastUpdate = this._LastUpdate;
-        obj._LobbyPlatform = this._LobbyPlatform;
-        obj._Region = this._Region;
+        //obj._IsDetails = this._IsDetails;
+        //obj._LastUpdate = this._LastUpdate;
+        //obj._LobbyPlatform = this._LobbyPlatform;
+        //obj._Region = this._Region;
+
+        obj.Raw = this.Raw;
 
         return obj;
     }
@@ -176,7 +185,9 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerWithPlay
         dest.Users = this.Users;
         dest.ModsInfo = this.ModsInfo;
 
-        dest._LastUpdate = this._LastUpdate;
+        //dest._LastUpdate = this._LastUpdate;
+
+        dest.Raw = this.Raw;
     }
 
 }

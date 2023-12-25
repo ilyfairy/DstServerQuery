@@ -9,6 +9,7 @@ using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.Requests;
 using Ilyfairy.DstServerQuery.Services;
 using Ilyfairy.DstServerQuery.Web;
+using Ilyfairy.DstServerQuery.Web.Helpers.Console;
 using Ilyfairy.DstServerQuery.Web.Services;
 using Ilyfairy.DstServerQuery.Web.Services.TrafficRateLimiter;
 using Microsoft.AspNetCore.RateLimiting;
@@ -16,12 +17,13 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
+using Serilog.Sinks.SystemConsole.Themes;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
-
 
 var builder = WebApplication.CreateBuilder(args);
 if (File.Exists("secrets.json"))
@@ -30,9 +32,14 @@ if (File.Exists("secrets.json"))
 }
 
 #region Logger
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .CreateBootstrapLogger(); // Run之前生效
+{
+    var consoleSink = ControllableConsoleSink.Create();
+    builder.Services.AddSingleton(consoleSink);
+
+    Log.Logger = new LoggerConfiguration()
+        .WriteTo.Sink(consoleSink)
+        .CreateBootstrapLogger(); // Run之前生效
+}
 
 builder.Services.AddSerilog((service, loggerConfiguration) =>
 {
@@ -40,13 +47,19 @@ builder.Services.AddSerilog((service, loggerConfiguration) =>
     //new LoggerConfiguration().ReadFrom.Configuration(configuration, options); 
     //loggerConfiguration.ReadFrom.Configuration(service.GetRequiredService<IConfiguration>()); // 单文件读取失败
 
-    loggerConfiguration.WriteTo.Async(v => v.Console());
+    loggerConfiguration.WriteTo.Async(v =>
+    {
+        v.Sink(service.GetRequiredService<ControllableConsoleSink>());
+    });
     loggerConfiguration.Enrich.FromLogContext();
 
-    //如果不是开发模式
-    if (!builder.Environment.IsDevelopment())
+    if (builder.Environment.IsDevelopment())
     {
-        loggerConfiguration.WriteTo.Async(v => 
+        loggerConfiguration.MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning);
+    }
+    else
+    {
+        loggerConfiguration.WriteTo.Async(v =>
             v.File("Logs/log.log", rollingInterval: RollingInterval.Day)
         );
         loggerConfiguration.MinimumLevel.Information();
@@ -111,7 +124,7 @@ else if (databaseType is DatabaseType.PostgreSql)
     });
     builder.Services.AddScoped<DstDbContext>(v => v.GetRequiredService<PostgreSqlDstDbContext>());
 }
-else if(databaseType is DatabaseType.Memory)
+else if (databaseType is DatabaseType.Memory)
 {
     Log.Logger.Information("使用内存数据库");
     builder.Services.AddDbContext<MemoryDstDbContext>(v =>
@@ -158,9 +171,9 @@ builder.Services.AddSingleton<LobbyServerManager>();
 builder.Services.AddSingleton<LobbyServerManager>();
 builder.Services.AddSingleton<DstVersionService>();
 builder.Services.AddSingleton<GeoIPService>();
-builder.Services.AddSingleton<DstJsonOptions>();
-builder.Services.AddSingleton<DstHistoryService>();
 builder.Services.AddSingleton<LobbyDownloader>();
+builder.Services.AddHostedService<DstHistoryService>();
+builder.Services.AddHistoryCleanupService(builder.Configuration.GetSection("DstConfig").Get<DstWebConfig>()!.HistoryExpiration);
 
 //IP速率限制
 builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
@@ -222,7 +235,9 @@ builder.Services.AddControllers()
     .AddJsonOptions(opt =>
 {
     //默认Json序列化选项
-    //opt.JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
+    opt.JsonSerializerOptions.TypeInfoResolverChain.Add(DstRawJsonContext.Default);
+    opt.JsonSerializerOptions.TypeInfoResolverChain.Add(DstLobbyInfoJsonContext.Default);
+
     opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     opt.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     opt.JsonSerializerOptions.PropertyNamingPolicy = null;
@@ -251,8 +266,9 @@ var app = builder.Build();
 
 
 
-
 //`(*>﹏<*)′=================================== 一条华丽的分割线 ===================================`(*>﹏<*)′//
+
+
 
 app.UseCors("CORS");
 
@@ -289,6 +305,7 @@ app.Lifetime.ApplicationStarted.Register(async () =>
 {
     using var scope = app.Services.CreateScope();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<IHostApplicationBuilder>>();
+    logger.LogInformation("IHostApplicationBuilder Start");
 
     //键值对缓存数据库
     var cache = scope.ServiceProvider.GetRequiredService<SimpleCacheDatabase>();
@@ -298,7 +315,7 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
     bool isMigration = false;
     try
-    {   
+    {
         isMigration = dbContext.Database.GetPendingMigrations().Any();
     }
     catch { }
@@ -321,18 +338,15 @@ app.Lifetime.ApplicationStarted.Register(async () =>
 
     //配置GeoIP
     var geoIPService = app.Services.GetRequiredService<GeoIPService>();
-    var dstJsonConverter = app.Services.GetRequiredService<DstJsonOptions>();
     if (app.Configuration.GetValue<string>("GeoLite2Path") is string geoLite2Path)
     {
         geoIPService.Initialize(geoLite2Path);
     }
-    dstJsonConverter.DeserializerOptions.Converters.Add(new IPAddressInfoConverter(geoIPService));
-    dstJsonConverter.SerializerOptions.Converters.Add(new IPAddressInfoConverter(geoIPService));
+    DstConverterHelper.GeoIPService = geoIPService;
 
     //启动服务管理器
     var lobbyManager = app.Services.GetRequiredService<LobbyServerManager>();
     await lobbyManager.Start();
-    logger.LogInformation("IHostApplicationBuilder Start");
 
     //饥荒版本获取
     var dstManager = app.Services.GetRequiredService<DstVersionService>();
@@ -342,14 +356,12 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     {
         dstVersionDatabase["DstVersion"] = version;
     };
-
-    app.Services.GetRequiredService<DstHistoryService>(); // 确保构造执行
 });
 
 app.Lifetime.ApplicationStopped.Register(() =>
 {
     using var scope = app.Services.CreateScope();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<IHostApplicationBuilder>>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     logger.LogInformation("IHostApplicationBuilder Shutdowning");
 
     var lobbyManager = app.Services.GetService<LobbyServerManager>()!;
@@ -365,7 +377,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSwagger();
-app.UseSwaggerUI(options => 
+app.UseSwaggerUI(options =>
 {
     options.InjectJavascript("/swagger/swagger_ext.js");
     foreach (var description in app.DescribeApiVersions().Reverse())

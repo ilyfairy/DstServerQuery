@@ -1,15 +1,8 @@
-﻿using Ilyfairy.DstServerQuery.Helpers.Converters;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
+﻿using Ilyfairy.DstServerQuery.Helpers;
+using Ilyfairy.DstServerQuery.Helpers.Converters.Cache;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Ilyfairy.DstServerQuery.Models;
-
-public class LobbyWorldLevel : Dictionary<string, WorldLevelItem>;
 
 public class WorldLevelRawItem
 {
@@ -20,13 +13,14 @@ public class WorldLevelRawItem
     public int Port { get; set; }
 
     [JsonPropertyName("id")]
+    [JsonConverter(typeof(IdRawCacheConverter))]
     public string Id { get; set; }
 
     [JsonPropertyName("steamid")]
     public string? SteamId { get; set; } // 有前缀
 }
 
-public class WorldLevelItem : IWorldLevelItem
+public class WorldLevelItem
 {
     public string? Address { get; set; }
 
@@ -34,19 +28,15 @@ public class WorldLevelItem : IWorldLevelItem
 
     public string Id { get; set; }
 
-    [JsonConverter(typeof(PrefixRemoveConverter))]
     public string? SteamId { get; set; } // 有前缀
+
+    public static WorldLevelItem FromRaw(WorldLevelRawItem raw)
+    {
+        WorldLevelItem item = new();
+        item.Address = raw.Address;
+        item.Port = raw.Port;
+        item.Id = raw.Id;
+        item.SteamId = DstConverterHelper.RemovePrefixColon(raw.SteamId);
+        return item;
+    }
 }
-
-public interface IWorldLevelItem
-{
-    public string? Address { get; set; }
-
-    public int Port { get; set; }
-
-    public string Id { get; set; }
-
-    [JsonConverter(typeof(PrefixRemoveConverter))]
-    public string? SteamId { get; set; } // 有前缀
-}
-

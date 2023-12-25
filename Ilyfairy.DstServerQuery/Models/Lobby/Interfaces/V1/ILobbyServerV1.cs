@@ -10,7 +10,7 @@ public interface ILobbyServerV1
     public string Name { get; set; } //房间名称
 
     [JsonPropertyName("Address")]
-    [JsonConverter(typeof(IPAddressRawConverter))]
+    [JsonConverter(typeof(IPAddressStringConverter))]
     public IPAddressInfo Address { get; set; } //ip地址信息
 
     [JsonPropertyName("Port")]
@@ -36,7 +36,7 @@ public interface ILobbyServerV1
     public int MaxConnections { get; set; } //最大玩家限制
 
     [JsonPropertyName("Mode")]
-    [JsonConverter(typeof(ModeWithTranslateConverter))]
+    [JsonConverter(typeof(GameModeWithTranslateConverter))]
     public GameMode Mode { get; set; } //模式
 
     [JsonPropertyName("Mods")]
@@ -46,7 +46,6 @@ public interface ILobbyServerV1
     public bool IsPassword { get; set; } //是否需要密码
 
     [JsonPropertyName("Platform")]
-    //[JsonConverter(typeof(EnumConverter<Platform>))]
     public Platform Platform { get; set; } //平台信息
 
     [JsonPropertyName("Season")]
@@ -64,4 +63,49 @@ public interface ILobbyServerV1
 
     [JsonPropertyName("Country")]
     public string? Country { get; } //
+
+
+
+    [JsonPropertyName("ClanOnly")]
+    public bool IsClanOnly { get; set; } //仅限steam群组成员加入
+
+    [JsonPropertyName("Fo")]
+    public bool IsFriendsOnly { get; set; } //是否仅限好友加入
+
+    [JsonPropertyName("Slaves")]
+    public WorldLevelItem[]? Slaves { get; set; } //json
+
+    [JsonPropertyName("Secondaries")]
+    public WorldLevelItem[]? Secondaries { get; set; } //json
+
+    [JsonPropertyName("ServerPaused")]
+    public bool IsServerPaused { get; set; } //世界是否暂停
+
+    [JsonPropertyName("AllowNewPlayers")]
+    public bool IsAllowNewPlayers { get; set; } //是否允许新玩家加入
+
+    [JsonPropertyName("SteamId")]
+    public string? SteamId { get; set; }
+
+    [JsonPropertyName("SteamRoom")]
+    public string? SteamRoom { get; set; }
+
+    [JsonPropertyName("Tags")]
+    public string[]? Tags { get; set; } //Tags
+
+    [JsonPropertyName("ClientHosted")]
+    public bool IsClientHosted { get; set; } //是否是客户端主机
+
+    [JsonPropertyName("Guid")]
+    public string? Guid { get; set; } //GUID
+
+    [JsonPropertyName("OwnerNetId")]
+    public string? OwnerNetId { get; set; } //steamid
+
+    [JsonPropertyName("SteamClanId")]
+    public string? SteamClanId { get; set; } //steam群组gid
+
+    [JsonPropertyName("LanOnly")]
+    public bool IsLanOnly { get; set; } //是否仅局域网
+
 }

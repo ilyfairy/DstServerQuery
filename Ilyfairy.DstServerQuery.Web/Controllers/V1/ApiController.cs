@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Net.Mime;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Ilyfairy.DstServerQuery.Web.Controllers.V1;
 
@@ -26,21 +28,25 @@ public partial class ApiController : ControllerBase
     private readonly DstVersionService dstVersion;
     private readonly LobbyServerManager lobbyDetailsManager;
     private readonly HistoryCountService historyCountManager;
-    private readonly DstJsonOptions dstJsonOptions;
-    private readonly JsonSerializerOptions v1JsonOptions = new JsonSerializerOptions()
+    private static readonly JsonSerializerOptions v1JsonOptions = new();
+
+    static ApiController()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
+        v1JsonOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver()
+        {
+        };
+        v1JsonOptions.PropertyNamingPolicy = null;
+        v1JsonOptions.Converters.Add(new JsonStringEnumConverter());
+        v1JsonOptions.MakeReadOnly();
+    }
 
     //版本获取, 大厅服务器管理器, 大厅服务器历史房间数量管理器
-    public ApiController(ILogger<ApiController> logger, DstVersionService versionGetter, LobbyServerManager lobbyDetailsManager, HistoryCountService historyCountManager, DstJsonOptions dstJsonOptions)
+    public ApiController(ILogger<ApiController> logger, DstVersionService versionGetter, LobbyServerManager lobbyDetailsManager, HistoryCountService historyCountManager)
     {
         _logger = logger;
         dstVersion = versionGetter;
         this.lobbyDetailsManager = lobbyDetailsManager;
         this.historyCountManager = historyCountManager;
-        this.dstJsonOptions = dstJsonOptions;
-
     }
 
     /// <summary>
@@ -88,7 +94,7 @@ public partial class ApiController : ControllerBase
         }
         _logger.LogInformation("找到服务器 RowId:{RowId} Name:{Name}", id, info.Name);
 
-        return Content(JsonSerializer.Serialize<ILobbyServerDetailedV1>(info, dstJsonOptions.SerializerOptions), MediaTypeNames.Application.Json);
+        return Content(JsonSerializer.Serialize<ILobbyServerDetailedV1>(info), MediaTypeNames.Application.Json);
     }
 
     [HttpPost("details")]
@@ -109,7 +115,7 @@ public partial class ApiController : ControllerBase
         string query = string.Join("&", queryKey.Select(v => $"{v.Key}={v.Value}"));
         _logger.LogInformation("查询服务器 Count:{Count} Query:{Query}", queryer.Result.Count, query);
         
-        return Content(queryer.ToJson(dstJsonOptions.SerializerOptions), "application/json");
+        return Content(queryer.ToJson(v1JsonOptions), "application/json");
     }
 
 
@@ -149,7 +155,7 @@ public partial class ApiController : ControllerBase
             catch { }
         }
         result.Reverse();
-        return new JsonResult(result, dstJsonOptions.SerializerOptions);
+        return new JsonResult(result);
     }
 
     /// <summary>

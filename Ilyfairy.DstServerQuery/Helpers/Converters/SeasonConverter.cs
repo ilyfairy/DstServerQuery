@@ -5,22 +5,23 @@ using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.Helpers.Converters;
 
-public class SeasonConverter : JsonConverter<Season>
+public class SeasonWriteConverter : JsonConverter<Season>
 {
     public override Season Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        return new Season(reader.GetString());
+        throw new NotSupportedException();
     }
-
     public override void Write(Utf8JsonWriter writer, Season value, JsonSerializerOptions options)
     {
-        //writer.WriteStringValue(DstEnumText.Instance.TryGetValueOrDefault(value, "未知"));
         writer.WriteStringValue(value.Value);
     }
 }
-
-public class SeasonWithTranslateConverter : SeasonConverter
+public class SeasonWithTranslateConverter : JsonConverter<Season>
 {
+    public override Season Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        throw new NotSupportedException();
+    }
     public override void Write(Utf8JsonWriter writer, Season value, JsonSerializerOptions options)
     {
         writer.WriteStringValue(DstEnumText.Instance.GetFromString(value.Value ?? "", value.Value ?? ""));

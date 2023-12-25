@@ -1,6 +1,7 @@
 ﻿using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
 using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
+using Ilyfairy.DstServerQuery.Models.Requests;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,12 +16,13 @@ public class HistoryCountService
     private readonly ILogger<HistoryCountService> _logger;
     private readonly IServiceScopeFactory serviceScopeFactory;
     private readonly Queue<ServerCountInfo> cache = new(10100);
+    private readonly bool isCountFromPlayers;
 
     public DateTimeOffset LastUpdate { get; private set; }
     public DateTimeOffset First => cache.FirstOrDefault()?.UpdateDate ?? DateTimeOffset.Now;
     public IEnumerable<ServerCountInfo> Cache => cache;
 
-    public HistoryCountService(IServiceScopeFactory serviceScopeFactory, ILogger<HistoryCountService> logger)
+    public HistoryCountService(IServiceScopeFactory serviceScopeFactory, ILogger<HistoryCountService> logger, DstWebConfig config)
     {
         _logger = logger;
         this.serviceScopeFactory = serviceScopeFactory;
@@ -41,7 +43,7 @@ public class HistoryCountService
     {
         using var scope = serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
-        
+
         var day3 = DateTimeOffset.Now - TimeSpan.FromDays(3); //三天前
         var r = dbContext.ServerHistoryCountInfos.Where(v => v.UpdateDate > day3).AsNoTracking().ToArray();
         foreach (var item in r)
@@ -51,13 +53,13 @@ public class HistoryCountService
         _logger.LogInformation("初始缓存个数:{CacheCount}", cache.Count);
     }
 
-    private async Task AddAsync(ServerCountInfo info)
+    private async Task AddAsync(ServerCountInfo info, CancellationToken cancellationToken)
     {
         using var scope = serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
 
         var r = dbContext.ServerHistoryCountInfos.Add(info);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         cache.Enqueue(info);
 
@@ -69,7 +71,7 @@ public class HistoryCountService
     }
 
     // data to info
-    public Task AddAsync(ICollection<LobbyServerDetailed> data, DateTimeOffset updateTime)
+    public Task AddAsync(ICollection<LobbyServerDetailed> data, DateTimeOffset updateTime, CancellationToken cancellationToken)
     {
         LastUpdate = updateTime;
 
@@ -79,32 +81,32 @@ public class HistoryCountService
 
         foreach (var item in data)
         {
-            countInfo.AllPlayerCount += item.Connected;
+            countInfo.AllPlayerCount += isCountFromPlayers ? (item.Players?.Length ?? 0) : item.Connected;
             switch (item.Platform)
             {
                 case Platform.Steam:
                     countInfo.SteamServerCount++;
-                    countInfo.SteamPlayerCount += item.Connected;
+                    countInfo.SteamPlayerCount += isCountFromPlayers ? (item.Players?.Length ?? 0) : item.Connected;
                     break;
                 case Platform.PlayStation:
                     countInfo.PlayStationServerCount++;
-                    countInfo.PlayStationPlayerCount += item.Connected;
+                    countInfo.PlayStationPlayerCount += isCountFromPlayers ? (item.Players?.Length ?? 0) : item.Connected;
                     break;
                 case Platform.WeGame or Platform.QQGame:
                     countInfo.WeGameServerCount++;
-                    countInfo.WeGamePlayerCount += item.Connected;
+                    countInfo.WeGamePlayerCount += isCountFromPlayers ? (item.Players?.Length ?? 0) : item.Connected;
                     break;
                 case Platform.Xbox:
                     countInfo.XboxServerCount++;
-                    countInfo.XboxPlayerCount += item.Connected;
+                    countInfo.XboxPlayerCount += isCountFromPlayers ? (item.Players?.Length ?? 0) : item.Connected;
                     break;
                 case Platform.Switch:
                     countInfo.SwitchServerCount++;
-                    countInfo.SwitchPlayerCount += item.Connected;
+                    countInfo.SwitchPlayerCount += isCountFromPlayers ? (item.Players?.Length ?? 0) : item.Connected;
                     break;
             }
         }
-        return AddAsync(countInfo);
+        return AddAsync(countInfo, cancellationToken);
     }
 
     /// <summary>
