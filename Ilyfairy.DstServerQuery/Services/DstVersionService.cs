@@ -45,25 +45,31 @@ public class DstVersionService : IDisposable
                     catch (Exception) { }
                     if (ok) return;
                     dst.Dispose();
+                    if (TokenSource.IsCancellationRequested) return;
                     log.Warning("饥荒版本获取失败");
                     return;
                 });
 
-                if (dst.Login())
+                try
+                {
+                    await dst.Steam.Authentication.LoginAnonymousAsync();
+                }
+                catch (Exception)
+                {
+                    log.Warning("Steam饥荒登录失败");
+                    continue;
+                }
+                try
                 {
                     var version = await dst.GetServerVersion();
-                    if (version.HasValue && version.Value > 0)
-                    {
-                        Version = version.Value;
-                        VersionUpdated?.Invoke(this, version.Value);
-                        ok = true;
-                        TokenSource.Cancel();
-                        log.Information("饥荒版本获取成功: {0}", version);
-                    }
-                    else
-                    {
-                        log.Warning("饥荒版本获取失败");
-                    }
+                    VersionUpdated?.Invoke(this, version);
+                    TokenSource.Cancel();
+                    log.Information("饥荒版本获取成功: {0}", version);
+                    Version = version;
+                }
+                catch (Exception)
+                {
+                    log.Warning("饥荒版本获取失败");
                 }
             }
             catch { }
@@ -78,6 +84,6 @@ public class DstVersionService : IDisposable
         GC.SuppressFinalize(this);
         running = false;
         TokenSource?.Cancel();
-        currentDst?.Disconnect();
+        currentDst?.Steam.Disconnect();
     }
 }
