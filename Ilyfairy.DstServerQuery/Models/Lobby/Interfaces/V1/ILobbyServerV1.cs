@@ -91,7 +91,7 @@ public interface ILobbyServerV1
     public string? SteamRoom { get; set; }
 
     [JsonPropertyName("Tags")]
-    public string[]? Tags { get; set; } //Tags
+    public ReadOnlyMemory<char>[]? Tags { get; set; } //Tags
 
     [JsonPropertyName("ClientHosted")]
     public bool IsClientHosted { get; set; } //是否是客户端主机

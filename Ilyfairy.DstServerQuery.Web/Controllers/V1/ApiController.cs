@@ -1,7 +1,7 @@
 ﻿using Asp.Versioning;
 using Ilyfairy.DstServerQuery.EntityFrameworkCore;
 using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
-using Ilyfairy.DstServerQuery.Helpers;
+using Ilyfairy.DstServerQuery.Helpers.Converters;
 using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.LobbyData;
 using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
@@ -37,6 +37,8 @@ public partial class ApiController : ControllerBase
         };
         v1JsonOptions.PropertyNamingPolicy = null;
         v1JsonOptions.Converters.Add(new JsonStringEnumConverter());
+        v1JsonOptions.Converters.Add(new ReadOnlyMemoryCharJsonConverter());
+        v1JsonOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
         v1JsonOptions.MakeReadOnly();
     }
 
@@ -94,7 +96,7 @@ public partial class ApiController : ControllerBase
         }
         _logger.LogInformation("找到服务器 RowId:{RowId} Name:{Name}", id, info.Name);
 
-        return Content(JsonSerializer.Serialize<ILobbyServerDetailedV1>(info), MediaTypeNames.Application.Json);
+        return Content(JsonSerializer.Serialize<ILobbyServerDetailedV1>(info, v1JsonOptions), MediaTypeNames.Application.Json);
     }
 
     [HttpPost("details")]

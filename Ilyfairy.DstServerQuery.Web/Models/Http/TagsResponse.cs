@@ -4,5 +4,5 @@ public class TagsResponse(IEnumerable<TagsResponse.ServerTag> tags) : ResponseBa
 {
     public IEnumerable<ServerTag> Tags { get; } = tags;
 
-    public record ServerTag(string Tag, int Count);
+    public record ServerTag(ReadOnlyMemory<char> Tag, int Count);
 }

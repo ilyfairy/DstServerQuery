@@ -7,6 +7,7 @@ using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace Ilyfairy.DstServerQuery.Helpers;
@@ -55,6 +56,12 @@ public static partial class DstConverterHelper
         {
             return Localhost;
         }
+
+        [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_toString")] // NOTE: unsafe
+        static extern ref string IPAddress_toString(IPAddress ipAddress);
+
+        IPAddress_toString(ipAddress) = ip;
+
         try
         {
             if (GeoIPService?.TryCity(ipAddress, out var city) == true)
@@ -231,15 +238,36 @@ public static partial class DstConverterHelper
         return tags;
     }
 
+    [return: NotNullIfNotNull(nameof(tagsString))]
+    public static ReadOnlyMemory<char>[]? ParseTagsAsMemory(string? tagsString)
+    {
+        if (tagsString is null) return null;
+        if (tagsString.Length == 0) return Array.Empty<ReadOnlyMemory<char>>();
+
+        var span = tagsString.AsSpan();
+        var tagsMaxCount = Utils.GetCharCount(tagsString, ',') + 1;
+        Span<Range> ranges = tagsMaxCount < 512 ? stackalloc Range[tagsMaxCount] : new Range[tagsMaxCount];
+        var tagsCount = span.Split(ranges, ',', StringSplitOptions.RemoveEmptyEntries);
+        var tags = new ReadOnlyMemory<char>[tagsCount];
+
+        for (int i = 0; i < tagsCount; i++)
+        {
+            var range = ranges[i];
+            var tagMemory = tagsString.AsMemory(range.Start.Value, range.End.Value - range.Start.Value).Trim();
+            tags[i] = tagMemory;
+        }
+        return tags;
+    }
 
 
 
 
 
 
-    [GeneratedRegex("return \\{ day=(\\d+), dayselapsedinseason=(\\d+), daysleftinseason=(\\d+) \\}")]
+
+    [GeneratedRegex(@"return\s*\{\s*day=(\d+),\s*dayselapsedinseason=(\d+),\s*daysleftinseason=(\d+)\s*\}")]
     private static partial Regex DayRegex();
 
-    [GeneratedRegex("workshop\\-(\\d+)")]
+    [GeneratedRegex(@"workshop\-(\d+)")]
     private static partial Regex WorkshopRegex();
 }

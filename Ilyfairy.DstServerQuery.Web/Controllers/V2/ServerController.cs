@@ -267,8 +267,7 @@ public class ServerController : ControllerBase
     {
         var servers = lobbyServerManager.GetCurrentServers();
 
-        var tags = servers.SelectMany(v => v.Tags ?? [])
-            .Where(v => !string.IsNullOrEmpty(v));
+        var tags = servers.SelectMany(v => v.Tags ?? []);
 
         var response = tags.GroupBy(v => v)
             .Select(v => new TagsResponse.ServerTag(v.Key, v.Count()))

@@ -605,15 +605,16 @@ public partial class LobbyServerQueryerV2
         if (queryParams.Tags is null)
             return;
 
-        var tags = queryParams.Tags.Value;
+        var queryTags = queryParams.Tags.Value;
 
-        if (tags.Value is null)
+        if (queryTags.Value is null)
             return;
 
-        if (tags.Value.Length == 0)
+        if (queryTags.Value.Length == 0)
             return;
 
-        current = current.Where(v => tags.IsExclude ^ tags.Value.Any(tag => v.Tags?.Any(v => tag is not null && v.Contains(tag, StringComparison.OrdinalIgnoreCase)) == true));
+        current = current
+            .Where(v => queryTags.IsExclude ^ queryTags.Value.Any(queryTag => v.Tags?.Any(v => queryTag is not null && v.Span.Contains(queryTag, StringComparison.OrdinalIgnoreCase)) == true));
     }
 
     private void HandleMaxConnection()

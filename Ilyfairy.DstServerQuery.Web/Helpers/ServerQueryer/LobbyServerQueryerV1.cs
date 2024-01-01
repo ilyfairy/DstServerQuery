@@ -677,17 +677,24 @@ public class LobbyServerQueryerV1
     /// </summary>
     private void TagsProc()
     {
-        if (GetQueryValue("Tags", "Tag") is string tag)
+        if (GetQueryValue("Tags", "Tag") is string queryTag)
         {
-            if (tag.Contains(','))
+            if (queryTag.Contains(','))
             {
-                var tags = tag.Split(',');
-                var tmp = Result.Where(v => v.Tags?.Any(t => tags.Contains(t)) == true);
+                var queryTags = queryTag.Split(',');
+                var tmp = Result.Where(v => v.Tags?.Any(t =>
+                {
+                    foreach (var item in queryTags)
+                    {
+                        if (t.Span.Equals(item)) return true;
+                    }
+                    return false;
+                }) == true);
                 ReAdd(tmp);
             }
             else
             {
-                var tmp = Result.Where(v => v.Tags?.Contains(tag) == true);
+                var tmp = Result.Where(v => v.Tags?.Any(t => t.Span.SequenceEqual(queryTag)) == true);
                 ReAdd(tmp);
             }
         }
@@ -879,7 +886,7 @@ public class LobbyServerQueryerV1
             }
             else
             {
-                var tmp = Result.Where(v => v.Tags?.Contains(modName) == true);
+                var tmp = Result.Where(v => v.ModsInfo?.Any(v => v.Name.Contains(modName)) == true);
                 ReAdd(tmp);
             }
         }

@@ -16,8 +16,10 @@ public class DstVersionService : IDisposable
     private bool running = true;
     private DstDownloader? currentDst;
     private readonly ILogger log = Log.ForContext<DstVersionService>();
-    public event EventHandler<long> VersionUpdated;
+    public event EventHandler<long>? VersionUpdated;
     private bool isDisposed = false;
+
+    public Func<DstDownloader> DstDownloaderFactory { get; set; } = () => new();
 
     public async Task RunAsync(long? defaultVersion = null)
     {
@@ -30,7 +32,7 @@ public class DstVersionService : IDisposable
         {
             try
             {
-                using DstDownloader dst = new();
+                using DstDownloader dst = DstDownloaderFactory();
                 currentDst = dst;
                 bool ok = false;
                 TokenSource = new();
@@ -61,7 +63,7 @@ public class DstVersionService : IDisposable
                 }
                 try
                 {
-                    var version = await dst.GetServerVersion();
+                    var version = await dst.GetServerVersionAsync();
                     VersionUpdated?.Invoke(this, version);
                     TokenSource.Cancel();
                     log.Information("饥荒版本获取成功: {0}", version);
@@ -73,7 +75,7 @@ public class DstVersionService : IDisposable
                 }
             }
             catch { }
-            await Task.Delay(10000).ConfigureAwait(false); //每10秒获取一次
+            await Task.Delay(60000).ConfigureAwait(false); //每60秒获取一次
         }
     }
 

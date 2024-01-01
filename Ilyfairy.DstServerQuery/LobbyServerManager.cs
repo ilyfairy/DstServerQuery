@@ -195,10 +195,11 @@ public class LobbyServerManager : IDisposable
                     //历史记录更新间隔
                     bool isInsertHistory = false;
                     if (dstConfig.HistoryDetailsUpdateInterval != null &&
-                        DateTimeOffset.Now - lastHistoryUpdateTime >= TimeSpan.FromSeconds(dstConfig.HistoryDetailsUpdateInterval ?? 600))
+                        DateTimeOffset.Now - lastHistoryUpdateTime >= TimeSpan.FromSeconds(dstConfig.HistoryDetailsUpdateInterval.Value))
                     {
                         lastHistoryUpdateTime = DateTimeOffset.Now;
                         isInsertHistory = true;
+                        _logger.Information("此次更新开始添加到历史记录 {DateTime}", lastHistoryUpdateTime);
                     }
 
                     //开始更新

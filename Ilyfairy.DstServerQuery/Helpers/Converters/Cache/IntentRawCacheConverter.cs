@@ -37,6 +37,10 @@ public class IntentRawCacheConverter : JsonConverter<string>
         {
             return "wilderness";
         }
+        else if (reader.ValueSpan.SequenceEqual("cooperative"u8))
+        {
+            return "cooperative";
+        }
         else if (reader.ValueSpan.SequenceEqual("lightsout"u8))
         {
             return "lightsout";

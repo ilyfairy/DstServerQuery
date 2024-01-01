@@ -17,7 +17,6 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
-using Serilog.Sinks.SystemConsole.Themes;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Diagnostics;
 using System.Globalization;
@@ -173,6 +172,7 @@ builder.Services.AddSingleton<DstVersionService>();
 builder.Services.AddSingleton<GeoIPService>();
 builder.Services.AddSingleton<LobbyDownloader>();
 builder.Services.AddHostedService<DstHistoryService>();
+builder.Services.AddHostedService<StringCacheService>();
 builder.Services.AddHistoryCleanupService(builder.Configuration.GetSection("DstConfig").Get<DstWebConfig>()!.HistoryExpiration);
 
 //IP速率限制
@@ -239,6 +239,7 @@ builder.Services.AddControllers()
     opt.JsonSerializerOptions.TypeInfoResolverChain.Add(DstLobbyInfoJsonContext.Default);
 
     opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    opt.JsonSerializerOptions.Converters.Add(new ReadOnlyMemoryCharJsonConverter());
     opt.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     opt.JsonSerializerOptions.PropertyNamingPolicy = null;
     opt.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
@@ -259,6 +260,8 @@ builder.Services.AddSwaggerGen(options =>
         options.IncludeXmlComments(queryXmlFilePath);
     }
 });
+
+builder.Services.AddSingleton<CommandService>();
 
 CultureInfo.CurrentCulture = new CultureInfo("zh-CN");
 
@@ -331,28 +334,41 @@ app.Lifetime.ApplicationStarted.Register(async () =>
         logger.LogInformation("数据库创建成功");
     }
 
-    //设置Steam代理api
-    DepotDownloader.SteamConfig.SetApiUrl(app.Configuration.GetValue<string>("SteampoweredApiProxy") ?? "https://api.steampowered.com/");
-
     var dstWebConfig = app.Services.GetRequiredService<DstWebConfig>();
 
     //配置GeoIP
-    var geoIPService = app.Services.GetRequiredService<GeoIPService>();
     if (app.Configuration.GetValue<string>("GeoLite2Path") is string geoLite2Path)
     {
+        var geoIPService = app.Services.GetRequiredService<GeoIPService>();
         geoIPService.Initialize(geoLite2Path);
+        DstConverterHelper.GeoIPService = geoIPService;
     }
-    DstConverterHelper.GeoIPService = geoIPService;
 
     //启动服务管理器
-    var lobbyManager = app.Services.GetRequiredService<LobbyServerManager>();
-    await lobbyManager.Start();
+    var lobbyServerManager = app.Services.GetRequiredService<LobbyServerManager>();
+    await lobbyServerManager.Start();
 
-    //饥荒版本获取
-    var dstManager = app.Services.GetRequiredService<DstVersionService>();
-    _ = dstManager.RunAsync(cache.Get<long?>("DstVersion") ?? dstWebConfig.DstDefaultVersion);
+    //饥荒版本获取服务
+    var dstVersionService = app.Services.GetRequiredService<DstVersionService>();
+    var steampoweredApiProxy = app.Configuration.GetValue<string>("SteampoweredApiProxy");
+    Uri? steampoweredApiProxyUri = null;
+    if(steampoweredApiProxy is { })
+    {
+        steampoweredApiProxyUri = new Uri(steampoweredApiProxy);
+    }
+    dstVersionService.DstDownloaderFactory = () =>
+    {
+        return new Ilyfairy.Tools.DstDownloader(new SteamDownloader.SteamSession(SteamKit2.SteamConfiguration.Create(v =>
+        {
+            if(steampoweredApiProxyUri is { })
+            {
+                v.WithWebAPIBaseAddress(steampoweredApiProxyUri);
+            }
+        })));
+    };
+    _ = dstVersionService.RunAsync(cache.Get<long?>("DstVersion") ?? dstWebConfig.DstDefaultVersion);
     var dstVersionDatabase = app.Services.CreateScope().ServiceProvider.GetRequiredService<SimpleCacheDatabase>(); // 不销毁
-    dstManager.VersionUpdated += (sender, version) =>
+    dstVersionService.VersionUpdated += (sender, version) =>
     {
         dstVersionDatabase["DstVersion"] = version;
     };
@@ -400,4 +416,12 @@ app.Use(async (context, next) =>
 
 app.MapControllers();
 
-app.Run();
+if (app.Configuration.GetSection("EnabledCommandLine").Get<bool?>() is true)
+{
+    await app.StartAsync();
+    await app.Services.GetRequiredService<CommandService>().RunCommandLoopAsync();
+}
+else
+{
+    app.Run();
+}

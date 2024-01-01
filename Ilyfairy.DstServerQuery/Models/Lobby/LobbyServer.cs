@@ -4,6 +4,7 @@ using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
 using Ilyfairy.DstServerQuery.Models.LobbyData.Units;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Text;
 using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstServerQuery.Models.LobbyData;
@@ -85,7 +86,45 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
 
     public string? SteamRoom { get; set; }
 
-    public string[]? Tags { get; set; } //Tags
+
+    private ReadOnlyMemory<char>[]? tags;
+    public ReadOnlyMemory<char>[]? Tags
+    {
+        get
+        {
+            return tags;
+        }
+        set
+        {
+            tagsArray = null;
+            tags = value;
+        }
+    }
+
+    private string[]? tagsArray;
+    [JsonIgnore]
+    public string[]? TagsArray
+    {
+        get
+        {
+            if (tags is null) return null;
+
+            var tempTags = new string[tags.Length];
+            int i = 0;
+            foreach (var item in tags)
+            {
+                tempTags[i] = item.ToString();
+                i++;
+            }
+            tagsArray = tempTags;
+            return tagsArray;
+        }
+        set
+        {
+            tags = null;
+            tagsArray = value;
+        }
+    }
 
     public bool IsClientHosted { get; set; } //是否是客户端主机
 
@@ -148,7 +187,7 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
         IsServerPaused = Raw.IsServerPaused;
         SteamId = Raw.SteamId;
         SteamRoom = Raw.SteamRoom;
-        Tags = DstConverterHelper.ParseTags(Raw.Tags);
+        Tags = DstConverterHelper.ParseTagsAsMemory(Raw.Tags);
         IsClientHosted = Raw.IsClientHosted;
         Guid = Raw.Guid;
         OwnerNetId = Raw.OwnerNetId;

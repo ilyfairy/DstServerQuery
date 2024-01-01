@@ -88,7 +88,7 @@ public interface ILobbyServerV2
     public string? SteamRoom { get; set; }
 
     [JsonPropertyName("Tags")]
-    public string[]? Tags { get; set; } //Tags
+    public ReadOnlyMemory<char>[]? Tags { get; set; } //Tags
 
     [JsonPropertyName("Guid")]
     public string? Guid { get; set; } //GUID

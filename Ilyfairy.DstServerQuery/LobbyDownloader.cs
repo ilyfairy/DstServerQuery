@@ -288,6 +288,10 @@ public class LobbyDownloader
                 {
                      get = await r.Content.ReadFromJsonAsync<GET<LobbyServerDetailedRaw>>(ct);
                 }
+                catch (TaskCanceledException)
+                {
+                    return;
+                }
                 catch (Exception e)
                 {
                     Log.Error("{Exception}",e);
