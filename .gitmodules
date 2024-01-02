@@ -1,3 +1,6 @@
 [submodule "DstDownloader"]
 	path = DstDownloader
 	url = https://github.com/ilyfairy/DstDownloader.git
+[submodule "PrettyPrompt"]
+	path = PrettyPrompt
+	url = https://github.com/ilyfairy/PrettyPrompt.git

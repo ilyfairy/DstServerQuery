@@ -79,7 +79,6 @@ public class AppcalitionCommand : RootCommand
         var exitCommand = new Command("exit", "退出");
         exitCommand.SetHandler(() =>
         {
-            Console.WriteLine("bye~");
             IsExit = true;
         });
 

@@ -1,11 +1,9 @@
-﻿using Serilog;
-using Serilog.Configuration;
-using Serilog.Core;
+﻿using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
 using Serilog.Sinks.SystemConsole.Themes;
+using System.Collections.Concurrent;
 using System.Reflection;
-using System.Text;
 
 namespace Ilyfairy.DstServerQuery.Web.Helpers.Console;
 
@@ -17,6 +15,8 @@ public class ControllableConsoleSink : ILogEventSink
     private const int DefaultWriteBufferCapacity = 256;
 
     public bool Enabled { get; set; } = true;
+    public int HistoryLineMax { get; set; } = 1000;
+    public ConcurrentQueue<LogEvent> History { get; } = new();
 
     static ControllableConsoleSink()
     {
@@ -36,11 +36,17 @@ public class ControllableConsoleSink : ILogEventSink
 
     public void Emit(LogEvent logEvent)
     {
+        History.Enqueue(logEvent);
+        if (History.Count > HistoryLineMax)
+        {
+            History.TryDequeue(out _);
+        }
+
         if (!Enabled)
         {
             return;
         }
-        TextWriter textWriter = SelectOutputStream(logEvent.Level);     
+        TextWriter textWriter = SelectOutputStream(logEvent.Level);
         lock (_syncRoot)
         {
             _formatter.Format(logEvent, textWriter);
@@ -65,11 +71,9 @@ public class ControllableConsoleSink : ILogEventSink
     }
 
 
-    public static ControllableConsoleSink Create(
-        string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
-        IFormatProvider? formatProvider = null,
-        LogEventLevel? standardErrorFromLevel = null
-        )
+    public static ControllableConsoleSink Create(string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
+                                                 IFormatProvider? formatProvider = null,
+                                                 LogEventLevel? standardErrorFromLevel = null)
     {
         ArgumentNullException.ThrowIfNull(outputTemplate);
 

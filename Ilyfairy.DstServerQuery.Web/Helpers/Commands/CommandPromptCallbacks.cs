@@ -11,6 +11,14 @@ using Ilyfairy.DstServerQuery.Web.Helpers.Console;
 
 public class CommandPromptCallbacks(Command rootCommand, ControllableConsoleSink controllableConsoleSink) : PromptCallbacks
 {
+    private bool isCompletionPaneOpen;
+    private string lastInput = "";
+
+    private void CheckConsoleSink()
+    {
+        controllableConsoleSink.Enabled = string.IsNullOrWhiteSpace(lastInput) && isCompletionPaneOpen is false;
+    }
+
     /// <summary>
     /// 把CommandLine的补全提供给PrettyPrompt
     /// </summary>
@@ -54,12 +62,23 @@ public class CommandPromptCallbacks(Command rootCommand, ControllableConsoleSink
     //当有新输入时
     protected override Task<(string Text, int Caret)> FormatInput(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
     {
-        controllableConsoleSink.Enabled = text.Length is 0;
-        //controllableConsoleSink.Enabled = false;
-        //Console.WriteLine($"输入");
+        lastInput = text;
+        CheckConsoleSink();
 
         return base.FormatInput(text, caret, keyPress, cancellationToken);
     }
+
+
+    protected override Task CompletionPaneWindowStateChanged(bool isOpen)
+    {
+        //当补全窗口打开时，禁用日志输出
+        isCompletionPaneOpen = isOpen;
+        CheckConsoleSink();
+
+        return Task.CompletedTask;
+    }
+
+
 
     protected override Task<bool> ShouldOpenCompletionWindowAsync(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
     {

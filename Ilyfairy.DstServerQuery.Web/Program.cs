@@ -30,9 +30,12 @@ if (File.Exists("secrets.json"))
     builder.Configuration.AddJsonFile("secrets.json");
 }
 
+bool enabledCommandLine = builder.Configuration.GetSection("EnabledCommandLine").Get<bool?>() is true;
+
 #region Logger
 {
     var consoleSink = ControllableConsoleSink.Create();
+    consoleSink.Enabled = !enabledCommandLine;
     builder.Services.AddSingleton(consoleSink);
 
     Log.Logger = new LoggerConfiguration()
@@ -416,7 +419,7 @@ app.Use(async (context, next) =>
 
 app.MapControllers();
 
-if (app.Configuration.GetSection("EnabledCommandLine").Get<bool?>() is true)
+if (enabledCommandLine)
 {
     await app.StartAsync();
     await app.Services.GetRequiredService<CommandService>().RunCommandLoopAsync();
