@@ -1,6 +1,8 @@
 //入口点
 using AspNetCoreRateLimit;
+using DstDownloaders.Mods;
 using HoneyChat.WebApi.Database;
+using Ilyfairy.DstDownloaders;
 using Ilyfairy.DstServerQuery;
 using Ilyfairy.DstServerQuery.EntityFrameworkCore;
 using Ilyfairy.DstServerQuery.Helpers;
@@ -9,7 +11,9 @@ using Ilyfairy.DstServerQuery.Models;
 using Ilyfairy.DstServerQuery.Models.Requests;
 using Ilyfairy.DstServerQuery.Services;
 using Ilyfairy.DstServerQuery.Web;
+using Ilyfairy.DstServerQuery.Web.Helpers;
 using Ilyfairy.DstServerQuery.Web.Helpers.Console;
+using Ilyfairy.DstServerQuery.Web.Models.Configurations;
 using Ilyfairy.DstServerQuery.Web.Services;
 using Ilyfairy.DstServerQuery.Web.Services.TrafficRateLimiter;
 using Microsoft.AspNetCore.RateLimiting;
@@ -167,8 +171,11 @@ builder.Services.AddTrafficLimiter(options =>
 
 builder.Services.AddMemoryCache();
 
-builder.Services.AddSingleton<HistoryCountService>();
 builder.Services.AddSingleton(builder.Configuration.GetSection("DstConfig").Get<DstWebConfig>()!);
+builder.Services.AddSingleton(builder.Configuration.GetSection("Steam").Get<SteamOptions>()!);
+builder.Services.AddSingleton(builder.Configuration.GetSection("DstVersionService").Get<DstVersionServiceOptions>()!);
+builder.Services.AddSingleton(builder.Configuration.GetSection("DstModsFileService").Get<DstModsFileServiceOptions>()!);
+builder.Services.AddSingleton<HistoryCountService>();
 builder.Services.AddSingleton<LobbyServerManager>();
 builder.Services.AddSingleton<LobbyServerManager>();
 builder.Services.AddSingleton<DstVersionService>();
@@ -177,6 +184,23 @@ builder.Services.AddSingleton<LobbyDownloader>();
 builder.Services.AddHostedService<DstHistoryService>();
 builder.Services.AddHostedService<StringCacheService>();
 builder.Services.AddHistoryCleanupService(builder.Configuration.GetSection("DstConfig").Get<DstWebConfig>()!.HistoryExpiration);
+
+// mods文件服务
+builder.Services.AddSingleton<DstModsFileService>(v =>
+{
+    var options = v.GetRequiredService<DstModsFileServiceOptions>();
+    if (options.IsEnabled)
+    {
+        var dst = new DstDownloader(Helper.CreateSteamSession(v));
+        if(options.FileUrlProxy is { })
+        {
+            dst.FileUrlProxy = v => new Uri(options.FileUrlProxy.Replace("{url}", v.ToString()));
+        }
+        return new DstModsFileService(dst, options.RootPath);
+    }
+    return new(null, "");
+});
+builder.Services.AddHostedService<DstModsFileServiceWrapper>();
 
 //IP速率限制
 builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
@@ -338,6 +362,9 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     }
 
     var dstWebConfig = app.Services.GetRequiredService<DstWebConfig>();
+    var steamOptions = app.Services.GetRequiredService<SteamOptions>();
+    var dstVersionServiceOptions = app.Services.GetRequiredService<DstVersionServiceOptions>();
+    var dstModsFileServiceOptions = app.Services.GetRequiredService<DstModsFileServiceOptions>();
 
     //配置GeoIP
     if (app.Configuration.GetValue<string>("GeoLite2Path") is string geoLite2Path)
@@ -353,28 +380,18 @@ app.Lifetime.ApplicationStarted.Register(async () =>
 
     //饥荒版本获取服务
     var dstVersionService = app.Services.GetRequiredService<DstVersionService>();
-    var steampoweredApiProxy = app.Configuration.GetValue<string>("SteampoweredApiProxy");
-    Uri? steampoweredApiProxyUri = null;
-    if(steampoweredApiProxy is { })
-    {
-        steampoweredApiProxyUri = new Uri(steampoweredApiProxy);
-    }
     dstVersionService.DstDownloaderFactory = () =>
     {
-        return new Ilyfairy.Tools.DstDownloader(new SteamDownloader.SteamSession(SteamKit2.SteamConfiguration.Create(v =>
-        {
-            if(steampoweredApiProxyUri is { })
-            {
-                v.WithWebAPIBaseAddress(steampoweredApiProxyUri);
-            }
-        })));
+        return new DstDownloader(Helper.CreateSteamSession(app.Services));
     };
-    _ = dstVersionService.RunAsync(cache.Get<long?>("DstVersion") ?? dstWebConfig.DstDefaultVersion);
+    var defaultVersion = cache.Get<long?>("DstVersion") ?? dstVersionServiceOptions.DefaultVersion;
+    _ = dstVersionService.RunAsync(defaultVersion);
     var dstVersionDatabase = app.Services.CreateScope().ServiceProvider.GetRequiredService<SimpleCacheDatabase>(); // 不销毁
     dstVersionService.VersionUpdated += (sender, version) =>
     {
         dstVersionDatabase["DstVersion"] = version;
     };
+
 });
 
 app.Lifetime.ApplicationStopped.Register(() =>
@@ -385,8 +402,10 @@ app.Lifetime.ApplicationStopped.Register(() =>
 
     var lobbyManager = app.Services.GetService<LobbyServerManager>()!;
     var dstVersion = app.Services.GetService<DstVersionService>()!;
+    var dstModsService = app.Services.GetService<DstModsFileService>()!;
     dstVersion.Dispose();
     lobbyManager.Dispose();
+    dstModsService.Dispose();
 
     Log.CloseAndFlush();
 });

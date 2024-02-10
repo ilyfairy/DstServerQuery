@@ -1,4 +1,9 @@
 ﻿using System.Buffers;
+using Ilyfairy.DstDownloaders;
+using Ilyfairy.DstServerQuery.Web.Models.Configurations;
+using SteamDownloader;
+using SteamDownloader.Helpers;
+using SteamKit2;
 
 namespace Ilyfairy.DstServerQuery.Web.Helpers;
 
@@ -24,4 +29,30 @@ public static class Helper
         return colorHex;
     }
 
+    public static SteamSession CreateSteamSession(IServiceProvider serviceProvider)
+    {
+        var steamOptions = serviceProvider.GetRequiredService<SteamOptions>();
+        return new SteamSession(SteamConfiguration.Create(steamBuilder =>
+        {
+            if (steamOptions.SteampoweredApiProxy is { })
+            {
+                steamBuilder.WithWebAPIBaseAddress(steamOptions.SteampoweredApiProxy);
+            }
+            if (steamOptions.WebApiKey is { })
+            {
+                steamBuilder.WithWebAPIKey(steamOptions.WebApiKey);
+            }
+        }));
+    }
+
+    public static async Task EnsureContentServerAsync(DstDownloader dst, CancellationToken cancellationToken = default)
+    {
+        var servers1 = await dst.Steam.GetCdnServersAsync(1, null, cancellationToken);
+        var servers2 = await dst.Steam.GetCdnServersAsync(100, null, cancellationToken);
+        var servers3 = await dst.Steam.GetCdnServersAsync(150, null, cancellationToken);
+        var servers4 = await dst.Steam.GetCdnServersAsync(200, null, cancellationToken);
+        IEnumerable<SteamContentServer> servers = [.. servers1, .. servers2, .. servers3, .. servers4];
+        var stableServers = await SteamHelper.TestContentServerConnectionAsync(dst.Steam.HttpClient, servers, TimeSpan.FromSeconds(4));
+        dst.Steam.ContentServers = stableServers.ToList();
+    }
 }

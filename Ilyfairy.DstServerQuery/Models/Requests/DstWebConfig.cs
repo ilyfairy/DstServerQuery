@@ -6,9 +6,7 @@ public class DstWebConfig
     public string[]? DstDetailsProxyUrls { get; set; }
     public string LobbyProxyTemplate { get; set; } = "https://lobby-v2-cdn.klei.com/{region}-{platform}.json.gz";
 
-    public long? DstDefaultVersion { get; set; }
-
-    public int? HistoryUpdateInterval { get; set; }
+    public int? HistoryLiteUpdateInterval { get; set; }
     public int? HistoryDetailsUpdateInterval { get; set; }
     public int? ServerUpdateInterval { get; set; }
     public int? ServerDetailsUpdateInterval { get; set; }

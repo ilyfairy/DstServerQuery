@@ -19,7 +19,7 @@ public class HistoryCleanupService(IServiceProvider serviceProvider, TimeSpan? e
             return;
         }
 
-        System.Timers.Timer timer = new(TimeSpan.FromMinutes(10));
+        System.Timers.Timer timer = new(TimeSpan.FromHours(1));
         timer.Elapsed += Timer_Elapsed;
         timer.Start();
     }
@@ -68,7 +68,7 @@ public class HistoryCleanupService(IServiceProvider serviceProvider, TimeSpan? e
 
         try
         {
-            await Task.Delay(TimeSpan.FromMinutes(1), cts.Token);
+            await Task.Delay(TimeSpan.FromHours(1), cts.Token);
         }
         catch (TaskCanceledException)
         {

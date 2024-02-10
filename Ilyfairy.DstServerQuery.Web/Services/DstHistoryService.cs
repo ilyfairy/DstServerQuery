@@ -13,10 +13,12 @@ namespace Ilyfairy.DstServerQuery.Web.Services;
 public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig config, IServiceScopeFactory serviceScopeFactory, LobbyServerManager lobbyServerManager, HistoryCountService historyCountManager) : IHostedService
 {
     private readonly CancellationTokenSource cts = new();
-    private readonly int historyUpdateInterval = config.HistoryUpdateInterval ?? 10 * 60;
+    private readonly TimeSpan historyLiteUpdateInterval = TimeSpan.FromSeconds(config.HistoryLiteUpdateInterval ?? 10 * 60);
     private readonly ConcurrentDictionary<string, LobbyServerDetailed> working = new();
     private readonly SemaphoreSlim chunkUpdateLock = new(1);
     private bool serverWorking = false;
+
+    private DateTimeOffset lastHistoryLiteUpdate;
 
 
     public Task StartAsync(CancellationToken cancellationToken)
@@ -35,7 +37,7 @@ public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig c
         return Task.CompletedTask;
     }
 
-
+    //详细信息
     private async void LobbyServerManager_DetailsChunkUpdated(object? sender, DstUpdatedDetailsChunk e)
     {
         var chunk = e.Chunk;
@@ -69,7 +71,7 @@ public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig c
         }
         catch (Exception ex)
         {
-            logger.LogError("Chunk更新异常");
+            logger.LogError("UpdateHistoryServerChunk更新异常 {Exception}", ex);
         }
         finally
         {
@@ -77,12 +79,18 @@ public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig c
         }
     }
 
+    //简略信息
     private async void LobbyServerManager_Updated(object? sender, DstUpdatedEventArgs e)
     {
         if (cts.Token.IsCancellationRequested) return;
         if (e.Servers.Count == 0) return;
 
         DateTimeOffset updateDateTime = e.UpdatedDateTime;
+
+        if (updateDateTime - lastHistoryLiteUpdate <= historyLiteUpdateInterval) // 更新间隔
+            return;
+
+        lastHistoryLiteUpdate = updateDateTime;
 
         logger.LogInformation("历史信息储存数据库");
         using var scope = serviceScopeFactory.CreateScope();
@@ -94,7 +102,7 @@ public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig c
         {
             await historyCountManager.AddAsync(servers, updateDateTime, cts.Token);
             serverWorking = true;
-            await Updated(dbContext, servers);
+            await UpdatedLite(dbContext, servers);
             serverWorking = false;
         }
         catch (Exception ex)
@@ -102,7 +110,7 @@ public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig c
 #if DEBUG
             Console.WriteLine(ex);
 #endif
-            logger.LogError("UpdatedServer失败 Exception:{Exception}", ex.Message);
+            logger.LogError("UpdateHistoryServer失败 Exception:{Exception}", ex);
         }
     }
 
@@ -139,7 +147,7 @@ public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig c
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            logger.LogError("EnsureServersCreated Exception: {Exception}", e);
             throw;
         }
     }
@@ -173,7 +181,7 @@ public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig c
 
 
 
-    private async Task Updated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers)
+    private async Task UpdatedLite(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers)
     {
         dbContext.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
 

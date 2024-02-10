@@ -1,4 +1,4 @@
-﻿namespace Ilyfairy.DstServerQuery.Web.Models.Http;
+﻿namespace Ilyfairy.DstServerQuery.Web.Models.Http.Mods;
 
 public class DstModsNameUsageResponse : ResponseBase
 {

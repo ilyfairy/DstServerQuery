@@ -46,7 +46,7 @@ public class LobbyDownloader
         this.httpUpdate = Create();
     }
 
-    public async Task Initialize()
+    public async Task InitializeAsync()
     {
         //获取"区域&平台"的url映射
         var platforms = new[] { "Steam", "PSN", "Rail", "XBone", "Switch" };
@@ -74,8 +74,8 @@ public class LobbyDownloader
     //GET请求
     private async Task<List<LobbyServerRaw>> DownloadBriefs(string url, CancellationToken cancellationToken = default)
     {
-        var response = await http.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        var get = await response.Content.ReadFromJsonAsync<GET<LobbyServerRaw>>(cancellationToken);
+        var response = await http.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+        var get = await response.Content.ReadFromJsonAsync<GET<LobbyServerRaw>>(cancellationToken).ConfigureAwait(false);
 
         //var get = await response.Content.ReadFromJsonAsync<GET<LobbyServerDetailed>>(dstJsonOptions.DeserializerOptions, cancellationToken);
 
@@ -354,7 +354,7 @@ public class LobbyDownloader
         foreach (var map in RegionPlatformMap)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var r = await DownloadBriefs(map.Value.BriefsUrl, cancellationToken);
+            var r = await DownloadBriefs(map.Value.BriefsUrl, cancellationToken).ConfigureAwait(false);
             foreach (var item in r)
             {
                 item._LastUpdate = DateTimeOffset.Now;

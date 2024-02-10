@@ -50,7 +50,7 @@ public class HistoryCountService
         {
             cache.Enqueue(item);
         }
-        _logger.LogInformation("初始缓存个数:{CacheCount}", cache.Count);
+        _logger.LogInformation("HistoryCountService 初始缓存个数:{CacheCount}", cache.Count);
     }
 
     private async Task AddAsync(ServerCountInfo info, CancellationToken cancellationToken)

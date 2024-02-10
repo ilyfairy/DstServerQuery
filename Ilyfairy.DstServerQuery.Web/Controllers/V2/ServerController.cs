@@ -10,6 +10,7 @@ using Ilyfairy.DstServerQuery.Web.Models;
 using Ilyfairy.DstServerQuery.Web.Models.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
 
@@ -20,28 +21,19 @@ namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
 [ApiVersion(2.0)]
 [Route("api/v{version:apiVersion}/[controller]")]
 [EnableRateLimiting("fixed")]
-public class ServerController : ControllerBase
+public class ServerController(
+    ILogger<ServerController> logger,
+    LobbyServerManager lobbyDetailsManager,
+    DstVersionService dstVersionGetter,
+    HistoryCountService historyCountManager,
+    DstDbContext dbContext,
+    IMemoryCache memoryCache) : ControllerBase
 {
-    private readonly ILogger _logger;
-    private readonly LobbyServerManager lobbyServerManager;
-    private readonly DstVersionService dstVersionGetter;
-    private readonly HistoryCountService historyCountManager;
-    private readonly DstDbContext dbContext;
-
-    public ServerController(
-        ILogger<ServerController> logger,
-        LobbyServerManager lobbyDetailsManager,
-        DstVersionService dstVersionGetter,
-        HistoryCountService historyCountManager,
-        DstDbContext dbContext
-        )
-    {
-        _logger = logger;
-        this.lobbyServerManager = lobbyDetailsManager;
-        this.dstVersionGetter = dstVersionGetter;
-        this.historyCountManager = historyCountManager;
-        this.dbContext = dbContext;
-    }
+    private readonly ILogger _logger = logger;
+    private readonly LobbyServerManager lobbyServerManager = lobbyDetailsManager;
+    private readonly DstVersionService dstVersionGetter = dstVersionGetter;
+    private readonly HistoryCountService historyCountManager = historyCountManager;
+    private readonly DstDbContext dbContext = dbContext;
 
     /// <summary>
     /// 获取服务器最新版本 返回文本
@@ -95,7 +87,17 @@ public class ServerController : ControllerBase
 
         CancellationTokenSource cts = new();
         cts.CancelAfter(15000);
-        LobbyServerDetailed? info = await lobbyServerManager.GetDetailedByRowIdAsync(id, forceUpdate, cts.Token);
+        var cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, HttpContext.RequestAborted).Token;
+
+        LobbyServerDetailed? info;
+        try
+        {
+            info = await lobbyServerManager.GetDetailedByRowIdAsync(id, forceUpdate, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return NoContent();
+        }
 
         if (info == null)
         {
@@ -103,7 +105,7 @@ public class ServerController : ControllerBase
             return ResponseBase.NotFound(); //找不到该房间
         }
         _logger.LogInformation("找到服务器 RowId:{RowId} Name:{Name}", id, info.Name);
-
+        
         DateTimeOffset lastUpdate = info.GetUpdateTime();
         ServerDetailsResponse response = new()
         {
@@ -175,9 +177,19 @@ public class ServerController : ControllerBase
     [Produces("application/json")]
     public IActionResult GetServerList([FromBody] ListQueryParams? query = null)
     {
-        var servers = lobbyServerManager.GetCurrentServers();
-
         query ??= new();
+
+        bool isCache = false;
+        if (query is { PlayerName: null, ServerName: null or { Value: null or "" }, Description: null, PageIndex: null or 0 })
+        {
+            isCache = true;
+            if (memoryCache.TryGetValue(query, out ResponseBase? cache))
+            {
+                return cache!.ToJsonResult();
+            }
+        }
+
+        var servers = lobbyServerManager.GetCurrentServers();
 
         LobbyServerQueryerV2 queryer = new(query, servers, dstVersionGetter.Version);
 
@@ -224,17 +236,32 @@ public class ServerController : ControllerBase
             };
         }
 
-        ResponseBase resonse;
+        ResponseBase response;
         if (query.IsDetailed is true || query.PlayerName is not null || query.PlayerPrefab is not null)
         {
-            resonse = CreateResponse<ILobbyServerDetailedV2>();
+            response = CreateResponse<ILobbyServerDetailedV2>();
         }
         else
         {
-            resonse = CreateResponse<ILobbyServerV2>();
+            response = CreateResponse<ILobbyServerV2>();
         }
 
-        return resonse.ToJsonResult();
+        if(HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            return Problem();
+        }
+
+        if (isCache)
+        {
+            memoryCache.Set(query, response, new MemoryCacheEntryOptions()
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(10),
+                Size = 10,
+            });
+            _logger.LogInformation("GetServerList已缓存 {Params}", query);
+        }
+
+        return response.ToJsonResult();
     }
 
     /// <summary>

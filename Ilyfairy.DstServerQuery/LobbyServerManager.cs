@@ -44,7 +44,20 @@ public class LobbyServerManager : IDisposable
     {
         HttpCancellationToken = new();
 
-        await LobbyDownloader.Initialize();
+        //重试
+        for (int i = 1; i <= 3; i++)
+        {
+            try
+            {
+                await LobbyDownloader.InitializeAsync();
+                break;
+            }
+            catch (Exception)
+            {
+                if (i >= 3)
+                    throw;
+            }
+        }
 
         _logger.Information("开始DownloadLoop Task");
         sw.Restart();

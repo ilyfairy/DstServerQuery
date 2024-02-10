@@ -802,7 +802,7 @@ public class QueryArgumentException(string message) : Exception(message);
 /// <summary>
 /// 查询参数
 /// </summary>
-public class ListQueryParams
+public record ListQueryParams
 {
     /// <summary>
     /// 每页数量
