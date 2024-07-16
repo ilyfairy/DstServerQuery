@@ -168,15 +168,15 @@ builder.Services.AddTrafficLimiter(options =>
     options.IPHeader = trafficRate.GetSection("IPHeader").Get<string[]>() ?? [];
 });
 
+var dstModsFileServiceOptions = builder.Configuration.GetSection("DstModsFileService").Get<DstModsFileServiceOptions>()!;
 
 builder.Services.AddMemoryCache();
 
 builder.Services.AddSingleton(builder.Configuration.GetSection("DstConfig").Get<DstWebConfig>()!);
 builder.Services.AddSingleton(builder.Configuration.GetSection("Steam").Get<SteamOptions>()!);
 builder.Services.AddSingleton(builder.Configuration.GetSection("DstVersionService").Get<DstVersionServiceOptions>()!);
-builder.Services.AddSingleton(builder.Configuration.GetSection("DstModsFileService").Get<DstModsFileServiceOptions>()!);
+builder.Services.AddSingleton(dstModsFileServiceOptions);
 builder.Services.AddSingleton<HistoryCountService>();
-builder.Services.AddSingleton<LobbyServerManager>();
 builder.Services.AddSingleton<LobbyServerManager>();
 builder.Services.AddSingleton<DstVersionService>();
 builder.Services.AddSingleton<GeoIPService>();
@@ -185,22 +185,20 @@ builder.Services.AddHostedService<DstHistoryService>();
 builder.Services.AddHostedService<StringCacheService>();
 builder.Services.AddHistoryCleanupService(builder.Configuration.GetSection("DstConfig").Get<DstWebConfig>()!.HistoryExpiration);
 
-// mods文件服务
-builder.Services.AddSingleton<DstModsFileService>(v =>
+if (dstModsFileServiceOptions.IsEnabled)
 {
-    var options = v.GetRequiredService<DstModsFileServiceOptions>();
-    if (options.IsEnabled)
+    // mods文件服务
+    builder.Services.AddSingleton<DstModsFileService>(v =>
     {
         var dst = new DstDownloader(Helper.CreateSteamSession(v));
-        if(options.FileUrlProxy is { })
+        if (dstModsFileServiceOptions.FileUrlProxy is { })
         {
-            dst.FileUrlProxy = v => new Uri(options.FileUrlProxy.Replace("{url}", v.ToString()));
+            dst.FileUrlProxy = v => new Uri(dstModsFileServiceOptions.FileUrlProxy.Replace("{url}", v.ToString(), StringComparison.OrdinalIgnoreCase));
         }
-        return new DstModsFileService(dst, options.RootPath);
-    }
-    return new(null, "");
-});
-builder.Services.AddHostedService<DstModsFileServiceWrapper>();
+        return new DstModsFileService(dst, dstModsFileServiceOptions.RootPath);
+    });
+    builder.Services.AddHostedService<DstModsFileHosedService>();
+}
 
 //IP速率限制
 builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
@@ -302,7 +300,7 @@ var app = builder.Build();
 
 app.UseCors("CORS");
 
-// 禁止访问/  用来检测服务器是否正常运行
+// 禁止访问/  或用来检测服务器是否正常运行
 app.Use(async (v, next) =>
 {
     if (v.Request.Path == "" || v.Request.Path == "/")
@@ -400,12 +398,12 @@ app.Lifetime.ApplicationStopped.Register(() =>
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     logger.LogInformation("IHostApplicationBuilder Shutdowning");
 
-    var lobbyManager = app.Services.GetService<LobbyServerManager>()!;
-    var dstVersion = app.Services.GetService<DstVersionService>()!;
-    var dstModsService = app.Services.GetService<DstModsFileService>()!;
+    var lobbyManager = app.Services.GetRequiredService<LobbyServerManager>();
+    var dstVersion = app.Services.GetRequiredService<DstVersionService>()!;
+    var dstModsService = app.Services.GetService<DstModsFileService?>();
     dstVersion.Dispose();
     lobbyManager.Dispose();
-    dstModsService.Dispose();
+    dstModsService?.Dispose();
 
     Log.CloseAndFlush();
 });

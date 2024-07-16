@@ -121,9 +121,13 @@ public class WebModsInfoLite
 
     public WebModsInfoLite(DstModStore store, PublishedFileServiceLanguage? language = null)
     {
+        if (store is null)
+        {
+            throw new NullReferenceException("store为null");
+        }
         if (store.SteamModInfo is null)
         {
-            throw new ArgumentNullException($"SteamModInfo为null WorkshopId:{store.WorkshopId}");
+            throw new NullReferenceException($"SteamModInfo为null WorkshopId:{store.WorkshopId}");
         }
 
         WorkshopId = store.WorkshopId;

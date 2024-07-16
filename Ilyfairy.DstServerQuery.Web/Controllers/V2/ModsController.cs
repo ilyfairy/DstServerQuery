@@ -181,6 +181,10 @@ public class ModsController(
         //查询过滤器
         QueryFilterResult QueryFunc(DstModStore v)
         {
+            if (v == null)
+            {
+                throw new Exception("QueryFunc.arg1意外null");
+            }
             if (string.IsNullOrEmpty(text))
                 return new QueryFilterResult(v, true, 0);
 
@@ -218,13 +222,20 @@ public class ModsController(
         }
 
         var result = modsService.Cache
-            .Select(QueryFunc)
+            .AsParallel()
+            .Where(v => v != null)
+            .Select(QueryFunc!) // 抑制参数的可空警告
             .Where(v => v.IsOk)
             .Select(v =>
             {
+                if (v.Store == null)
+                {
+                    throw new Exception("Store意外null");
+                }
                 v.WebModsInfo = new WebModsInfo(v.Store, param.Language);
                 return v;
-            });
+            })
+            .AsEnumerable();
 
         //排序
         if (string.IsNullOrWhiteSpace(param.Sort))

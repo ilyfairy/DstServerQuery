@@ -5,6 +5,7 @@ using Ilyfairy.DstServerQuery.Models.Requests;
 using Serilog;
 using System.Collections.Concurrent;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.Mime;
 using System.Runtime.CompilerServices;
@@ -38,6 +39,12 @@ public class LobbyDownloader
             handler.ClientCertificateOptions = ClientCertificateOption.Manual;
             handler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Brotli;
             HttpClient http = new(handler);
+
+            var cacheHeader = new CacheControlHeaderValue();
+            cacheHeader.NoCache = true;
+            cacheHeader.NoStore = true;
+            http.DefaultRequestHeaders.CacheControl = cacheHeader;
+
             http.Timeout = TimeSpan.FromSeconds(100);
             return http;
         }

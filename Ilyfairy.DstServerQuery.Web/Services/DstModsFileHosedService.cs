@@ -4,7 +4,7 @@ using Ilyfairy.DstServerQuery.Web.Models.Configurations;
 
 namespace Ilyfairy.DstServerQuery.Web.Services;
 
-public class DstModsFileServiceWrapper(IServiceProvider serviceProvider) : IHostedService
+public class DstModsFileHosedService(IServiceProvider serviceProvider) : IHostedService
 {
     private readonly ILogger<DstModsFileService> logger = serviceProvider.GetRequiredService<ILogger<DstModsFileService>>();
     private readonly DstModsFileServiceOptions options = serviceProvider.GetRequiredService<DstModsFileServiceOptions>();

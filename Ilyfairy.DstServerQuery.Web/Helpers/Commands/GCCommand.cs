@@ -1,9 +1,18 @@
 ﻿using Spectre.Console;
 using System.CommandLine;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 public class GCCommand : Command
 {
+    private static TimeSpan startTime;
+
+    [ModuleInitializer]
+    public static void Initialize()
+    {
+        startTime = TimeSpan.FromMilliseconds(Environment.TickCount64);
+    }
+
     public GCCommand() : base("gc", "垃圾回收器命令")
     {
         AddStatus();
@@ -16,8 +25,10 @@ public class GCCommand : Command
         Command statusCommand = new("status", "获取垃圾回收器状态");
         statusCommand.SetHandler(() =>
         {
+            var runningTime = TimeSpan.FromMilliseconds(Environment.TickCount64) - startTime;
             AnsiConsole.Write(
                 new Panel(new Markup($"""
+                    总运行时间: [blue]{runningTime:d\:hh\:mm\:ss}[/]
                     第0代垃圾回收次数: [blue]{GC.CollectionCount(0)}[/]
                     第1代垃圾回收次数: [blue]{GC.CollectionCount(1)}[/]
                     第2代垃圾回收次数: [blue]{GC.CollectionCount(2)}[/]

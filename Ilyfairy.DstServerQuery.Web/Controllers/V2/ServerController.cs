@@ -251,7 +251,7 @@ public class ServerController(
             return Problem();
         }
 
-        if (isCache)
+        if (isCache && current.Length != 0)
         {
             memoryCache.Set(query, response, new MemoryCacheEntryOptions()
             {
