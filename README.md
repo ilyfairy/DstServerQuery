@@ -1,9 +1,11 @@
 # DstServerQuery
-饥荒联机版服务器查询 [dstserverlist.top](https://dstserverlist.top)  
+服务器查询, 玩家查询, 服务器的历史记录, Mods查询  
 
 从Klei服务器下载所有服务器数据进行查询  
 
-## 生成
+网站: [dstserverlist.top](https://dstserverlist.top)  
+
+## 构建
 
 运行`publish-win.bat`发布项目  
 然后打开`Ilyfairy.DstServerQuery.Web.exe`
