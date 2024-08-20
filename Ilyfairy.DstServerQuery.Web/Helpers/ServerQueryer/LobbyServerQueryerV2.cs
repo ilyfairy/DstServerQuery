@@ -349,6 +349,39 @@ public partial class LobbyServerQueryerV2
         });
     }
 
+    private void HandlePort()
+    {
+        if (queryParams.Port is null)
+            return;
+
+        string portString = queryParams.Port;
+
+        if (portString is "string")
+            return;
+
+        Match match = Regex.Match(portString, @"(?<op>[<>=]{0,2}?)(?<port>\d+)");
+        if (!match.Success)
+        {
+            throw new QueryArgumentException("'Port' syntax error");
+        }
+
+        var op = match.Groups["op"].Value;
+        if (!int.TryParse(match.Groups["port"].Value, out var port))
+        {
+            throw new QueryArgumentException("not a number");
+        }
+
+        current = op switch
+        {
+            "=" or "==" or "" => current.Where(v => v.Port == port),
+            ">" => current.Where(v => v.Port > port),
+            "<" => current.Where(v => v.Port < port),
+            ">=" => current.Where(v => v.Port >= port),
+            "<=" => current.Where(v => v.Port <= port),
+            _ => throw new QueryArgumentException("'Port' syntax error"),
+        };
+    }
+
     private void HandleHost()
     {
         if (queryParams.Host is null)
@@ -872,6 +905,11 @@ public record ListQueryParams
     /// IP地址, 可以使用CIDR或者通配符\*.\*.\*.\*
     /// </summary>
     public string? IP { get; set; }
+
+    /// <summary>
+    /// 端口, 可以运算符&lt; &lt;= > >= =
+    /// </summary>
+    public string? Port { get; set; }
 
     /// <summary>
     /// 房主的KleiId
