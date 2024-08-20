@@ -38,6 +38,7 @@ public partial class LobbyServerQueryerV2
         HandleGameMode();
         HandleIntent();
         HandleIP();
+        HandlePort();
         HandleHost();
         HandlePlatform();
         HandleCountry();
@@ -550,11 +551,12 @@ public partial class LobbyServerQueryerV2
         if (daysString is "string")
             return;
 
-        Match match = Regex.Match(daysString, @"(?<op>.*?)(?<days>\d+)");
+        Match match = Regex.Match(daysString, @"(?<op>[<>=]{0,2}?)(?<days>\d+)(?<percentage>%)?");
         if (!match.Success)
         {
             throw new QueryArgumentException("'Days' syntax error");
         }
+        bool isPercentage = match.Groups["percentage"].Value == "%";
 
         var op = match.Groups["op"].Value;
         if (!int.TryParse(match.Groups["days"].Value, out var day))
@@ -562,15 +564,34 @@ public partial class LobbyServerQueryerV2
             throw new QueryArgumentException("not a number");
         }
 
-        current = op switch
+        if (isPercentage)
         {
-            "=" or "==" or "" => current.Where(v => v.DaysInfo?.Day == day),
-            ">" => current.Where(v => v.DaysInfo?.Day > day),
-            "<" => current.Where(v => v.DaysInfo?.Day < day),
-            ">=" => current.Where(v => v.DaysInfo?.Day >= day),
-            "<=" => current.Where(v => v.DaysInfo?.Day <= day),
-            _ => throw new QueryArgumentException("'Days' syntax error"),
-        };
+            if (day > 100) day = 100;
+            double seasonDaysPercentage = day / 100.0;
+            static double? Div(double? left, double? right) => right == 0 ? 1 : (left / right);
+            // DaysElapsedInSeason 永远小于或等于 TotalDaysSeason-1
+            current = op switch
+            {
+                "=" or "==" or "" => current.Where(v => Div(v.DaysInfo?.DaysElapsedInSeason, v.DaysInfo?.TotalDaysSeason - 1) == seasonDaysPercentage),
+                ">" => current.Where(v => Div(v.DaysInfo?.DaysElapsedInSeason, v.DaysInfo?.TotalDaysSeason - 1) > seasonDaysPercentage),
+                "<" => current.Where(v => Div(v.DaysInfo?.DaysElapsedInSeason, v.DaysInfo?.TotalDaysSeason - 1) < seasonDaysPercentage),
+                ">=" => current.Where(v => Div(v.DaysInfo?.DaysElapsedInSeason, v.DaysInfo?.TotalDaysSeason - 1) >= seasonDaysPercentage),
+                "<=" => current.Where(v => Div(v.DaysInfo?.DaysElapsedInSeason, v.DaysInfo?.TotalDaysSeason - 1) <= seasonDaysPercentage),
+                _ => throw new QueryArgumentException("'Days' syntax error"),
+            };
+        }
+        else
+        {
+            current = op switch
+            {
+                "=" or "==" or "" => current.Where(v => v.DaysInfo?.Day == day),
+                ">" => current.Where(v => v.DaysInfo?.Day > day),
+                "<" => current.Where(v => v.DaysInfo?.Day < day),
+                ">=" => current.Where(v => v.DaysInfo?.Day >= day),
+                "<=" => current.Where(v => v.DaysInfo?.Day <= day),
+                _ => throw new QueryArgumentException("'Days' syntax error"),
+            };
+        }
     }
 
     private void HandleDaysInSeason()
