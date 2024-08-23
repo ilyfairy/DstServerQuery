@@ -16,9 +16,9 @@
   <Project Path="DstLobbyProxyDownloader\DstLobbyProxyDownloader.csproj" />
   <Project Path="GeoIP2-dotnet\MaxMind-DB-Reader-dotnet\MaxMind.Db\MaxMind.Db.csproj" />
   <Project Path="GeoIP2-dotnet\MaxMind.GeoIP2\MaxMind.GeoIP2.csproj" />
-  <Project Path="Ilyfairy.DstServerQuery.EntityFrameworkCore\Ilyfairy.DstServerQuery.EntityFrameworkCore.csproj" />
-  <Project Path="Ilyfairy.DstServerQuery.Web\Ilyfairy.DstServerQuery.Web.csproj" />
-  <Project Path="Ilyfairy.DstServerQuery\Ilyfairy.DstServerQuery.csproj" />
+  <Project Path="DstServerQuery.EntityFrameworkCore\DstServerQuery.EntityFrameworkCore.csproj" />
+  <Project Path="DstServerQuery.Web\DstServerQuery.Web.csproj" />
+  <Project Path="DstServerQuery\DstServerQuery.csproj" />
   <Project Path="MiniApiTest\MiniApiTest.csproj" />
   <Project Path="PrettyPrompt\src\PrettyPrompt\PrettyPrompt.csproj" />
   <Project Path="Test\Test.csproj" />
@@ -27,4 +27,7 @@
   </Properties>
   <Project Path="CSharpRepl\CSharpRepl.Services\CSharpRepl.Services.csproj" Type="C#" />
   <Project Path="CSharpRepl\CSharpRepl\CSharpRepl.csproj" Type="C#" />
+  <Project Path="DstServerQuery.EntityFrameworkCore\DstServerQuery.EntityFrameworkCore.csproj" />
+  <Project Path="DstServerQuery.Web\DstServerQuery.Web.csproj" />
+  <Project Path="DstServerQuery\DstServerQuery.csproj" />
 </Solution>

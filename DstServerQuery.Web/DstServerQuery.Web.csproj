@@ -33,7 +33,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Ilyfairy.DstServerQuery.EntityFrameworkCore\Ilyfairy.DstServerQuery.EntityFrameworkCore.csproj" />
+		<ProjectReference Include="..\DstServerQuery.EntityFrameworkCore\DstServerQuery.EntityFrameworkCore.csproj" />
 		<ProjectReference Include="..\PrettyPrompt\src\PrettyPrompt\PrettyPrompt.csproj" />
 	</ItemGroup>
 

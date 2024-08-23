@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Ilyfairy.DstServerQuery\Ilyfairy.DstServerQuery.csproj" />
+    <ProjectReference Include="..\DstServerQuery\DstServerQuery.csproj" />
   </ItemGroup>
 
 </Project>
