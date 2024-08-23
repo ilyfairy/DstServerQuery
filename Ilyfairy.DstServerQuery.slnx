@@ -25,4 +25,6 @@
   <Properties Name="Visual Studio">
     <Property Name="OpenWith" Value="Visual Studio Version 17" />
   </Properties>
+  <Project Path="CSharpRepl\CSharpRepl.Services\CSharpRepl.Services.csproj" Type="C#" />
+  <Project Path="CSharpRepl\CSharpRepl\CSharpRepl.csproj" Type="C#" />
 </Solution>

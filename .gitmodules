@@ -4,3 +4,6 @@
 [submodule "PrettyPrompt"]
 	path = PrettyPrompt
 	url = https://github.com/ilyfairy/PrettyPrompt.git
+[submodule "CSharpRepl"]
+	path = CSharpRepl
+	url = https://github.com/ilyfairy/CSharpRepl
