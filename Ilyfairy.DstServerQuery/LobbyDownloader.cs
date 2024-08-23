@@ -37,7 +37,7 @@ public class LobbyDownloader
         {
             HttpClientHandler handler = new();
             handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-            handler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Brotli;
+            handler.AutomaticDecompression = DecompressionMethods.All;
             HttpClient http = new(handler);
 
             var cacheHeader = new CacheControlHeaderValue();
@@ -218,7 +218,7 @@ public class LobbyDownloader
 
     private readonly List<LobbyServerDetailed> updatedChunksCache = new(1100);
     //POST请求
-    public async Task<int> UpdateToDetails(ICollection<LobbyServerDetailed> servers, Action<ICollection<LobbyServerDetailed>>? chunkCallback, CancellationToken cancellationToken = default)
+    public async Task<int> UpdateToDetails(IDictionary<string, LobbyServerDetailed> servers, Action<ICollection<LobbyServerDetailed>>? chunkCallback, CancellationToken cancellationToken = default)
     {
         if (servers.Count == 0) return 0;
         
@@ -232,7 +232,7 @@ public class LobbyDownloader
             foreach (var item in servers)
             {
                 //requestCount++;
-                if (await UpdateToDetails(item, cancellationToken))
+                if (await UpdateToDetails(item.Value, cancellationToken))
                 {
                     //updatedClone.Add(item);
                     Interlocked.Increment(ref  updatedCount);
@@ -242,23 +242,24 @@ public class LobbyDownloader
         else
         {
             // RegionPlatform, LobbyServerDetailed
-            var requests = servers.Select(v =>
+            var requests = servers.Values.Select(v =>
             {
                 if (v.Raw is null || v.Raw._Region is null) return null;
 
                 var region = new RegionPlatform(v.Raw._Region, v.Raw._LobbyPlatform);
                 if (RegionPlatformMap.ContainsKey(region))
                 {
-                    return new
-                    {
-                        Region = region,
-                        Server = v,
-                    };
+                    //return new
+                    //{
+                    //    Region = region,
+                    //    Server = v,
+                    //};
+                    return new (RegionPlatform Region, LobbyServerDetailed Server)?((region, v));
                 }
                 return null;
             }).Where(v=> v is not null);
 
-            var rowIdMap = servers.ToDictionary(v => v.RowId);
+            //var rowIdMap = servers.ToDictionary(v => v.RowId);
 
             //并行更新
             ParallelOptions opt = new()
@@ -269,11 +270,7 @@ public class LobbyDownloader
             await Parallel.ForEachAsync(requests.Chunk(50), opt, async (chunk, ct) =>
             {
                 var requestList = chunk.Select(v =>
-                    new
-                    {
-                        RowId = v!.Server.RowId,
-                        Region = v.Region.Region,
-                    });
+                    new RowIdRegion(v!.Value.Server.RowId, v!.Value.Region.Region));
 
                 HttpResponseMessage r;
                 var content = JsonContent.Create(requestList, null, JsonSerializerOptions.Default);
@@ -302,7 +299,7 @@ public class LobbyDownloader
                 catch (Exception e)
                 {
                     Log.Error("{Exception}",e);
-                    var requestJson = JsonSerializer.Serialize(requestList);
+                    //var requestJson = JsonSerializer.Serialize(requestList);
                     //throw;
                     return;
                 }
@@ -314,7 +311,7 @@ public class LobbyDownloader
                 int index = 0;
                 foreach (var newRaw in get.Data)
                 {
-                    if (rowIdMap.TryGetValue(newRaw.RowId, out var server))
+                    if (servers.TryGetValue(newRaw.RowId, out var server))
                     {
                         newRaw._LastUpdate = dateTime;
                         newRaw._Region = server.Raw!._Region;
@@ -410,3 +407,5 @@ file struct Array100000
 {
     public object First { get; set; }
 }
+
+file record struct RowIdRegion(string RowId, string Region);

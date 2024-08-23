@@ -32,6 +32,8 @@ public class LobbyServerManager : IDisposable
     public event EventHandler<DstUpdatedEventArgs>? ServerUpdated;
     public event EventHandler<DstUpdatedDetailsChunk>? DetailsChunkUpdated;
 
+    public bool ModifyEnabled { get; set; } = true;
+
     //参数是依赖注入
     public LobbyServerManager(DstWebConfig requestConfig, LobbyDownloader lobbyDownloader)
     {
@@ -90,21 +92,45 @@ public class LobbyServerManager : IDisposable
     //循环获取数据  
     private async Task RequestLoop()
     {
-        Dictionary<string, LobbyServerRaw> tempServerRowIdMap = new(40000);
+        List<string> newRowIdLst = new();
+        //Dictionary<string, LobbyServerRaw> tempServerRowIdMap = new(40000);
         while (Running)
         {
+            bool modifyEnabled = ModifyEnabled;
+            List<LobbyServer>? unchanged = modifyEnabled ? new(10000) : null;
+            List<LobbyServer>? added = modifyEnabled ? new(1000) : null;
             try
             {
-                tempServerRowIdMap.Clear();
+                newRowIdLst.Clear();
                 CancellationTokenSource cts = new();
                 cts.CancelAfter(TimeSpan.FromMinutes(3));
                 _logger.Information("开始 Download");
 
-                //int count = 0;
                 await foreach (var item in LobbyDownloader.DownloadAllBriefs(CancellationTokenSource.CreateLinkedTokenSource(cts.Token, HttpCancellationToken.Token).Token))
                 {
-                    tempServerRowIdMap[item.RowId] = item;
-                    //count++;
+                    newRowIdLst.Add(item.RowId);
+
+                    //重复的
+                    if (ServerMap.TryGetValue(item.RowId, out var current))
+                    {
+                        LobbyServer server = ServerMap[item.RowId];
+                        server.UpdateFrom(item);
+                        if (modifyEnabled)
+                            unchanged!.Add(server);
+                    }
+                    //新增的
+                    else
+                    {
+                        LobbyServer server = new LobbyServerDetailed();
+                        server.UpdateFrom(item as LobbyServerRaw);
+                        if (ServerMap.TryAdd(item.RowId, (server as LobbyServerDetailed)!))
+                        {
+                            if (modifyEnabled)
+                                added!.Add(server);
+                        }
+                    }
+
+
                 }
             }
             catch (Exception e)
@@ -122,44 +148,19 @@ public class LobbyServerManager : IDisposable
 
             LastUpdate = DateTimeOffset.Now;
             var currentRowIds = ServerMap.Keys;
-            var newRowIds = tempServerRowIdMap.Keys;
-
-            //重复的
-            List<LobbyServer> unchanged = new(10000);
-            foreach (var rowId in currentRowIds.Intersect(newRowIds))
-            {
-                var newRaw = tempServerRowIdMap[rowId];
-                LobbyServer server = ServerMap[rowId];
-                server.UpdateFrom(newRaw);
-                unchanged.Add(server);
-            }
-
-            //新增的
-            List<LobbyServer> added = new(1000);
-            foreach (var rowId in newRowIds.Except(currentRowIds))
-            {
-                var newRaw = tempServerRowIdMap[rowId];
-                LobbyServer server = new LobbyServerDetailed();
-                server.UpdateFrom(newRaw as LobbyServerRaw);
-                if (ServerMap.TryAdd(rowId, (server as LobbyServerDetailed)!))
-                {
-                    added.Add(server);
-                }
-            }
 
             //移除的
-            List<LobbyServer> removed = new(1000);
-            foreach (var rowId in currentRowIds.Except(newRowIds))
+            List<LobbyServer>? removed = modifyEnabled ? new(1000) : null;
+            foreach (var rowId in currentRowIds.Except(newRowIdLst))
             {
                 if (ServerMap.TryRemove(rowId, out var rm))
                 {
-                    removed.Add(rm);
+                    if(modifyEnabled)
+                        removed!.Add(rm);
                 }
             }
-
-            List<LobbyServerDetailed> tempServer = new(ServerMap.Count);
-            tempServer.AddRange(ServerMap.Values);
-            serverCache = tempServer;
+            
+            serverCache = new List<LobbyServerDetailed>(ServerMap.Values);
 
             ServerUpdated?.Invoke(this, new DstUpdatedEventArgs(serverCache, DateTimeOffset.Now)
             {
@@ -167,7 +168,8 @@ public class LobbyServerManager : IDisposable
                 AddedServers = added,
                 RemovedServers = removed
             });
-            _logger.Information("已获取所有服务器数据  一共{Count}个  更新了{UnchangedCount}个  新增了{AddedCount}个  移除了{RemovedCount}个", tempServerRowIdMap.Count, unchanged.Count, added.Count, removed.Count);
+            _logger.Information("已获取所有服务器数据  一共{Count}个  更新了{UnchangedCount}个  新增了{AddedCount}个  移除了{RemovedCount}个",
+                newRowIdLst.Count, unchanged?.Count.ToString() ?? "N/A", added?.Count.ToString() ?? "N/A", removed?.Count.ToString() ?? "N/A");
 
             try
             {
@@ -199,8 +201,9 @@ public class LobbyServerManager : IDisposable
                 continue;
             }
 
-            ICollection<LobbyServerDetailed> arr = ServerMap.Values;
-            if (arr.Count != 0)
+            //ICollection<LobbyServerDetailed> arr = ServerMap.Values;
+            var totalCount = ServerMap.Count;
+            if (totalCount != 0)
             {
                 s.Restart();
                 try
@@ -216,19 +219,19 @@ public class LobbyServerManager : IDisposable
                     }
 
                     //开始更新
-                    var updatedCount = await LobbyDownloader.UpdateToDetails(arr, updatedChunk =>
+                    var updatedCount = await LobbyDownloader.UpdateToDetails(ServerMap, updatedChunk =>
                     {
                         if (isInsertHistory)
                         {
                             DetailsChunkUpdated?.Invoke(this, new DstUpdatedDetailsChunk(updatedChunk, DateTimeOffset.Now));
                         }
                     }, HttpCancellationToken.Token);
-                    if (updatedCount > arr.Count * 0.6f) // 更新数量大于60%
-                    {
-                        //Updated?.Invoke(this, new DstUpdatedEventArgs(updated, LastUpdate));
-                    }
+                    //if (updatedCount > arr.Count * 0.6f) // 更新数量大于60%
+                    //{
+                    //    //Updated?.Invoke(this, new DstUpdatedEventArgs(updated, LastUpdate));
+                    //}
 
-                    _logger.Information("所有详细信息已更新  在{OriginCount}个中更新了{UpdateCount}  耗时:{ElapsedMilliseconds:0.00}分钟  距离上次更新{LateUpdate:0.00}分钟", arr.Count, updatedCount, s.ElapsedMilliseconds / 1000 / 60.0, (DateTimeOffset.Now - lastUpdated).TotalMinutes);
+                    _logger.Information("所有详细信息已更新  在{OriginCount}个中更新了{UpdateCount}  耗时:{ElapsedMilliseconds:0.00}分钟  距离上次更新{LateUpdate:0.00}分钟", totalCount, updatedCount, s.ElapsedMilliseconds / 1000 / 60.0, (DateTimeOffset.Now - lastUpdated).TotalMinutes);
 
                     s.Stop();
                 }
