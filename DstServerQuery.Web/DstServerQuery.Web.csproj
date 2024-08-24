@@ -5,7 +5,7 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UserSecretsId>66626388-8029-405a-a20c-4f45f8782739</UserSecretsId>
-		<RootNamespace>Ilyfairy.DstServerQuery.Web</RootNamespace>
+		<RootNamespace>DstServerQuery.Web</RootNamespace>
 		<ServerGarbageCollection>false</ServerGarbageCollection>
 		<LangVersion>preview</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>

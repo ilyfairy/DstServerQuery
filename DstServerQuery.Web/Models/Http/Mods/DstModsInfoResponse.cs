@@ -1,8 +1,7 @@
 ﻿using DstDownloaders.Mods;
-using SteamDownloader.WebApi;
 using SteamDownloader.WebApi.Interfaces;
 
-namespace Ilyfairy.DstServerQuery.Web.Models.Http.Mods;
+namespace DstServerQuery.Web.Models.Http.Mods;
 
 
 public class DstModsInfoRequest
@@ -60,7 +59,7 @@ public class WebModsInfo : WebModsInfoLite
 
         if (store.SteamModInfo.details.VoteData is { } voteData)
             VoteData = new(voteData.Score, voteData.VotesUp, voteData.VotesDown);
-        if(store.SteamModInfo.details.Previews is { } previews)
+        if (store.SteamModInfo.details.Previews is { } previews)
             Previews = previews.Select(v => new WorkshopPreview(v.PrewviewId, v.SortOrder, v.Url, v.Size, v.FileName, v.PreviewType)).ToArray();
     }
 }

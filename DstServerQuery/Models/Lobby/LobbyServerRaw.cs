@@ -1,7 +1,8 @@
-﻿using Ilyfairy.DstServerQuery.Helpers.Converters.Cache;
+﻿using DstServerQuery.Helpers.Converters.Cache;
+using DstServerQuery.Models;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Models.LobbyData;
+namespace DstServerQuery.Models.Lobby;
 
 public class LobbyServerRaw
 {
@@ -112,5 +113,5 @@ public class LobbyServerRaw
 
     [JsonPropertyName("steamclanid")]
     public string? SteamClanId { get; set; } //steam群组gid
-    
+
 }

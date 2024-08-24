@@ -1,4 +1,4 @@
-﻿namespace Ilyfairy.DstServerQuery.Web.Models;
+﻿namespace DstServerQuery.Web.Models;
 
 public class DstModNameCount(string name, int count)
 {

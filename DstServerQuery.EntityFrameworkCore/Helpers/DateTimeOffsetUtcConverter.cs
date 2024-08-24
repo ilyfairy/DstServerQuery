@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Ilyfairy.DstServerQuery.EntityFrameworkCore.Helpers;
+namespace DstServerQuery.EntityFrameworkCore.Helpers;
 
 public class DateTimeOffsetUtcConverter : ValueConverter<DateTimeOffset, DateTimeOffset>
 {
-    public static ValueConverterInfo DefaultInfo { get; } = new ValueConverterInfo(typeof(DateTimeOffset), typeof(DateTimeOffset), (ValueConverterInfo i) => new DateTimeOffsetUtcConverter(i.MappingHints));
+    public static ValueConverterInfo DefaultInfo { get; } = new ValueConverterInfo(typeof(DateTimeOffset), typeof(DateTimeOffset), (i) => new DateTimeOffsetUtcConverter(i.MappingHints));
 
     public DateTimeOffsetUtcConverter()
         : this(null)
@@ -12,7 +12,7 @@ public class DateTimeOffsetUtcConverter : ValueConverter<DateTimeOffset, DateTim
     }
 
     public DateTimeOffsetUtcConverter(ConverterMappingHints? mappingHints)
-        : base((DateTimeOffset v) => ToUtc(v), (DateTimeOffset v) => ToLocal(v), mappingHints)
+        : base((v) => ToUtc(v), (v) => ToLocal(v), mappingHints)
     {
     }
 

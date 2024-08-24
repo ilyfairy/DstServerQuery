@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http.Features;
-using Serilog;
 using System.Collections.Concurrent;
 
-namespace Ilyfairy.DstServerQuery.Web.Services.TrafficRateLimiter;
+namespace DstServerQuery.Web.Services.TrafficRateLimiter;
 
 public static class TrafficLimiterExtensions
 {
@@ -15,13 +14,13 @@ public static class TrafficLimiterExtensions
         return serviceDescriptors;
     }
 
-    
+
 
     public static IApplicationBuilder UseTrafficLimiter(this IApplicationBuilder applicationBuilder)
     {
         TrafficRateLimitOptions trafficRateLimitOptions = applicationBuilder.ApplicationServices.GetRequiredService<TrafficRateLimitOptions>();
 
-        UseTrafficLimiter(applicationBuilder, (context, trafficContext, next) =>
+        applicationBuilder.UseTrafficLimiter((context, trafficContext, next) =>
         {
             return Task.CompletedTask;
         });
@@ -33,7 +32,7 @@ public static class TrafficLimiterExtensions
     {
         TrafficRateLimitOptions trafficRateLimitOptions = applicationBuilder.ApplicationServices.GetRequiredService<TrafficRateLimitOptions>();
 
-        applicationBuilder.Use(async (HttpContext httpContext, RequestDelegate next) =>
+        applicationBuilder.Use(async (httpContext, next) =>
         {
             IHttpResponseBodyFeature? originStream = httpContext.Features.Get<IHttpResponseBodyFeature>()!;
             TrafficMonitorStream trafficMonitorStream = new(originStream);

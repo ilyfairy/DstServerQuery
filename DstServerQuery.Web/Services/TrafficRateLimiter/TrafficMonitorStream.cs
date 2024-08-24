@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http.Features;
 using System.IO.Pipelines;
 
-namespace Ilyfairy.DstServerQuery.Web.Services.TrafficRateLimiter;
+namespace DstServerQuery.Web.Services.TrafficRateLimiter;
 
 public class TrafficMonitorStream(IHttpResponseBodyFeature httpResponseBodyFeature) : Stream, IHttpResponseBodyFeature
 {

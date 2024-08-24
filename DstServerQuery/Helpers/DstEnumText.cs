@@ -1,12 +1,12 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Ilyfairy.DstServerQuery.Models;
+using DstServerQuery.Models;
 
-namespace Ilyfairy.DstServerQuery.Helpers;
+namespace DstServerQuery.Helpers;
 
 /// <summary>
 /// 定义了枚举对应的文本
 /// </summary>
-public class DstEnumText : Dictionary<Enum, string> 
+public class DstEnumText : Dictionary<Enum, string>
 {
     public static DstEnumText Instance => new Lazy<DstEnumText>(() => new DstEnumText()
     {
@@ -78,7 +78,7 @@ public class DstEnumText : Dictionary<Enum, string>
         { SeasonalDuration.verylongseason, "极长" },
         { SeasonalDuration.random, "随机" },
 
-      
+
 
         { TaskSet.@default, "联机版" },
         { TaskSet.classic, "经典" },
@@ -117,7 +117,7 @@ public class DstEnumText : Dictionary<Enum, string>
         { PrefabswapsStart.@default, "默认" },
         { PrefabswapsStart.highly_random, "非常随机" },
 
-    }).Value;   
+    }).Value;
 
     private DstEnumText() { }
 
@@ -157,7 +157,7 @@ public class DstEnumText : Dictionary<Enum, string>
         { "autumnOrspring", "春活秋" },
         { "winterOrsummer", "冬季或夏季" },
         { "autumnOrwinterOrspringOrsummer", "随机" },
-        
+
         { "relaxed", "轻松" },
         { "lightsout", "暗无天日" },
         { "cooperative", "合作" },

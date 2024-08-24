@@ -1,8 +1,8 @@
-﻿using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Models.LobbyData;
+﻿using DstServerQuery.Models;
+using DstServerQuery.Models.Lobby;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Helpers;
+namespace DstServerQuery.Helpers;
 
 [JsonSerializable(typeof(bool))]
 [JsonSerializable(typeof(string))]

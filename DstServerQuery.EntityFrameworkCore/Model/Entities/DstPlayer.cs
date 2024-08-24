@@ -1,15 +1,10 @@
-﻿using Ilyfairy.DstServerQuery.Models;
+﻿using DstServerQuery.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
-namespace Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
+namespace DstServerQuery.EntityFrameworkCore.Model.Entities;
 
 /// <summary>
 /// 服务器玩家

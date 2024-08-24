@@ -1,11 +1,11 @@
 ﻿using System.Diagnostics;
-using Ilyfairy.DstServerQuery.Models.LobbyData;
 using System.Collections.Concurrent;
-using Ilyfairy.DstServerQuery.Models.Requests;
 using System.Collections.Immutable;
 using Serilog;
+using DstServerQuery.Models.Requests;
+using DstServerQuery.Models.Lobby;
 
-namespace Ilyfairy.DstServerQuery;
+namespace DstServerQuery;
 
 /// <summary>
 /// 大厅的详细信息实时获取以及管理
@@ -38,7 +38,7 @@ public class LobbyServerManager : IDisposable
     public LobbyServerManager(DstWebConfig requestConfig, LobbyDownloader lobbyDownloader)
     {
         LobbyDownloader = lobbyDownloader;
-        this.dstConfig = requestConfig;
+        dstConfig = requestConfig;
     }
 
 
@@ -155,11 +155,11 @@ public class LobbyServerManager : IDisposable
             {
                 if (ServerMap.TryRemove(rowId, out var rm))
                 {
-                    if(modifyEnabled)
+                    if (modifyEnabled)
                         removed!.Add(rm);
                 }
             }
-            
+
             serverCache = new List<LobbyServerDetailed>(ServerMap.Values);
 
             ServerUpdated?.Invoke(this, new DstUpdatedEventArgs(serverCache, DateTimeOffset.Now)
@@ -275,7 +275,7 @@ public class LobbyServerManager : IDisposable
         try
         {
             await server._Lock.WaitAsync(token);
-            if (forceUpdate || !server.Raw!._IsDetailed || (DateTimeOffset.Now - server.Raw._LastUpdate) > TimeSpan.FromSeconds(20))
+            if (forceUpdate || !server.Raw!._IsDetailed || DateTimeOffset.Now - server.Raw._LastUpdate > TimeSpan.FromSeconds(20))
             {
                 await LobbyDownloader.UpdateToDetails(server, HttpCancellationToken.Token);
             }

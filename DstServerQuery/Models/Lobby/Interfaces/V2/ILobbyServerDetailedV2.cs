@@ -1,7 +1,6 @@
-﻿using Ilyfairy.DstServerQuery.Helpers.Converters;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
+namespace DstServerQuery.Models.Lobby.Interfaces.V2;
 
 public interface ILobbyServerDetailedV2 : ILobbyServerV2
 {

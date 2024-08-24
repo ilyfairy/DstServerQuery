@@ -1,4 +1,4 @@
-﻿namespace HoneyChat.WebApi.Database;
+﻿namespace DstServerQuery.EntityFrameworkCore;
 
 public enum DatabaseType
 {

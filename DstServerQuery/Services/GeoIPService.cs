@@ -3,7 +3,7 @@ using MaxMind.GeoIP2.Responses;
 using Serilog;
 using System.Net;
 
-namespace Ilyfairy.DstServerQuery.Services;
+namespace DstServerQuery.Services;
 
 public class GeoIPService
 {

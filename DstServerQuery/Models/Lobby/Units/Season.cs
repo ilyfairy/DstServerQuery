@@ -1,4 +1,4 @@
-﻿namespace Ilyfairy.DstServerQuery.Models.LobbyData.Units;
+﻿namespace DstServerQuery.Models.Lobby.Units;
 
 /// <summary>
 /// 季节

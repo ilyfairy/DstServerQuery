@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace Ilyfairy.DstServerQuery.Helpers.Converters.Cache;
+namespace DstServerQuery.Helpers;
 
 public class MemoryCharEqualityComparer : IEqualityComparer<ReadOnlyMemory<char>>
 {

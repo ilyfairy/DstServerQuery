@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer.JsonConverters;
+namespace DstServerQuery.Web.Helpers.ServerQueryer.JsonConverter;
 
 public class StringArrayJsonConverter : JsonConverter<StringArray>
 {
@@ -18,7 +18,7 @@ public class StringArrayJsonConverter : JsonConverter<StringArray>
                 Value = StringSplitConverter.Instance.Read(ref reader, typeof(string[]), options)
             };
         }
-        else if(reader.TokenType == JsonTokenType.Number)
+        else if (reader.TokenType == JsonTokenType.Number)
         {
             return new()
             {
@@ -29,7 +29,7 @@ public class StringArrayJsonConverter : JsonConverter<StringArray>
         {
             return JsonSerializer.Deserialize<StringArray>(ref reader, new JsonSerializerOptions()
             {
-                
+
             });
         }
     }

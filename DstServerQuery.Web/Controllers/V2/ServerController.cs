@@ -1,18 +1,17 @@
 ﻿using Asp.Versioning;
-using Ilyfairy.DstServerQuery.EntityFrameworkCore;
-using Ilyfairy.DstServerQuery.Helpers;
-using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Models.LobbyData;
-using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
-using Ilyfairy.DstServerQuery.Services;
-using Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer;
-using Ilyfairy.DstServerQuery.Web.Models;
-using Ilyfairy.DstServerQuery.Web.Models.Http;
+using DstServerQuery;
+using DstServerQuery.EntityFrameworkCore;
+using DstServerQuery.EntityFrameworkCore.Model;
+using DstServerQuery.Models.Lobby;
+using DstServerQuery.Models.Lobby.Interfaces.V2;
+using DstServerQuery.Services;
+using DstServerQuery.Web.Helpers.ServerQueryer;
+using DstServerQuery.Web.Models.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
+namespace DstServerQuery.Web.Controllers.V2;
 
 /// <summary>
 /// 服务器控制器
@@ -105,7 +104,7 @@ public class ServerController(
             return ResponseBase.NotFound(); //找不到该房间
         }
         _logger.LogInformation("找到服务器 RowId:{RowId} Name:{Name}", id, info.Name);
-        
+
         DateTimeOffset lastUpdate = info.GetUpdateTime();
         ServerDetailsResponse response = new()
         {
@@ -246,7 +245,7 @@ public class ServerController(
             response = CreateResponse<ILobbyServerV2>();
         }
 
-        if(HttpContext.RequestAborted.IsCancellationRequested)
+        if (HttpContext.RequestAborted.IsCancellationRequested)
         {
             return Problem();
         }
@@ -279,7 +278,7 @@ public class ServerController(
             .Where(v => !string.IsNullOrEmpty(v));
 
         var response = prefabs.GroupBy(v => v).Select(v => new PrefabsResponse.PlayerPrefab(v.Key, v.Count())).OrderByDescending(v => v.Count);
-        
+
         return new PrefabsResponse(response).ToJsonResult();
     }
 

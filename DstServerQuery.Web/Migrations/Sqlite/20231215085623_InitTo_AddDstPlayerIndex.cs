@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Ilyfairy.DstServerQuery.Web.Migrations.Sqlite
+namespace DstServerQuery.Web.Migrations.Sqlite
 {
     /// <inheritdoc />
     public partial class InitTo_AddDstPlayerIndex : Migration

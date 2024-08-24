@@ -1,8 +1,8 @@
-﻿using Ilyfairy.DstServerQuery.Models;
+﻿using DstServerQuery.Models;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Helpers.Converters;
+namespace DstServerQuery.Helpers.Converters;
 
 public class IPAddressStringConverter : JsonConverter<IPAddressInfo>
 {

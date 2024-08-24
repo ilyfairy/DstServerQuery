@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Ilyfairy.DstServerQuery.Web.Migrations.PostgreSql
+namespace DstServerQuery.Web.Migrations.PostgreSql
 {
     /// <inheritdoc />
     public partial class InitTo_AddDstPlayerIndex : Migration

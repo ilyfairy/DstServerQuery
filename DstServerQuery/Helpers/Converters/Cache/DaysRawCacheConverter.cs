@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Helpers.Converters.Cache;
+namespace DstServerQuery.Helpers.Converters.Cache;
 
 public class DaysRawCacheConverter : JsonConverter<string>
 {

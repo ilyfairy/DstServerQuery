@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
+namespace DstServerQuery.EntityFrameworkCore.Model.Entities;
 
 /// <summary>
 /// 服务器数量信息

@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Helpers.Converters;
+namespace DstServerQuery.Helpers.Converters;
 
 /// <summary>
 /// 自定义名称序列化转换器, 仅允许序列化

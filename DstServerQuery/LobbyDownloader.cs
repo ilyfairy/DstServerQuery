@@ -1,9 +1,7 @@
-﻿using Ilyfairy.DstServerQuery.Helpers;
-using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Models.LobbyData;
-using Ilyfairy.DstServerQuery.Models.Requests;
+﻿using DstServerQuery.Models;
+using DstServerQuery.Models.Lobby;
+using DstServerQuery.Models.Requests;
 using Serilog;
-using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -13,7 +11,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Ilyfairy.DstServerQuery;
+namespace DstServerQuery;
 
 public record struct RegionPlatform(string Region, LobbyPlatform Platform);
 public record struct RegionUrl(string BriefsUrl, string DetailsUrl);
@@ -49,8 +47,8 @@ public class LobbyDownloader
             return http;
         }
 
-        this.http = Create();
-        this.httpUpdate = Create();
+        http = Create();
+        httpUpdate = Create();
     }
 
     public async Task InitializeAsync()
@@ -156,7 +154,7 @@ public class LobbyDownloader
                 if (!RegionPlatformMap.TryGetValue(new(server.Raw._Region, server.Raw._LobbyPlatform), out var regionUrl)) return false;
                 url = regionUrl.DetailsUrl;
                 //var request = new RestRequest(url.details, Method.Post);
-                string str = 
+                string str =
                 $$$"""
                 {
                     "__gameId": "DontStarveTogether",
@@ -172,7 +170,7 @@ public class LobbyDownloader
             {
                 object[] requestList = [new
                 {
-                    RowId = server.RowId,
+                    server.RowId,
                     Region = server.Raw._Region,
                 }];
                 requestBody = JsonContent.Create(requestList, null, JsonSerializerOptions.Default);
@@ -183,7 +181,7 @@ public class LobbyDownloader
             if (get is null || get.Data is null || get.Data.Count == 0) return false;
 
             var newRaw = get.Data.FirstOrDefault();
-            if(newRaw is null)
+            if (newRaw is null)
             {
                 return false;
             }
@@ -201,7 +199,7 @@ public class LobbyDownloader
         }
         try
         {
-            if(await Request(proxyUrl))
+            if (await Request(proxyUrl))
             {
                 return true;
             }
@@ -221,11 +219,11 @@ public class LobbyDownloader
     public async Task<int> UpdateToDetails(IDictionary<string, LobbyServerDetailed> servers, Action<ICollection<LobbyServerDetailed>>? chunkCallback, CancellationToken cancellationToken = default)
     {
         if (servers.Count == 0) return 0;
-        
+
         int updatedCount = 0;
         //int requestCount = 0;
         //List<LobbyServerDetailed> updatedClone = new(servers.Count);
-        
+
         var proxyUrl = GetProxyUrl();
         if (string.IsNullOrWhiteSpace(proxyUrl))
         {
@@ -235,7 +233,7 @@ public class LobbyDownloader
                 if (await UpdateToDetails(item.Value, cancellationToken))
                 {
                     //updatedClone.Add(item);
-                    Interlocked.Increment(ref  updatedCount);
+                    Interlocked.Increment(ref updatedCount);
                 }
             }
         }
@@ -257,7 +255,7 @@ public class LobbyDownloader
                     return new (RegionPlatform Region, LobbyServerDetailed Server)?((region, v));
                 }
                 return null;
-            }).Where(v=> v is not null);
+            }).Where(v => v is not null);
 
             //var rowIdMap = servers.ToDictionary(v => v.RowId);
 
@@ -290,7 +288,7 @@ public class LobbyDownloader
                 GET<LobbyServerDetailedRaw>? get;
                 try
                 {
-                     get = await r.Content.ReadFromJsonAsync<GET<LobbyServerDetailedRaw>>(ct);
+                    get = await r.Content.ReadFromJsonAsync<GET<LobbyServerDetailedRaw>>(ct);
                 }
                 catch (TaskCanceledException)
                 {
@@ -298,7 +296,7 @@ public class LobbyDownloader
                 }
                 catch (Exception e)
                 {
-                    Log.Error("{Exception}",e);
+                    Log.Error("{Exception}", e);
                     //var requestJson = JsonSerializer.Serialize(requestList);
                     //throw;
                     return;
@@ -320,7 +318,7 @@ public class LobbyDownloader
                         //server.Raw = newRaw;
                         //server.Update();
                         server.UpdateFrom(newRaw);
-                        
+
                         //lock (updatedChunks)
                         //{
                         //    //updatedClone.Add(server.Clone());
@@ -336,14 +334,14 @@ public class LobbyDownloader
                     {
                         updatedChunksCache.Add(serverTemp[i]);
                     }
-                    if(updatedChunksCache.Count > 1000)
+                    if (updatedChunksCache.Count > 1000)
                     {
                         chunkCallback?.Invoke(updatedChunksCache.ToArray());
                         updatedChunksCache.Clear();
                     }
                 }
             });
-            if(updatedChunksCache.Count != 0)
+            if (updatedChunksCache.Count != 0)
             {
                 chunkCallback?.Invoke(updatedChunksCache);
                 updatedChunksCache.Clear();

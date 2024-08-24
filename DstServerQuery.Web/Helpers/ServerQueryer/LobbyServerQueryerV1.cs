@@ -1,14 +1,13 @@
-﻿using Ilyfairy.DstServerQuery.Helpers.Converters;
-using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Models.LobbyData;
-using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
-using Ilyfairy.DstServerQuery.Models.LobbyData.Units;
+﻿using DstServerQuery.Models;
+using DstServerQuery.Models.Lobby;
+using DstServerQuery.Models.Lobby.Interfaces.V1;
+using DstServerQuery.Models.Lobby.Units;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
-namespace Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer;
+namespace DstServerQuery.Web.Helpers.ServerQueryer;
 
 public class LobbyServerQueryerV1
 {

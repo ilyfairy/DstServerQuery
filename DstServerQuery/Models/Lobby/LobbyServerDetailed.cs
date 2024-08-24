@@ -1,7 +1,8 @@
-﻿using Ilyfairy.DstServerQuery.Helpers;
-using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
+﻿using DstServerQuery.Helpers;
+using DstServerQuery.Models.Lobby.Interfaces.V1;
+using DstServerQuery.Models.Lobby.Interfaces.V2;
 
-namespace Ilyfairy.DstServerQuery.Models.LobbyData;
+namespace DstServerQuery.Models.Lobby;
 
 /// <summary>
 /// 单个服务器列表详细信息, 用于反序列化
@@ -74,61 +75,61 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerDetailed
     {
         LobbyServerDetailed obj = new();
 
-        obj.Name = this.Name;
-        obj.Address = this.Address;
-        obj.Port = this.Port;
-        obj.RowId = this.RowId;
-        obj.Connected = this.Connected;
-        obj.IsDedicated = this.IsDedicated;
-        obj.Host = this.Host;
-        obj.Intent = this.Intent;
-        obj.MaxConnections = this.MaxConnections;
-        obj.Mode = this.Mode;
-        obj.IsMods = this.IsMods;
-        obj.IsPassword = this.IsPassword;
-        obj.Platform = this.Platform;
-        obj.Season = this.Season;
-        obj.IsPvp = this.IsPvp;
-        obj.Version = this.Version;
-        obj.Session = this.Session;
+        obj.Name = Name;
+        obj.Address = Address;
+        obj.Port = Port;
+        obj.RowId = RowId;
+        obj.Connected = Connected;
+        obj.IsDedicated = IsDedicated;
+        obj.Host = Host;
+        obj.Intent = Intent;
+        obj.MaxConnections = MaxConnections;
+        obj.Mode = Mode;
+        obj.IsMods = IsMods;
+        obj.IsPassword = IsPassword;
+        obj.Platform = Platform;
+        obj.Season = Season;
+        obj.IsPvp = IsPvp;
+        obj.Version = Version;
+        obj.Session = Session;
 
-        obj.IsClanOnly = this.IsClanOnly;
-        obj.IsFriendsOnly = this.IsFriendsOnly;
-        obj.Slaves = this.Slaves;
-        obj.Secondaries = this.Secondaries;
-        obj.IsAllowNewPlayers = this.IsAllowNewPlayers;
-        obj.IsServerPaused = this.IsServerPaused;
-        obj.SteamId = this.SteamId;
-        obj.SteamRoom = this.SteamRoom;
-        obj.Tags = this.Tags;
-        obj.IsClientHosted = this.IsClientHosted;
-        obj.Guid = this.Guid;
-        obj.OwnerNetId = this.OwnerNetId;
-        obj.IsLanOnly = this.IsLanOnly;
-        obj.SteamClanId = this.SteamClanId;
+        obj.IsClanOnly = IsClanOnly;
+        obj.IsFriendsOnly = IsFriendsOnly;
+        obj.Slaves = Slaves;
+        obj.Secondaries = Secondaries;
+        obj.IsAllowNewPlayers = IsAllowNewPlayers;
+        obj.IsServerPaused = IsServerPaused;
+        obj.SteamId = SteamId;
+        obj.SteamRoom = SteamRoom;
+        obj.Tags = Tags;
+        obj.IsClientHosted = IsClientHosted;
+        obj.Guid = Guid;
+        obj.OwnerNetId = OwnerNetId;
+        obj.IsLanOnly = IsLanOnly;
+        obj.SteamClanId = SteamClanId;
 
-        obj.Players = this.Players?.ToArray();
-        obj.LastPing = this.LastPing;
-        obj.Description = this.Description;
-        obj.Tick = this.Tick;
-        obj.IsClientModsOff = this.IsClientModsOff;
-        obj.Nat = this.Nat;
-        obj.IsEvent = this.IsEvent;
-        obj.IsValveCloudServer = this.IsValveCloudServer;
-        obj.ValvePopId = this.ValvePopId;
-        obj.ValveRoutingInfo = this.ValveRoutingInfo;
-        obj.IsKleiOfficial = this.IsKleiOfficial;
-        obj.DaysInfo = this.DaysInfo is null ? null : DaysInfo with { };
-        obj.WorldGen = this.WorldGen;
-        obj.Users = this.Users;
-        obj.ModsInfo = this.ModsInfo?.ToArray();
+        obj.Players = Players?.ToArray();
+        obj.LastPing = LastPing;
+        obj.Description = Description;
+        obj.Tick = Tick;
+        obj.IsClientModsOff = IsClientModsOff;
+        obj.Nat = Nat;
+        obj.IsEvent = IsEvent;
+        obj.IsValveCloudServer = IsValveCloudServer;
+        obj.ValvePopId = ValvePopId;
+        obj.ValveRoutingInfo = ValveRoutingInfo;
+        obj.IsKleiOfficial = IsKleiOfficial;
+        obj.DaysInfo = DaysInfo is null ? null : DaysInfo with { };
+        obj.WorldGen = WorldGen;
+        obj.Users = Users;
+        obj.ModsInfo = ModsInfo?.ToArray();
 
         //obj._IsDetails = this._IsDetails;
         //obj._LastUpdate = this._LastUpdate;
         //obj._LobbyPlatform = this._LobbyPlatform;
         //obj._Region = this._Region;
 
-        obj.Raw = this.Raw;
+        obj.Raw = Raw;
 
         return obj;
     }
@@ -136,58 +137,58 @@ public class LobbyServerDetailed : LobbyServer, ICloneable, ILobbyServerDetailed
     public void CopyTo(LobbyServerDetailed dest)
     {
         if (dest is null) return;
-        dest.Name = this.Name;
-        dest.Address = this.Address;
-        dest.Port = this.Port;
-        dest.RowId = this.RowId;
-        dest.Connected = this.Connected;
-        dest.IsDedicated = this.IsDedicated;
-        dest.Host = this.Host;
-        dest.Intent = this.Intent;
-        dest.MaxConnections = this.MaxConnections;
-        dest.Mode = this.Mode;
-        dest.IsMods = this.IsMods;
-        dest.IsPassword = this.IsPassword;
-        dest.Platform = this.Platform;
-        dest.Season = this.Season;
-        dest.IsPvp = this.IsPvp;
-        dest.Version = this.Version;
-        dest.Session = this.Session;
+        dest.Name = Name;
+        dest.Address = Address;
+        dest.Port = Port;
+        dest.RowId = RowId;
+        dest.Connected = Connected;
+        dest.IsDedicated = IsDedicated;
+        dest.Host = Host;
+        dest.Intent = Intent;
+        dest.MaxConnections = MaxConnections;
+        dest.Mode = Mode;
+        dest.IsMods = IsMods;
+        dest.IsPassword = IsPassword;
+        dest.Platform = Platform;
+        dest.Season = Season;
+        dest.IsPvp = IsPvp;
+        dest.Version = Version;
+        dest.Session = Session;
 
-        dest.IsClanOnly = this.IsClanOnly;
-        dest.IsFriendsOnly = this.IsFriendsOnly;
-        dest.Slaves = this.Slaves;
-        dest.Secondaries = this.Secondaries;
-        dest.IsAllowNewPlayers = this.IsAllowNewPlayers;
-        dest.IsServerPaused = this.IsServerPaused;
-        dest.SteamId = this.SteamId;
-        dest.SteamRoom = this.SteamRoom;
-        dest.Tags = this.Tags;
-        dest.IsClientHosted = this.IsClientHosted;
-        dest.Guid = this.Guid;
-        dest.OwnerNetId = this.OwnerNetId;
-        dest.IsLanOnly = this.IsLanOnly;
-        dest.SteamClanId = this.SteamClanId;
+        dest.IsClanOnly = IsClanOnly;
+        dest.IsFriendsOnly = IsFriendsOnly;
+        dest.Slaves = Slaves;
+        dest.Secondaries = Secondaries;
+        dest.IsAllowNewPlayers = IsAllowNewPlayers;
+        dest.IsServerPaused = IsServerPaused;
+        dest.SteamId = SteamId;
+        dest.SteamRoom = SteamRoom;
+        dest.Tags = Tags;
+        dest.IsClientHosted = IsClientHosted;
+        dest.Guid = Guid;
+        dest.OwnerNetId = OwnerNetId;
+        dest.IsLanOnly = IsLanOnly;
+        dest.SteamClanId = SteamClanId;
 
-        dest.Players = this.Players;
-        dest.LastPing = this.LastPing;
-        dest.Description = this.Description;
-        dest.Tick = this.Tick;
-        dest.IsClientModsOff = this.IsClientModsOff;
-        dest.Nat = this.Nat;
-        dest.IsEvent = this.IsEvent;
-        dest.IsValveCloudServer = this.IsValveCloudServer;
-        dest.ValvePopId = this.ValvePopId;
-        dest.ValveRoutingInfo = this.ValveRoutingInfo;
-        dest.IsKleiOfficial = this.IsKleiOfficial;
-        dest.DaysInfo = this.DaysInfo;
-        dest.WorldGen = this.WorldGen;
-        dest.Users = this.Users;
-        dest.ModsInfo = this.ModsInfo;
+        dest.Players = Players;
+        dest.LastPing = LastPing;
+        dest.Description = Description;
+        dest.Tick = Tick;
+        dest.IsClientModsOff = IsClientModsOff;
+        dest.Nat = Nat;
+        dest.IsEvent = IsEvent;
+        dest.IsValveCloudServer = IsValveCloudServer;
+        dest.ValvePopId = ValvePopId;
+        dest.ValveRoutingInfo = ValveRoutingInfo;
+        dest.IsKleiOfficial = IsKleiOfficial;
+        dest.DaysInfo = DaysInfo;
+        dest.WorldGen = WorldGen;
+        dest.Users = Users;
+        dest.ModsInfo = ModsInfo;
 
         //dest._LastUpdate = this._LastUpdate;
 
-        dest.Raw = this.Raw;
+        dest.Raw = Raw;
     }
 
 }

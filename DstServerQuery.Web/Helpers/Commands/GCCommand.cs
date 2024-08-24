@@ -3,6 +3,8 @@ using System.CommandLine;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
+namespace DstServerQuery.Web.Helpers.Commands;
+
 public class GCCommand : Command
 {
     private static TimeSpan startTime;
@@ -71,14 +73,14 @@ public class GCCommand : Command
             if (string.Equals(v, "all", StringComparison.OrdinalIgnoreCase))
             {
                 GC.Collect();
-                Console.WriteLine("已完成所有代系垃圾回收");
+                System.Console.WriteLine("已完成所有代系垃圾回收");
                 return;
             }
             else
             {
                 var c = int.Parse(v);
                 GC.Collect();
-                Console.WriteLine($"已完成第{c}代垃圾回收");
+                System.Console.WriteLine($"已完成第{c}代垃圾回收");
             }
         }, g);
 

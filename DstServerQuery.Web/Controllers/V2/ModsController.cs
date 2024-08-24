@@ -1,15 +1,15 @@
 ﻿using System.Text.RegularExpressions;
 using Asp.Versioning;
 using DstDownloaders.Mods;
-using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Web.Models;
-using Ilyfairy.DstServerQuery.Web.Models.Http.Mods;
+using DstServerQuery.Models;
+using DstServerQuery.Web.Models;
+using DstServerQuery.Web.Models.Http;
+using DstServerQuery.Web.Models.Http.Mods;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
+namespace DstServerQuery.Web.Controllers.V2;
 
 [ApiController]
 [ApiVersion(2.0)]
@@ -18,7 +18,7 @@ namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
 [EnableRateLimiting("fixed")]
 public class ModsController(
             ILogger<ModsController> logger,
-            LobbyServerManager LobbyDetailsManager, 
+            LobbyServerManager LobbyDetailsManager,
             DstModsFileService modsService,
             IMemoryCache memoryCache) : ControllerBase
 {
@@ -286,7 +286,7 @@ public class ModsController(
 
             }
         }
-        
+
         List<WebModsInfoLite> list = new();
         var or = result.GetEnumerator();
         int count = 0;

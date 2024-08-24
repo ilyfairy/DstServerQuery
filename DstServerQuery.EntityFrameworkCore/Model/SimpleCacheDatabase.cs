@@ -4,6 +4,8 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
+namespace DstServerQuery.EntityFrameworkCore.Model;
+
 public class SimpleCacheDatabase : DbContext
 {
     public DbSet<DataItem> Items { get; set; }
@@ -58,7 +60,7 @@ public class SimpleCacheDatabase : DbContext
     public void Set<T>(string key, T value)
     {
         var item = Items.FirstOrDefault(v => v.Id == key);
-        var data = JsonSerializer.Serialize<T>(value, SerializerOptions);
+        var data = JsonSerializer.Serialize(value, SerializerOptions);
         if (item is null)
         {
             Items.Add(new DataItem() { Id = key, Data = data });

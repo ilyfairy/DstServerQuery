@@ -1,13 +1,11 @@
-﻿using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Models.LobbyData;
-using Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer.JsonConverters;
-using Medallion.Collections;
+﻿using DstServerQuery.Models;
+using DstServerQuery.Models.Lobby;
+using DstServerQuery.Web.Helpers.ServerQueryer.JsonConverter;
 using System.Net;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
-namespace Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer;
+namespace DstServerQuery.Web.Helpers.ServerQueryer;
 
 public partial class LobbyServerQueryerV2
 {

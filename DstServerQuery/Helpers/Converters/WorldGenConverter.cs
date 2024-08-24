@@ -2,7 +2,7 @@
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Helpers.Converters;
+namespace DstServerQuery.Helpers.Converters;
 
 public class WorldGenConverter : JsonConverter<object>
 {

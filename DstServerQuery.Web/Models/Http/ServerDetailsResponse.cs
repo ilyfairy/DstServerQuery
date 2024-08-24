@@ -1,6 +1,6 @@
-﻿using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
+﻿using DstServerQuery.Models.Lobby.Interfaces.V2;
 
-namespace Ilyfairy.DstServerQuery.Web.Models.Http;
+namespace DstServerQuery.Web.Models.Http;
 
 /// <summary>
 /// 服务器的详细信息

@@ -1,13 +1,12 @@
 ﻿using Asp.Versioning;
-using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
-using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Web.Helpers;
-using Ilyfairy.DstServerQuery.Web.Models.Http;
+using DstServerQuery.EntityFrameworkCore.Model;
+using DstServerQuery.Web.Helpers;
+using DstServerQuery.Web.Models.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
-namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
+namespace DstServerQuery.Web.Controllers.V2;
 
 [ApiController]
 [ApiVersion(2.0)]

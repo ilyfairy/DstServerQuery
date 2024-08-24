@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer.JsonConverters;
+namespace DstServerQuery.Web.Helpers.ServerQueryer.JsonConverter;
 
 public class StringSplitConverter : JsonConverter<string?[]>
 {
@@ -18,7 +18,7 @@ public class StringSplitConverter : JsonConverter<string?[]>
                 .Where(v => !string.IsNullOrWhiteSpace(v))
                 .ToArray();
         }
-        else if(reader.TokenType == JsonTokenType.StartArray)
+        else if (reader.TokenType == JsonTokenType.StartArray)
         {
             List<string?> arr = new();
             while (true)

@@ -1,11 +1,11 @@
-﻿using Ilyfairy.DstServerQuery.Models;
+﻿using DstServerQuery.Models;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
+namespace DstServerQuery.EntityFrameworkCore.Model.Entities;
 
 /// <summary>
 /// 服务器, 保存了几乎不可变的字段

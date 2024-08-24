@@ -1,17 +1,17 @@
 ﻿using Asp.Versioning;
-using Ilyfairy.DstServerQuery.EntityFrameworkCore;
-using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
-using Ilyfairy.DstServerQuery.Helpers;
-using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Services;
-using Ilyfairy.DstServerQuery.Web.Models;
-using Ilyfairy.DstServerQuery.Web.Models.Http;
+using DstServerQuery.EntityFrameworkCore;
+using DstServerQuery.EntityFrameworkCore.Model;
+using DstServerQuery.EntityFrameworkCore.Model.Entities;
+using DstServerQuery.Models;
+using DstServerQuery.Services;
+using DstServerQuery.Web.Models;
+using DstServerQuery.Web.Models.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
-namespace Ilyfairy.DstServerQuery.Web.Controllers.V2;
+namespace DstServerQuery.Web.Controllers.V2;
 
 [ApiController]
 [ApiVersion(2.0)]
@@ -238,9 +238,9 @@ public class HistoryController : ControllerBase
     /// <returns></returns>
     [HttpPost("GetServerHistory")]
     public async Task<IActionResult> GetServerHistory(
-        [FromQuery] string rowId, 
-        [FromQuery] DateTimeOffset? startDateTime = null, 
-        [FromQuery] DateTimeOffset? endDateTime = null, 
+        [FromQuery] string rowId,
+        [FromQuery] DateTimeOffset? startDateTime = null,
+        [FromQuery] DateTimeOffset? endDateTime = null,
         bool? isDetails = null,
         bool? includeDays = false,
         bool? includePlayers = false
@@ -276,11 +276,11 @@ public class HistoryController : ControllerBase
             query = query.Where(v => v.IsDetailed == isDetails);
         }
 
-        if(includeDays == true)
+        if (includeDays == true)
         {
             query = query.Include(v => v.DaysInfo);
         }
-        if(includePlayers == true)
+        if (includePlayers == true)
         {
             query = query.Include(v => v.Players);
         }

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Ilyfairy.DstServerQuery.Models.LobbyData.Units;
+﻿namespace DstServerQuery.Models.Lobby.Units;
 
 /// <summary>
 /// 游戏风格

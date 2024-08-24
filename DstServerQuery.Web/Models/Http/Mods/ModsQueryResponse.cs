@@ -1,8 +1,7 @@
-﻿using System.Text.RegularExpressions;
-using DstDownloaders.Mods;
+﻿using DstDownloaders.Mods;
 using SteamDownloader.WebApi.Interfaces;
 
-namespace Ilyfairy.DstServerQuery.Web.Models.Http.Mods;
+namespace DstServerQuery.Web.Models.Http.Mods;
 
 /// <summary>
 /// Mods查询参数
@@ -142,7 +141,7 @@ public class WebModsInfoLite
             Description = data.Description;
             Language = language.Value;
         }
-        
+
         UpdateTime = store.UpdatedTime!.Value;
         CreatedTime = store.SteamModInfo.CreatedTime;
 

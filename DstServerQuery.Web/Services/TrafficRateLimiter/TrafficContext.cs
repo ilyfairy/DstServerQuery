@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
-namespace Ilyfairy.DstServerQuery.Web.Services.TrafficRateLimiter;
+namespace DstServerQuery.Web.Services.TrafficRateLimiter;
 
 public record TrafficContext
 {

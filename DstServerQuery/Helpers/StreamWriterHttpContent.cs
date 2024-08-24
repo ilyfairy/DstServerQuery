@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace Ilyfairy.DstServerQuery.Helpers;
+namespace DstServerQuery.Helpers;
 
 public class StreamWriterHttpContent(Func<Stream, Task> streamCallabck) : HttpContent
 {

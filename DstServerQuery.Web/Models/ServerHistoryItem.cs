@@ -1,7 +1,7 @@
-﻿using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
+﻿using DstServerQuery.EntityFrameworkCore.Model.Entities;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Web.Models;
+namespace DstServerQuery.Web.Models;
 
 public record ServerHistoryItem
 {

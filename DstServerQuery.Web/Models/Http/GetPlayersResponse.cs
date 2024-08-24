@@ -1,4 +1,6 @@
-﻿namespace Ilyfairy.DstServerQuery.Web.Models.Http;
+﻿using DstServerQuery.Web.Models;
+
+namespace DstServerQuery.Web.Models.Http;
 
 public class GetPlayersResponse : ResponseBase
 {

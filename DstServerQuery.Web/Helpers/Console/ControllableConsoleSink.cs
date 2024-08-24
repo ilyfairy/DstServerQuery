@@ -5,7 +5,7 @@ using Serilog.Sinks.SystemConsole.Themes;
 using System.Collections.Concurrent;
 using System.Reflection;
 
-namespace Ilyfairy.DstServerQuery.Web.Helpers.Console;
+namespace DstServerQuery.Web.Helpers.Console;
 
 public class ControllableConsoleSink : ILogEventSink
 {

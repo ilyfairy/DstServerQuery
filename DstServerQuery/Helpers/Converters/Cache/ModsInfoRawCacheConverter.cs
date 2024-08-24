@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Helpers.Converters.Cache;
+namespace DstServerQuery.Helpers.Converters.Cache;
 
 public class ModsInfoRawCacheConverter : JsonConverter<object[]>
 {

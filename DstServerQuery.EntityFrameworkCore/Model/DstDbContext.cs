@@ -1,10 +1,10 @@
-﻿using EFCore.BulkExtensions;
-using Ilyfairy.DstServerQuery.EntityFrameworkCore.Helpers;
-using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
+﻿using DstServerQuery.EntityFrameworkCore.Helpers;
+using DstServerQuery.EntityFrameworkCore.Model.Entities;
+using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Ilyfairy.DstServerQuery.Models;
+namespace DstServerQuery.EntityFrameworkCore.Model;
 
 public abstract class DstDbContext(DbContextOptions options) : DbContext(options)
 {

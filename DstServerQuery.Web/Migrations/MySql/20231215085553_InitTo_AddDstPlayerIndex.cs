@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Ilyfairy.DstServerQuery.Web.Migrations.MySql
+namespace DstServerQuery.Web.Migrations.MySql
 {
     /// <inheritdoc />
     public partial class InitTo_AddDstPlayerIndex : Migration

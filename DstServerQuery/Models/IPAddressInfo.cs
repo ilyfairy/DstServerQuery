@@ -1,13 +1,8 @@
 ﻿using MaxMind.GeoIP2.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
-namespace Ilyfairy.DstServerQuery.Models;
+namespace DstServerQuery.Models;
 
 public record class IPAddressInfo
 {

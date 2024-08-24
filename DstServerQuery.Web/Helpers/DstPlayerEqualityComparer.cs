@@ -1,7 +1,7 @@
-﻿using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
+﻿using DstServerQuery.EntityFrameworkCore.Model.Entities;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Ilyfairy.DstServerQuery.Web.Helpers;
+namespace DstServerQuery.Web.Helpers;
 
 public class DstPlayerEqualityComparer : IEqualityComparer<DstPlayer>
 {

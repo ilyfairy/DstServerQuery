@@ -1,9 +1,8 @@
 ﻿
-using Ilyfairy.DstServerQuery.Helpers.Converters.Cache;
-using System.Net;
+using DstServerQuery.Helpers.Converters.Cache;
 using System.Text;
 
-namespace Ilyfairy.DstServerQuery.Web.Services;
+namespace DstServerQuery.Web.Services;
 
 public class StringCacheService(LobbyServerManager lobbyServerManager) : IHostedService
 {

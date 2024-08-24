@@ -1,8 +1,8 @@
-﻿using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
-using Ilyfairy.DstServerQuery.Models;
+﻿using DstServerQuery.EntityFrameworkCore.Model;
+using DstServerQuery.EntityFrameworkCore.Model.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Ilyfairy.DstServerQuery.Web.Services;
+namespace DstServerQuery.Web.Services;
 
 public class HistoryCleanupService(IServiceProvider serviceProvider, TimeSpan? expiration) : IHostedService
 {

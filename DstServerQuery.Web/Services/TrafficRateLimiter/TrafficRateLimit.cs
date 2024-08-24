@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Ilyfairy.DstServerQuery.Web.Services.TrafficRateLimiter;
+namespace DstServerQuery.Web.Services.TrafficRateLimiter;
 
 /// <summary>
 /// 在<see cref="Window"/>秒内, 只能请求<see cref="TrafficBytes"/>字节

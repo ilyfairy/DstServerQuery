@@ -1,12 +1,13 @@
 ﻿using Asp.Versioning;
-using Ilyfairy.DstServerQuery.EntityFrameworkCore;
-using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
-using Ilyfairy.DstServerQuery.Helpers.Converters;
-using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Models.LobbyData;
-using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
-using Ilyfairy.DstServerQuery.Services;
-using Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer;
+using DstServerQuery;
+using DstServerQuery.EntityFrameworkCore;
+using DstServerQuery.EntityFrameworkCore.Model.Entities;
+using DstServerQuery.Helpers.Converters;
+using DstServerQuery.Models;
+using DstServerQuery.Models.Lobby;
+using DstServerQuery.Models.Lobby.Interfaces.V1;
+using DstServerQuery.Services;
+using DstServerQuery.Web.Helpers.ServerQueryer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Net.Mime;
@@ -14,7 +15,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
-namespace Ilyfairy.DstServerQuery.Web.Controllers.V1;
+namespace DstServerQuery.Web.Controllers.V1;
 
 [ApiController]
 [ApiVersion(1.0)]
@@ -116,7 +117,7 @@ public partial class ApiController : ControllerBase
 
         string query = string.Join("&", queryKey.Select(v => $"{v.Key}={v.Value}"));
         _logger.LogInformation("查询服务器 Count:{Count} Query:{Query}", queryer.Result.Count, query);
-        
+
         return Content(queryer.ToJson(v1JsonOptions), "application/json");
     }
 

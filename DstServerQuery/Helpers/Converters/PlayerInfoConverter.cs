@@ -1,13 +1,9 @@
-﻿using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Helpers;
-using Neo.IronLua;
+﻿using DstServerQuery.Models;
 using System.Collections.Frozen;
-using System.Diagnostics;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Helpers.Converters;
+namespace DstServerQuery.Helpers.Converters;
 
 public class PlayersInfoWitTranslateConverter : JsonConverter<LobbyPlayerInfo[]>
 {

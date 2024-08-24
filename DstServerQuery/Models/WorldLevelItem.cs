@@ -1,8 +1,8 @@
-﻿using Ilyfairy.DstServerQuery.Helpers;
-using Ilyfairy.DstServerQuery.Helpers.Converters.Cache;
+﻿using DstServerQuery.Helpers;
+using DstServerQuery.Helpers.Converters.Cache;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Models;
+namespace DstServerQuery.Models;
 
 public class WorldLevelRawItem
 {

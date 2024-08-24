@@ -1,11 +1,10 @@
 ﻿using System.Buffers;
 using System.Collections.Concurrent;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Helpers.Converters.Cache;
+namespace DstServerQuery.Helpers.Converters.Cache;
 
 public class WorldGenRawCacheConverter : JsonConverter<string>
 {

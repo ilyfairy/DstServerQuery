@@ -3,7 +3,7 @@ using Ilyfairy.DstDownloaders;
 using Serilog;
 using SteamDownloader.Helpers;
 
-namespace Ilyfairy.DstServerQuery.Services;
+namespace DstServerQuery.Services;
 
 public class DstVersionService : IDisposable
 {

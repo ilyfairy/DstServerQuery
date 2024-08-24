@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Web.Helpers.ServerQueryer.JsonConverters;
+namespace DstServerQuery.Web.Helpers.ServerQueryer.JsonConverter;
 
 public class ToStringJsonConverter : JsonConverter<string>
 {

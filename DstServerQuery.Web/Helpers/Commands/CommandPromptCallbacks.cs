@@ -6,8 +6,9 @@ using PrettyPrompt.Highlighting;
 using System.CommandLine;
 using PrettyPrompt;
 using Spectre.Console;
-using System.Runtime.CompilerServices;
-using Ilyfairy.DstServerQuery.Web.Helpers.Console;
+using DstServerQuery.Web.Helpers.Console;
+
+namespace DstServerQuery.Web.Helpers.Commands;
 
 public class CommandPromptCallbacks(Command rootCommand, ControllableConsoleSink controllableConsoleSink) : PromptCallbacks
 {

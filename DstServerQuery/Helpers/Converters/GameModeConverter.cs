@@ -1,8 +1,8 @@
-﻿using Ilyfairy.DstServerQuery.Models.LobbyData.Units;
+﻿using DstServerQuery.Models.Lobby.Units;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Helpers.Converters;
+namespace DstServerQuery.Helpers.Converters;
 
 public class GameModeWriteConverter : JsonConverter<GameMode>
 {

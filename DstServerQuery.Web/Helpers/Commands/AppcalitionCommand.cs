@@ -6,6 +6,8 @@ using System.CommandLine;
 using Spectre.Console;
 using System.Diagnostics.CodeAnalysis;
 
+namespace DstServerQuery.Web.Helpers.Commands;
+
 public class AppcalitionCommand : RootCommand
 {
     public Parser? Parser { get; set; }

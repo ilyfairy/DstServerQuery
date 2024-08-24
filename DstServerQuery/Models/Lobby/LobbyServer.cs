@@ -1,13 +1,11 @@
-﻿using Ilyfairy.DstServerQuery.Helpers;
-using Ilyfairy.DstServerQuery.Helpers.Converters;
-using Ilyfairy.DstServerQuery.Models.LobbyData.Interfaces;
-using Ilyfairy.DstServerQuery.Models.LobbyData.Units;
+﻿using DstServerQuery.Helpers;
+using DstServerQuery.Models.Lobby.Interfaces.V1;
+using DstServerQuery.Models.Lobby.Interfaces.V2;
+using DstServerQuery.Models.Lobby.Units;
 using System.Diagnostics.CodeAnalysis;
-using System.Net;
-using System.Text;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Models.LobbyData;
+namespace DstServerQuery.Models.Lobby;
 
 /// <summary>
 /// 简略信息, 用于反序列化
@@ -19,7 +17,7 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
 
     public DateTimeOffset GetUpdateTime() => Raw?._LastUpdate ?? throw new Exception("Raw不能为null");
 
-    
+
     public string Name { get; set; } //房间名称
 
     //[JsonConverter(typeof(IPAddressInfoConverter))]
@@ -154,7 +152,7 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
         ArgumentNullException.ThrowIfNull(Raw);
 
         Name = Raw.Name;
-        if(Address?.IP != Raw.Address)
+        if (Address?.IP != Raw.Address)
         {
             Address = DstConverterHelper.ParseAddress(Raw.Address);
         }
@@ -175,7 +173,7 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
         Session = Raw.Session;
         IsClanOnly = Raw.IsClanOnly;
         IsFriendsOnly = Raw.IsFriendsOnly;
-        if(Slaves?.Length != Raw.Slaves?.Count)
+        if (Slaves?.Length != Raw.Slaves?.Count)
         {
             Slaves = DstConverterHelper.WorldLevelRawToArray(Raw.Slaves);
         }
@@ -197,7 +195,7 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
 
     private void Merge(LobbyServerRaw otherRaw)
     {
-        if (this.Raw is null)
+        if (Raw is null)
         {
             Raw = new();
         }
@@ -207,38 +205,38 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
         Raw._LobbyPlatform = otherRaw._LobbyPlatform;
         Raw._IsDetailed = otherRaw._IsDetailed;
 
-        this.Raw.Name = otherRaw.Name;
-        this.Raw.Address = otherRaw.Address;
-        this.Raw.Port = otherRaw.Port;
-        this.Raw.RowId = otherRaw.RowId;
-        this.Raw.Connected = otherRaw.Connected;
-        this.Raw.IsDedicated = otherRaw.IsDedicated;
-        this.Raw.Host = otherRaw.Host;
-        this.Raw.Intent = otherRaw.Intent;
-        this.Raw.MaxConnections = otherRaw.MaxConnections;
-        this.Raw.Mode = otherRaw.Mode;
-        this.Raw.IsMods = otherRaw.IsMods;
-        this.Raw.IsPassword = otherRaw.IsPassword;
-        this.Raw.Platform = otherRaw.Platform;
-        this.Raw.Season = otherRaw.Season;
-        this.Raw.IsPvp = otherRaw.IsPvp;
-        this.Raw.Version = otherRaw.Version;
-        this.Raw.Session = otherRaw.Session;
+        Raw.Name = otherRaw.Name;
+        Raw.Address = otherRaw.Address;
+        Raw.Port = otherRaw.Port;
+        Raw.RowId = otherRaw.RowId;
+        Raw.Connected = otherRaw.Connected;
+        Raw.IsDedicated = otherRaw.IsDedicated;
+        Raw.Host = otherRaw.Host;
+        Raw.Intent = otherRaw.Intent;
+        Raw.MaxConnections = otherRaw.MaxConnections;
+        Raw.Mode = otherRaw.Mode;
+        Raw.IsMods = otherRaw.IsMods;
+        Raw.IsPassword = otherRaw.IsPassword;
+        Raw.Platform = otherRaw.Platform;
+        Raw.Season = otherRaw.Season;
+        Raw.IsPvp = otherRaw.IsPvp;
+        Raw.Version = otherRaw.Version;
+        Raw.Session = otherRaw.Session;
 
-        this.Raw.IsClanOnly = otherRaw.IsClanOnly;
-        this.Raw.IsFriendsOnly = otherRaw.IsFriendsOnly;
-        this.Raw.Slaves = otherRaw.Slaves;
-        this.Raw.Secondaries = otherRaw.Secondaries;
-        this.Raw.IsAllowNewPlayers = otherRaw.IsAllowNewPlayers;
-        this.Raw.IsServerPaused = otherRaw.IsServerPaused;
-        this.Raw.SteamId = otherRaw.SteamId;
-        this.Raw.SteamRoom = otherRaw.SteamRoom;
-        this.Raw.Tags = otherRaw.Tags;
-        this.Raw.IsClientHosted = otherRaw.IsClientHosted;
-        this.Raw.Guid = otherRaw.Guid;
-        this.Raw.OwnerNetId = otherRaw.OwnerNetId;
-        this.Raw.IsLanOnly = otherRaw.IsLanOnly;
-        this.Raw.SteamClanId = otherRaw.SteamClanId;
+        Raw.IsClanOnly = otherRaw.IsClanOnly;
+        Raw.IsFriendsOnly = otherRaw.IsFriendsOnly;
+        Raw.Slaves = otherRaw.Slaves;
+        Raw.Secondaries = otherRaw.Secondaries;
+        Raw.IsAllowNewPlayers = otherRaw.IsAllowNewPlayers;
+        Raw.IsServerPaused = otherRaw.IsServerPaused;
+        Raw.SteamId = otherRaw.SteamId;
+        Raw.SteamRoom = otherRaw.SteamRoom;
+        Raw.Tags = otherRaw.Tags;
+        Raw.IsClientHosted = otherRaw.IsClientHosted;
+        Raw.Guid = otherRaw.Guid;
+        Raw.OwnerNetId = otherRaw.OwnerNetId;
+        Raw.IsLanOnly = otherRaw.IsLanOnly;
+        Raw.SteamClanId = otherRaw.SteamClanId;
     }
 
 
@@ -248,40 +246,40 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
     {
         LobbyServer obj = new();
 
-        obj.Name = this.Name;
-        obj.Address = this.Address;
-        obj.Port = this.Port;
-        obj.RowId = this.RowId;
-        obj.Connected = this.Connected;
-        obj.IsDedicated = this.IsDedicated;
-        obj.Host = this.Host;
-        obj.Intent = this.Intent;
-        obj.MaxConnections = this.MaxConnections;
-        obj.Mode = this.Mode;
-        obj.IsMods = this.IsMods;
-        obj.IsPassword = this.IsPassword;
-        obj.Platform = this.Platform;
-        obj.Season = this.Season;
-        obj.IsPvp = this.IsPvp;
-        obj.Version = this.Version;
-        obj.Session = this.Session;
+        obj.Name = Name;
+        obj.Address = Address;
+        obj.Port = Port;
+        obj.RowId = RowId;
+        obj.Connected = Connected;
+        obj.IsDedicated = IsDedicated;
+        obj.Host = Host;
+        obj.Intent = Intent;
+        obj.MaxConnections = MaxConnections;
+        obj.Mode = Mode;
+        obj.IsMods = IsMods;
+        obj.IsPassword = IsPassword;
+        obj.Platform = Platform;
+        obj.Season = Season;
+        obj.IsPvp = IsPvp;
+        obj.Version = Version;
+        obj.Session = Session;
 
-        obj.IsClanOnly = this.IsClanOnly;
-        obj.IsFriendsOnly = this.IsFriendsOnly;
-        obj.Slaves = this.Slaves;
-        obj.Secondaries = this.Secondaries;
-        obj.IsAllowNewPlayers = this.IsAllowNewPlayers;
-        obj.IsServerPaused = this.IsServerPaused;
-        obj.SteamId = this.SteamId;
-        obj.SteamRoom = this.SteamRoom;
-        obj.Tags = this.Tags;
-        obj.IsClientHosted = this.IsClientHosted;
-        obj.Guid = this.Guid;
-        obj.OwnerNetId = this.OwnerNetId;
-        obj.IsLanOnly = this.IsLanOnly;
-        obj.SteamClanId = this.SteamClanId;
+        obj.IsClanOnly = IsClanOnly;
+        obj.IsFriendsOnly = IsFriendsOnly;
+        obj.Slaves = Slaves;
+        obj.Secondaries = Secondaries;
+        obj.IsAllowNewPlayers = IsAllowNewPlayers;
+        obj.IsServerPaused = IsServerPaused;
+        obj.SteamId = SteamId;
+        obj.SteamRoom = SteamRoom;
+        obj.Tags = Tags;
+        obj.IsClientHosted = IsClientHosted;
+        obj.Guid = Guid;
+        obj.OwnerNetId = OwnerNetId;
+        obj.IsLanOnly = IsLanOnly;
+        obj.SteamClanId = SteamClanId;
 
-        obj.Raw = this.Raw;
+        obj.Raw = Raw;
 
         return obj;
     }
@@ -290,41 +288,41 @@ public class LobbyServer : ICloneable, ILobbyServerV1, ILobbyServerV2
     {
         if (dest is null) return;
 
-        dest.Name = this.Name;
-        dest.Address = this.Address;
-        dest.Port = this.Port;
-        dest.RowId = this.RowId;
-        dest.Connected = this.Connected;
-        dest.IsDedicated = this.IsDedicated;
-        dest.Host = this.Host;
-        dest.Intent = this.Intent;
-        dest.MaxConnections = this.MaxConnections;
-        dest.Mode = this.Mode;
-        dest.IsMods = this.IsMods;
-        dest.IsPassword = this.IsPassword;
-        dest.Platform = this.Platform;
-        dest.Season = this.Season;
-        dest.IsPvp = this.IsPvp;
-        dest.Version = this.Version;
-        dest.Session = this.Session;
+        dest.Name = Name;
+        dest.Address = Address;
+        dest.Port = Port;
+        dest.RowId = RowId;
+        dest.Connected = Connected;
+        dest.IsDedicated = IsDedicated;
+        dest.Host = Host;
+        dest.Intent = Intent;
+        dest.MaxConnections = MaxConnections;
+        dest.Mode = Mode;
+        dest.IsMods = IsMods;
+        dest.IsPassword = IsPassword;
+        dest.Platform = Platform;
+        dest.Season = Season;
+        dest.IsPvp = IsPvp;
+        dest.Version = Version;
+        dest.Session = Session;
 
-        dest.IsClanOnly = this.IsClanOnly;
-        dest.IsFriendsOnly = this.IsFriendsOnly;
-        dest.Slaves = this.Slaves;
-        dest.Secondaries = this.Secondaries;
-        dest.IsAllowNewPlayers = this.IsAllowNewPlayers;
-        dest.IsServerPaused = this.IsServerPaused;
-        dest.SteamId = this.SteamId;
-        dest.SteamRoom = this.SteamRoom;
-        dest.Tags = this.Tags;
-        dest.IsClientHosted = this.IsClientHosted;
-        dest.Guid = this.Guid;
-        dest.OwnerNetId = this.OwnerNetId;
-        dest.IsLanOnly = this.IsLanOnly;
-        dest.SteamClanId = this.SteamClanId;
+        dest.IsClanOnly = IsClanOnly;
+        dest.IsFriendsOnly = IsFriendsOnly;
+        dest.Slaves = Slaves;
+        dest.Secondaries = Secondaries;
+        dest.IsAllowNewPlayers = IsAllowNewPlayers;
+        dest.IsServerPaused = IsServerPaused;
+        dest.SteamId = SteamId;
+        dest.SteamRoom = SteamRoom;
+        dest.Tags = Tags;
+        dest.IsClientHosted = IsClientHosted;
+        dest.Guid = Guid;
+        dest.OwnerNetId = OwnerNetId;
+        dest.IsLanOnly = IsLanOnly;
+        dest.SteamClanId = SteamClanId;
 
         //dest._LastUpdate = this._LastUpdate;
-        dest.Raw = this.Raw;
+        dest.Raw = Raw;
     }
 
 }

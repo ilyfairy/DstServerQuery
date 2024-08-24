@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace Ilyfairy.DstServerQuery.Helpers;
+namespace DstServerQuery.Helpers;
 
 public class MemoryByteEqualityComparer : IEqualityComparer<ReadOnlyMemory<byte>>
 {

@@ -1,12 +1,13 @@
-﻿using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
-using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Models.LobbyData;
-using Ilyfairy.DstServerQuery.Models.Requests;
+﻿using DstServerQuery.EntityFrameworkCore.Model;
+using DstServerQuery.EntityFrameworkCore.Model.Entities;
+using DstServerQuery.Models;
+using DstServerQuery.Models.Lobby;
+using DstServerQuery.Models.Requests;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Ilyfairy.DstServerQuery.EntityFrameworkCore;
+namespace DstServerQuery.EntityFrameworkCore;
 
 /// <summary>
 /// 大厅服务器历史房间数量管理器
@@ -81,28 +82,28 @@ public class HistoryCountService
 
         foreach (var item in data)
         {
-            countInfo.AllPlayerCount += isCountFromPlayers ? (item.Players?.Length ?? 0) : item.Connected;
+            countInfo.AllPlayerCount += isCountFromPlayers ? item.Players?.Length ?? 0 : item.Connected;
             switch (item.Platform)
             {
                 case Platform.Steam:
                     countInfo.SteamServerCount++;
-                    countInfo.SteamPlayerCount += isCountFromPlayers ? (item.Players?.Length ?? 0) : item.Connected;
+                    countInfo.SteamPlayerCount += isCountFromPlayers ? item.Players?.Length ?? 0 : item.Connected;
                     break;
                 case Platform.PlayStation:
                     countInfo.PlayStationServerCount++;
-                    countInfo.PlayStationPlayerCount += isCountFromPlayers ? (item.Players?.Length ?? 0) : item.Connected;
+                    countInfo.PlayStationPlayerCount += isCountFromPlayers ? item.Players?.Length ?? 0 : item.Connected;
                     break;
                 case Platform.WeGame or Platform.QQGame:
                     countInfo.WeGameServerCount++;
-                    countInfo.WeGamePlayerCount += isCountFromPlayers ? (item.Players?.Length ?? 0) : item.Connected;
+                    countInfo.WeGamePlayerCount += isCountFromPlayers ? item.Players?.Length ?? 0 : item.Connected;
                     break;
                 case Platform.Xbox:
                     countInfo.XboxServerCount++;
-                    countInfo.XboxPlayerCount += isCountFromPlayers ? (item.Players?.Length ?? 0) : item.Connected;
+                    countInfo.XboxPlayerCount += isCountFromPlayers ? item.Players?.Length ?? 0 : item.Connected;
                     break;
                 case Platform.Switch:
                     countInfo.SwitchServerCount++;
-                    countInfo.SwitchPlayerCount += isCountFromPlayers ? (item.Players?.Length ?? 0) : item.Connected;
+                    countInfo.SwitchPlayerCount += isCountFromPlayers ? item.Players?.Length ?? 0 : item.Connected;
                     break;
             }
         }

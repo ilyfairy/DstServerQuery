@@ -1,4 +1,4 @@
-﻿namespace Ilyfairy.DstServerQuery.Models;
+﻿namespace DstServerQuery.Models;
 
 /// <summary>
 /// 平台

@@ -1,4 +1,4 @@
-﻿namespace Ilyfairy.DstServerQuery.Web.Models.Http;
+﻿namespace DstServerQuery.Web.Models.Http;
 
 public class PlayerServerHistoryResponse : ResponseBase
 {

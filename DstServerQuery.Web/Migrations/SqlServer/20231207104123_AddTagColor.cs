@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Ilyfairy.DstServerQuery.Web.Migrations.SqlServer
+namespace DstServerQuery.Web.Migrations.SqlServer
 {
     /// <inheritdoc />
     public partial class AddTagColor : Migration

@@ -1,11 +1,11 @@
 ﻿using System.Buffers;
+using DstServerQuery.Web.Models.Configurations;
 using Ilyfairy.DstDownloaders;
-using Ilyfairy.DstServerQuery.Web.Models.Configurations;
 using SteamDownloader;
 using SteamDownloader.Helpers;
 using SteamKit2;
 
-namespace Ilyfairy.DstServerQuery.Web.Helpers;
+namespace DstServerQuery.Web.Helpers;
 
 public static class Helper
 {

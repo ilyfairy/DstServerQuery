@@ -1,7 +1,7 @@
-﻿using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
-using Ilyfairy.DstServerQuery.Models;
+﻿using DstServerQuery.EntityFrameworkCore.Model.Entities;
+using DstServerQuery.Models;
 
-namespace Ilyfairy.DstServerQuery.Web.Models;
+namespace DstServerQuery.Web.Models;
 
 /// <summary>
 /// 玩家信息

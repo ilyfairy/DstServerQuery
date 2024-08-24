@@ -1,6 +1,6 @@
-﻿using Ilyfairy.DstServerQuery.Helpers.Converters.Cache;
-using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Services;
+﻿using DstServerQuery.Helpers;
+using DstServerQuery.Models;
+using DstServerQuery.Services;
 using Neo.IronLua;
 using Serilog;
 using System.Buffers;
@@ -10,7 +10,7 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
-namespace Ilyfairy.DstServerQuery.Helpers;
+namespace DstServerQuery.Helpers;
 
 public static partial class DstConverterHelper
 {

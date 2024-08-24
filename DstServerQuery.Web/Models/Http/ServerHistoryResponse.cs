@@ -1,7 +1,6 @@
-﻿using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
-using Microsoft.AspNetCore.Mvc;
+﻿using DstServerQuery.EntityFrameworkCore.Model.Entities;
 
-namespace Ilyfairy.DstServerQuery.Web.Models.Http;
+namespace DstServerQuery.Web.Models.Http;
 
 public class ServerHistoryResponse : ResponseBase
 {

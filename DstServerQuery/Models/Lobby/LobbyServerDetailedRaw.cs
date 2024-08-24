@@ -1,7 +1,7 @@
-﻿using Ilyfairy.DstServerQuery.Helpers.Converters.Cache;
+﻿using DstServerQuery.Helpers.Converters.Cache;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Models.LobbyData;
+namespace DstServerQuery.Models.Lobby;
 
 public class LobbyServerDetailedRaw : LobbyServerRaw
 {

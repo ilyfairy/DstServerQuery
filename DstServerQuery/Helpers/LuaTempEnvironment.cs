@@ -1,6 +1,6 @@
 ﻿using Neo.IronLua;
 
-namespace Ilyfairy.DstServerQuery.Helpers;
+namespace DstServerQuery.Helpers;
 
 public class LuaTempEnvironment
 {
@@ -8,7 +8,7 @@ public class LuaTempEnvironment
     private readonly Lazy<LuaGlobal> laziedLuaGlobal;
 
     public static LuaTempEnvironment Instance => laziedInstance.Value;
-    
+
     private readonly Lua lua = new();
     private LuaGlobal luaGlobal => laziedLuaGlobal.Value;
 

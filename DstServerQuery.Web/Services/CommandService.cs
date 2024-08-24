@@ -1,12 +1,13 @@
-﻿using Ilyfairy.DstServerQuery.Web.Helpers.Console;
+﻿using DstServerQuery.Web.Helpers.Commands;
+using DstServerQuery.Web.Helpers.Console;
 using PrettyPrompt;
 using PrettyPrompt.Highlighting;
 using System.CommandLine.Parsing;
 
-namespace Ilyfairy.DstServerQuery.Web.Services;
+namespace DstServerQuery.Web.Services;
 
 public class CommandService(
-    IHost host, 
+    IHost host,
     ControllableConsoleSink controllableConsoleSink
     )
 {
@@ -31,7 +32,7 @@ public class CommandService(
         while (true)
         {
             var result = await Prompt!.ReadLineAsync();
-            
+
             await Command.Parser!.InvokeAsync(result.Text);
             if (Command.IsExit || cts.Token.IsCancellationRequested)
             {

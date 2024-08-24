@@ -1,14 +1,16 @@
-﻿using EFCore.BulkExtensions;
-using Ilyfairy.DstServerQuery.EntityFrameworkCore;
-using Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
-using Ilyfairy.DstServerQuery.Models;
-using Ilyfairy.DstServerQuery.Models.LobbyData;
-using Ilyfairy.DstServerQuery.Models.Requests;
-using Ilyfairy.DstServerQuery.Web.Helpers;
+﻿using DstServerQuery;
+using DstServerQuery.EntityFrameworkCore;
+using DstServerQuery.EntityFrameworkCore.Model;
+using DstServerQuery.EntityFrameworkCore.Model.Entities;
+using DstServerQuery.Models;
+using DstServerQuery.Models.Lobby;
+using DstServerQuery.Models.Requests;
+using DstServerQuery.Web.Helpers;
+using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 
-namespace Ilyfairy.DstServerQuery.Web.Services;
+namespace DstServerQuery.Web.Services;
 
 public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig config, IServiceScopeFactory serviceScopeFactory, LobbyServerManager lobbyServerManager, HistoryCountService historyCountManager) : IHostedService
 {

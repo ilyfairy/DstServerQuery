@@ -1,4 +1,4 @@
-﻿namespace Ilyfairy.DstServerQuery.Models.Requests;
+﻿namespace DstServerQuery.Models.Requests;
 
 public class DstWebConfig
 {

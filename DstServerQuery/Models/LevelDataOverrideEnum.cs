@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Ilyfairy.DstServerQuery.Models;
+﻿namespace DstServerQuery.Models;
 
 /// <summary>
 /// 昼夜选项
@@ -193,7 +189,7 @@ public enum GrowthSpeed
     /// <summary>
     /// 极快
     /// </summary>
-    veryfast, 
+    veryfast,
 }
 /// <summary>
 /// 特殊活动

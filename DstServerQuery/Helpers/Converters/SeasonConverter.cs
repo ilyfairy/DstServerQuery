@@ -1,9 +1,8 @@
-﻿using Ilyfairy.DstServerQuery.Models.LobbyData.Units;
-using Ilyfairy.DstServerQuery.Helpers;
+﻿using DstServerQuery.Models.Lobby.Units;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Helpers.Converters;
+namespace DstServerQuery.Helpers.Converters;
 
 public class SeasonWriteConverter : JsonConverter<Season>
 {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
-namespace Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities;
+namespace DstServerQuery.EntityFrameworkCore.Model.Entities;
 
 [Index(nameof(Name), IsUnique = true)]
 public abstract class ColorItem

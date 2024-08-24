@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstServerQuery.Web.Models;
+namespace DstServerQuery.Web.Models.Http;
 
 /// <summary>
 /// 响应

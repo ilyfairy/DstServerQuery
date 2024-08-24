@@ -1,8 +1,8 @@
 ﻿using DstDownloaders.Mods;
-using Ilyfairy.DstServerQuery.Web.Helpers;
-using Ilyfairy.DstServerQuery.Web.Models.Configurations;
+using DstServerQuery.Web.Helpers;
+using DstServerQuery.Web.Models.Configurations;
 
-namespace Ilyfairy.DstServerQuery.Web.Services;
+namespace DstServerQuery.Web.Services;
 
 public class DstModsFileHosedService(IServiceProvider serviceProvider) : IHostedService
 {
@@ -88,7 +88,7 @@ public class DstModsFileHosedService(IServiceProvider serviceProvider) : IHosted
                     lastUpdateTime = DateTimeOffset.Now;
                     Task.Delay(TimeSpan.FromMinutes(5)).ContinueWith(task =>
                     {
-                        if(DateTimeOffset.Now - lastUpdateTime > TimeSpan.FromMinutes(5))
+                        if (DateTimeOffset.Now - lastUpdateTime > TimeSpan.FromMinutes(5))
                         {
                             timeoutCts.Cancel();
                         }

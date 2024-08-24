@@ -6,6 +6,7 @@
 		<Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <RootNamespace>DstServerQuery</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -1,4 +1,4 @@
-﻿namespace Ilyfairy.DstServerQuery.Web.Models.Configurations;
+﻿namespace DstServerQuery.Web.Models.Configurations;
 
 public class DstModsFileServiceOptions
 {
