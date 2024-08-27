@@ -88,7 +88,7 @@ if (databaseType is DatabaseType.SqlServer)
     string connectionString = builder.Configuration.GetConnectionString(databaseType.ToString())!;
     builder.Services.AddSqlServer<SqlServerDstDbContext>(connectionString, options =>
     {
-        options.MigrationsAssembly("Ilyfairy.DstServerQuery.Web");
+        options.MigrationsAssembly("DstServerQuery.Web");
     });
     builder.Services.AddScoped<DstDbContext>(v => v.GetRequiredService<SqlServerDstDbContext>());
 }
@@ -99,7 +99,7 @@ else if (databaseType is DatabaseType.MySql)
     string connectionString = builder.Configuration.GetConnectionString(databaseType.ToString())!;
     builder.Services.AddMySql<MySqlDstDbContext>(connectionString, ServerVersion.AutoDetect(connectionString), options =>
     {
-        options.MigrationsAssembly("Ilyfairy.DstServerQuery.Web");
+        options.MigrationsAssembly("DstServerQuery.Web");
     });
     //builder.Services.AddDbContext<DstDbContext>(options =>
     //{
@@ -114,7 +114,7 @@ else if (databaseType is DatabaseType.Sqlite)
     string connectionString = builder.Configuration.GetConnectionString(databaseType.ToString())!;
     builder.Services.AddSqlite<SqliteDstDbContext>(connectionString, options =>
     {
-        options.MigrationsAssembly("Ilyfairy.DstServerQuery.Web");
+        options.MigrationsAssembly("DstServerQuery.Web");
     });
     builder.Services.AddScoped<DstDbContext>(v => v.GetRequiredService<SqliteDstDbContext>());
 }
@@ -125,7 +125,7 @@ else if (databaseType is DatabaseType.PostgreSql)
     string connectionString = builder.Configuration.GetConnectionString(databaseType.ToString())!;
     builder.Services.AddNpgsql<PostgreSqlDstDbContext>(connectionString, options =>
     {
-        options.MigrationsAssembly("Ilyfairy.DstServerQuery.Web");
+        options.MigrationsAssembly("DstServerQuery.Web");
     });
     builder.Services.AddScoped<DstDbContext>(v => v.GetRequiredService<PostgreSqlDstDbContext>());
 }
@@ -278,7 +278,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         options.IncludeXmlComments(currentXmlFilePath);
     }
-    var queryXmlFilePath = Path.Combine(AppContext.BaseDirectory, "Ilyfairy.DstServerQuery.xml");
+    var queryXmlFilePath = Path.Combine(AppContext.BaseDirectory, "DstServerQuery.xml");
     if (File.Exists(queryXmlFilePath))
     {
         options.IncludeXmlComments(queryXmlFilePath);

@@ -26,7 +26,7 @@ namespace DstServerQuery.Web.Migrations.SqlServer
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstDaysInfo", b =>
+            modelBuilder.Entity("DstServerQuery.EntityFrameworkCore.Models.Entities.DstDaysInfo", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -48,7 +48,7 @@ namespace DstServerQuery.Web.Migrations.SqlServer
                     b.ToTable("DaysInfos");
                 });
 
-            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstPlayer", b =>
+            modelBuilder.Entity("DstServerQuery.EntityFrameworkCore.Models.Entities.DstPlayer", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -67,7 +67,7 @@ namespace DstServerQuery.Web.Migrations.SqlServer
                     b.ToTable("Players");
                 });
 
-            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistory", b =>
+            modelBuilder.Entity("DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistory", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -106,7 +106,7 @@ namespace DstServerQuery.Web.Migrations.SqlServer
                     b.ToTable("ServerHistories");
                 });
 
-            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistoryItem", b =>
+            modelBuilder.Entity("DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistoryItem", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -146,7 +146,7 @@ namespace DstServerQuery.Web.Migrations.SqlServer
                     b.ToTable("ServerHistoryItems");
                 });
 
-            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.HistoryServerItemPlayer", b =>
+            modelBuilder.Entity("DstServerQuery.EntityFrameworkCore.Models.Entities.HistoryServerItemPlayer", b =>
                 {
                     b.Property<long>("HistoryServerItemId")
                         .HasColumnType("bigint");
@@ -161,7 +161,7 @@ namespace DstServerQuery.Web.Migrations.SqlServer
                     b.ToTable("HistoryServerItemPlayerPair");
                 });
 
-            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.ServerCountInfo", b =>
+            modelBuilder.Entity("DstServerQuery.EntityFrameworkCore.Models.Entities.ServerCountInfo", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -213,7 +213,7 @@ namespace DstServerQuery.Web.Migrations.SqlServer
                     b.ToTable("ServerHistoryCountInfos");
                 });
 
-            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.TagColorItem", b =>
+            modelBuilder.Entity("DstServerQuery.EntityFrameworkCore.Models.Entities.TagColorItem", b =>
                 {
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(450)");
@@ -230,13 +230,13 @@ namespace DstServerQuery.Web.Migrations.SqlServer
                     b.ToTable("TagColors");
                 });
 
-            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistoryItem", b =>
+            modelBuilder.Entity("DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistoryItem", b =>
                 {
-                    b.HasOne("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstDaysInfo", "DaysInfo")
+                    b.HasOne("DstServerQuery.EntityFrameworkCore.Models.Entities.DstDaysInfo", "DaysInfo")
                         .WithOne("ServerItem")
-                        .HasForeignKey("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistoryItem", "DaysInfoId");
+                        .HasForeignKey("DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistoryItem", "DaysInfoId");
 
-                    b.HasOne("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistory", "Server")
+                    b.HasOne("DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistory", "Server")
                         .WithMany("Items")
                         .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -247,15 +247,15 @@ namespace DstServerQuery.Web.Migrations.SqlServer
                     b.Navigation("Server");
                 });
 
-            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.HistoryServerItemPlayer", b =>
+            modelBuilder.Entity("DstServerQuery.EntityFrameworkCore.Models.Entities.HistoryServerItemPlayer", b =>
                 {
-                    b.HasOne("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistoryItem", "HistoryServerItem")
+                    b.HasOne("DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistoryItem", "HistoryServerItem")
                         .WithMany()
                         .HasForeignKey("HistoryServerItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstPlayer", "Player")
+                    b.HasOne("DstServerQuery.EntityFrameworkCore.Models.Entities.DstPlayer", "Player")
                         .WithMany()
                         .HasForeignKey("PlayerId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -266,13 +266,13 @@ namespace DstServerQuery.Web.Migrations.SqlServer
                     b.Navigation("Player");
                 });
 
-            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstDaysInfo", b =>
+            modelBuilder.Entity("DstServerQuery.EntityFrameworkCore.Models.Entities.DstDaysInfo", b =>
                 {
                     b.Navigation("ServerItem")
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Ilyfairy.DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistory", b =>
+            modelBuilder.Entity("DstServerQuery.EntityFrameworkCore.Models.Entities.DstServerHistory", b =>
                 {
                     b.Navigation("Items");
                 });
