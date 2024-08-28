@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Ilyfairy.DstDownloaders;
+using DstDownloaders;
 using Serilog;
 using SteamDownloader.Helpers;
 
@@ -22,10 +22,10 @@ public class DstVersionService : IDisposable
     public Func<DstDownloader> DstDownloaderFactory { get; set; } = () => new();
 
     [MemberNotNull(nameof(currentDst))]
-    private async Task LoginAsync(CancellationToken cancellationToken = default)
+    private async Task LoginAsync()
     {
         currentDst = DstDownloaderFactory();
-        await currentDst.LoginAsync(cancellationToken);
+        await currentDst.LoginAsync();
     }
 
     public async Task RunAsync(long? defaultVersion = null)
@@ -56,7 +56,7 @@ public class DstVersionService : IDisposable
             tempServers = tempServers.Concat(await currentDst.Steam.GetCdnServersAsync(200).ConfigureAwait(false));
             var servers = tempServers.DistinctBy(v => v.SourceId).ToArray();
 
-            await currentDst.Steam.HttpClient.GetAsync(servers.First().Url, HttpCompletionOption.ResponseHeadersRead);
+            await currentDst.Steam.HttpClient.GetAsync(servers.First().Url, HttpCompletionOption.ResponseHeadersRead); // 预热
 
             var stableServers = await SteamHelper.TestContentServerConnectionAsync(currentDst.Steam.HttpClient, servers, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
             ContentServers = stableServers.ToList();

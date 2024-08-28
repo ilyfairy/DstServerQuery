@@ -1,13 +1,13 @@
 ﻿@DstServerQuery.Web_HostAddress = http://127.0.0.1:3000
-@version:apiVersion = 2
+@ApiVersion = 2
 
 //获取饥荒版本
-POST {{DstServerQuery.Web_HostAddress}}/api/v{{version:apiVersion}}/server/Version
+POST {{DstServerQuery.Web_HostAddress}}/api/v{{ApiVersion}}/server/Version
 
 ###
 
 //请求列表
-POST {{DstServerQuery.Web_HostAddress}}/api/v{{version:apiVersion}}/server/list
+POST {{DstServerQuery.Web_HostAddress}}/api/v{{ApiVersion}}/server/list
 Content-Type: application/json
 
 {

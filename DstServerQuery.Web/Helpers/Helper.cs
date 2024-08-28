@@ -1,6 +1,6 @@
 ﻿using System.Buffers;
+using DstDownloaders;
 using DstServerQuery.Web.Models.Configurations;
-using Ilyfairy.DstDownloaders;
 using SteamDownloader;
 using SteamDownloader.Helpers;
 using SteamKit2;

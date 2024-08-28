@@ -50,7 +50,7 @@ public class CommandPromptCallbacks(Command rootCommand, ControllableConsoleSink
                 );
 
             return item;
-        }).ToList();
+        }).ToArray();
 
         return Task.FromResult(result);
     }

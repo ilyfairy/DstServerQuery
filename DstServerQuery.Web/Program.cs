@@ -1,5 +1,6 @@
 //入口点
 using AspNetCoreRateLimit;
+using DstDownloaders;
 using DstDownloaders.Mods;
 using DstServerQuery;
 using DstServerQuery.EntityFrameworkCore;
@@ -14,7 +15,6 @@ using DstServerQuery.Web.Helpers.Console;
 using DstServerQuery.Web.Models.Configurations;
 using DstServerQuery.Web.Services;
 using DstServerQuery.Web.Services.TrafficRateLimiter;
-using Ilyfairy.DstDownloaders;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;

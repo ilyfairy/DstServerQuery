@@ -29,7 +29,7 @@ public class DstModsFileHosedService(IServiceProvider serviceProvider) : IHosted
         logger.LogInformation("DstModsFileService FileProxyUrl: {Url}", options.FileUrlProxy);
         await service.InitializeAsync(async dst =>
         {
-            await dst.LoginAsync(cts.Token);
+            await dst.LoginAsync();
             await Helper.EnsureContentServerAsync(dst, cts.Token);
         });
         logger.LogInformation("DstModsFileService 登录成功");
