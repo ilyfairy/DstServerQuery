@@ -28,10 +28,13 @@ public class DstVersionService : IDisposable
         await currentDst.LoginAsync();
     }
 
-    public async Task RunAsync(long? defaultVersion = null)
+    public async Task RunAsync(long? defaultVersion = null, bool disableUpdate = false)
     {
         Version = defaultVersion;
         _logger.Information($"饥荒初始版本为 {defaultVersion}");
+
+        if (disableUpdate)
+            return;
 
         while (true)
         {

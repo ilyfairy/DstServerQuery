@@ -1,4 +1,4 @@
-//入口点
+﻿//入口点
 using AspNetCoreRateLimit;
 using DstDownloaders;
 using DstDownloaders.Mods;
@@ -382,13 +382,12 @@ app.Lifetime.ApplicationStarted.Register(async () =>
         return new DstDownloader(Helper.CreateSteamSession(app.Services));
     };
     var defaultVersion = cache.Get<long?>("DstVersion") ?? dstVersionServiceOptions.DefaultVersion;
-    _ = dstVersionService.RunAsync(defaultVersion);
+    _ = dstVersionService.RunAsync(defaultVersion, dstVersionServiceOptions.IsDisabledUpdate);
     var dstVersionDatabase = app.Services.CreateScope().ServiceProvider.GetRequiredService<SimpleCacheDatabase>(); // 不销毁
     dstVersionService.VersionUpdated += (sender, version) =>
     {
         dstVersionDatabase["DstVersion"] = version;
     };
-
 });
 
 app.Lifetime.ApplicationStopped.Register(() =>
