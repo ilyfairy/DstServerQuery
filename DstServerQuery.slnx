@@ -22,9 +22,4 @@
   <Project Path="MiniApiTest\MiniApiTest.csproj" />
   <Project Path="PrettyPrompt\src\PrettyPrompt\PrettyPrompt.csproj" />
   <Project Path="Test\Test.csproj" />
-  <Properties Name="Visual Studio">
-    <Property Name="OpenWith" Value="Visual Studio Version 17" />
-  </Properties>
-  <Project Path="CSharpRepl\CSharpRepl.Services\CSharpRepl.Services.csproj" Type="C#" />
-  <Project Path="CSharpRepl\CSharpRepl\CSharpRepl.csproj" Type="C#" />
 </Solution>
