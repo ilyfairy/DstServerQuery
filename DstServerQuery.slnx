@@ -27,7 +27,4 @@
   </Properties>
   <Project Path="CSharpRepl\CSharpRepl.Services\CSharpRepl.Services.csproj" Type="C#" />
   <Project Path="CSharpRepl\CSharpRepl\CSharpRepl.csproj" Type="C#" />
-  <Project Path="DstServerQuery.EntityFrameworkCore\DstServerQuery.EntityFrameworkCore.csproj" />
-  <Project Path="DstServerQuery.Web\DstServerQuery.Web.csproj" />
-  <Project Path="DstServerQuery\DstServerQuery.csproj" />
 </Solution>
