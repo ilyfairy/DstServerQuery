@@ -15,7 +15,6 @@ using DstServerQuery.Web.Helpers.Console;
 using DstServerQuery.Web.Models.Configurations;
 using DstServerQuery.Web.Services;
 using DstServerQuery.Web.Services.TrafficRateLimiter;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -25,7 +24,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json.Serialization;
-using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 if (File.Exists("secrets.json"))
@@ -79,9 +77,9 @@ builder.Services.AddSerilog((service, loggerConfiguration) =>
 #endregion
 
 #region DbContext
-//DbContext
+// DbContext
 DatabaseType databaseType = builder.Configuration.GetValue<DatabaseType>("SqlType")!;
-//使用SqlServer
+// 使用SqlServer
 if (databaseType is DatabaseType.SqlServer)
 {
     Log.Logger.Information("使用SqlServer数据库");
@@ -92,7 +90,7 @@ if (databaseType is DatabaseType.SqlServer)
     });
     builder.Services.AddScoped<DstDbContext>(v => v.GetRequiredService<SqlServerDstDbContext>());
 }
-//使用MySql
+// 使用MySql
 else if (databaseType is DatabaseType.MySql)
 {
     Log.Logger.Information("使用MySql数据库");
@@ -107,7 +105,7 @@ else if (databaseType is DatabaseType.MySql)
     //});
     builder.Services.AddScoped<DstDbContext>(v => v.GetRequiredService<MySqlDstDbContext>());
 }
-//使用Sqlite
+// 使用Sqlite
 else if (databaseType is DatabaseType.Sqlite)
 {
     Log.Logger.Information("使用Sqlite数据库");
@@ -118,7 +116,7 @@ else if (databaseType is DatabaseType.Sqlite)
     });
     builder.Services.AddScoped<DstDbContext>(v => v.GetRequiredService<SqliteDstDbContext>());
 }
-//使用PostgreSql
+// 使用PostgreSql
 else if (databaseType is DatabaseType.PostgreSql)
 {
     Log.Logger.Information("使用PostgreSql数据库");
@@ -142,7 +140,7 @@ else
 {
     throw new Exception("unknown database type");
 }
-////使用内存数据库
+//// 使用内存数据库
 //else if (builder.Configuration.GetConnectionString("InMemory") != null)
 ////{
 //    builder.Services.AddSqlServer<DstDbContext>(@"Server=(localdb)\mssqllocaldb;Database=EFProviders.InMemory;Trusted_Connection=True;ConnectRetryCount=0");
@@ -155,7 +153,7 @@ builder.Services.AddSqlite<SimpleCacheDatabase>($"Data Source={Path.Join(AppCont
 //});
 #endregion
 
-//流量速率限制
+// 流量速率限制
 builder.Services.AddTrafficLimiter(options =>
 {
     options.StatusCode = 429;
@@ -199,14 +197,14 @@ if (dstModsFileServiceOptions.IsEnabled)
     builder.Services.AddHostedService<DstModsFileHosedService>();
 }
 
-//IP速率限制
+// IP速率限制
 builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
 builder.Services.Configure<IpRateLimitPolicies>(builder.Configuration.GetSection("IpRateLimitPolicies"));
 
 builder.Services.AddInMemoryRateLimiting();
 builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
-////速率限制
+//// 速率限制
 //builder.Services.AddRateLimiter(_ => _
 //    .AddFixedWindowLimiter(policyName: "fixed", options =>
 //    {
@@ -216,7 +214,7 @@ builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>()
 //        options.QueueLimit = 2;
 //    }));
 
-//配置压缩
+// 配置压缩
 builder.Services.AddResponseCompression(options =>
 {
     options.Providers.Add<BrotliCompressionProvider>();
@@ -225,7 +223,7 @@ builder.Services.AddResponseCompression(options =>
 builder.Services.Configure<BrotliCompressionProviderOptions>(v => v.Level = System.IO.Compression.CompressionLevel.Optimal);
 builder.Services.Configure<GzipCompressionProviderOptions>(v => v.Level = System.IO.Compression.CompressionLevel.Optimal);
 
-//配置跨域请求
+// 配置跨域请求
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CORS", policyBuilder =>
@@ -269,7 +267,7 @@ builder.Services.AddControllers()
     opt.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
 });
 
-//Swagger
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -314,10 +312,10 @@ app.Use(async (v, next) =>
     await next();
 });
 
-//请求流量限制
+// 请求流量限制
 app.UseTrafficLimiter(async (context, v2, next) =>
 {
-    Log.Warning("流量速率限制  IP:{IP}  Path:{Path}", v2.IP, context.Request.Path.ToString());
+    Log.Warning("流量速率限制  IP:{IP}  Path:{Path}", v2.IP, context.Request.Path);
     await context.Response.WriteAsync("""{"Code":429,"Error":"Too Many Requests"}""");
 });
 
@@ -338,11 +336,11 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<IHostApplicationBuilder>>();
     logger.LogInformation("IHostApplicationBuilder Start");
 
-    //键值对缓存数据库
+    // 键值对缓存数据库
     var cache = scope.ServiceProvider.GetRequiredService<SimpleCacheDatabase>();
     cache.EnsureInitialize();
 
-    //数据库迁移
+    // 数据库迁移
     var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
     bool isMigration = false;
     try
@@ -367,7 +365,7 @@ app.Lifetime.ApplicationStarted.Register(async () =>
     var dstVersionServiceOptions = app.Services.GetRequiredService<DstVersionServiceOptions>();
     var dstModsFileServiceOptions = app.Services.GetRequiredService<DstModsFileServiceOptions>();
 
-    //配置GeoIP
+    // 配置GeoIP
     if (app.Configuration.GetValue<string>("GeoLite2Path") is string geoLite2Path)
     {
         var geoIPService = app.Services.GetRequiredService<GeoIPService>();
@@ -375,11 +373,11 @@ app.Lifetime.ApplicationStarted.Register(async () =>
         DstConverterHelper.GeoIPService = geoIPService;
     }
 
-    //启动服务管理器
+    // 启动服务管理器
     var lobbyServerManager = app.Services.GetRequiredService<LobbyServerManager>();
     await lobbyServerManager.Start();
 
-    //饥荒版本获取服务
+    // 饥荒版本获取服务
     var dstVersionService = app.Services.GetRequiredService<DstVersionService>();
     dstVersionService.DstDownloaderFactory = () =>
     {
@@ -410,10 +408,6 @@ app.Lifetime.ApplicationStopped.Register(() =>
     Log.CloseAndFlush();
 });
 
-if (app.Environment.IsDevelopment())
-{
-}
-
 app.UseSwagger(v =>
 {
     v.RouteTemplate = "doc/api/{documentName}.json";
@@ -428,16 +422,6 @@ app.UseSwaggerUI(options =>
         options.SwaggerEndpoint(url, name);
     }
     options.RoutePrefix = "doc";
-});
-
-app.Use(async (context, next) =>
-{
-    //if (!app.Services.GetRequiredService<LobbyDetailsManager>().Running)
-    //{
-    //    context.Response.StatusCode = 500;
-    //    return;
-    //}
-    await next();
 });
 
 app.MapControllers();
