@@ -240,10 +240,10 @@ builder.Services.AddCors(options =>
         });
 });
 
-//版本管理
+// API版本管理
 builder.Services.AddApiVersioning(options =>
 {
-    options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0); // 默认api版本
+    options.DefaultApiVersion = new Asp.Versioning.ApiVersion(2, 0); // 默认api版本
     options.AssumeDefaultVersionWhenUnspecified = true; // 没有指定版本时, 使用默认版本
     options.ReportApiVersions = true;
 }).AddApiExplorer(options =>
@@ -254,11 +254,11 @@ builder.Services.AddApiVersioning(options =>
 
 builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 
-//添加控制器
+// 添加控制器
 builder.Services.AddControllers()
     .AddJsonOptions(opt =>
 {
-    //默认Json序列化选项
+    // 默认Json序列化选项
     opt.JsonSerializerOptions.TypeInfoResolverChain.Add(DstRawJsonContext.Default);
     opt.JsonSerializerOptions.TypeInfoResolverChain.Add(DstLobbyInfoJsonContext.Default);
 
@@ -273,6 +273,10 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    if (builder.Configuration["ApiDocumentBaseUrl"] is { } apiDocumentBaseUrl && !string.IsNullOrWhiteSpace(apiDocumentBaseUrl))
+    {
+        options.AddServer(new Microsoft.OpenApi.Models.OpenApiServer() { Url = apiDocumentBaseUrl });
+    }
     var currentXmlFilePath = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
     if (File.Exists(currentXmlFilePath))
     {
@@ -410,16 +414,20 @@ if (app.Environment.IsDevelopment())
 {
 }
 
-app.UseSwagger();
+app.UseSwagger(v =>
+{
+    v.RouteTemplate = "doc/api/{documentName}.json";
+});
 app.UseSwaggerUI(options =>
 {
     options.InjectJavascript("/swagger/swagger_ext.js");
     foreach (var description in app.DescribeApiVersions().Reverse())
     {
-        var url = $"/swagger/{description.GroupName}/swagger.json";
+        var url = $"/doc/api/{description.GroupName}.json";
         var name = description.GroupName.ToUpperInvariant();
         options.SwaggerEndpoint(url, name);
     }
+    options.RoutePrefix = "doc";
 });
 
 app.Use(async (context, next) =>
