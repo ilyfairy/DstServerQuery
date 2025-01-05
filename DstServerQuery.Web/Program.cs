@@ -19,9 +19,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Scalar.AspNetCore;
 using Serilog;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using System.Diagnostics;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json.Serialization;
@@ -269,21 +268,10 @@ builder.Services.AddControllers()
     opt.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
 });
 
-//Swagger
+// OpenApi
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    var currentXmlFilePath = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
-    if (File.Exists(currentXmlFilePath))
-    {
-        options.IncludeXmlComments(currentXmlFilePath);
-    }
-    var queryXmlFilePath = Path.Combine(AppContext.BaseDirectory, "DstServerQuery.xml");
-    if (File.Exists(queryXmlFilePath))
-    {
-        options.IncludeXmlComments(queryXmlFilePath);
-    }
-});
+builder.Services.AddOpenApi("v1");
+builder.Services.AddOpenApi("v2");
 
 builder.Services.AddSingleton<CommandService>();
 
@@ -410,15 +398,13 @@ if (app.Environment.IsDevelopment())
 {
 }
 
-app.UseSwagger();
-app.UseSwaggerUI(options =>
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
 {
-    options.InjectJavascript("/swagger/swagger_ext.js");
-    foreach (var description in app.DescribeApiVersions().Reverse())
+    options.Theme = ScalarTheme.Default;
+    if (app.Configuration["ApiDocumentBaseUrl"] is { } apiDocumentBaseUrl)
     {
-        var url = $"/swagger/{description.GroupName}/swagger.json";
-        var name = description.GroupName.ToUpperInvariant();
-        options.SwaggerEndpoint(url, name);
+        options.AddServer(apiDocumentBaseUrl);
     }
 });
 
