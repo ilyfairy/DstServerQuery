@@ -22,6 +22,7 @@ using Serilog;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Diagnostics;
 using System.Globalization;
+using System.Net.Mime;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
@@ -335,7 +336,7 @@ app.UseSwagger(v =>
 });
 app.UseSwaggerUI(options =>
 {
-    options.InjectJavascript("/swagger/swagger_ext.js");
+    options.InjectJavascript("/doc/swagger_ext.js");
     foreach (var description in app.DescribeApiVersions().Reverse())
     {
         var url = $"/doc/api/{description.GroupName}.json";
