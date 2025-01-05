@@ -404,6 +404,7 @@ app.MapScalarApiReference(options =>
     {
         options.AddServer(apiDocumentBaseUrl);
     }
+    options.EndpointPathPrefix = "/doc/{documentName}";
 });
 
 app.Use(async (context, next) =>
