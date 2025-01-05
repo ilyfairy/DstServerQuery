@@ -10,24 +10,27 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DstServerQuery.Web.Services;
 
-public class AppHostedService(ILogger<AppHostedService> logger,
-                              IServiceProvider serviceProvider,
-                              IConfiguration configuration,
-                              SimpleCacheDatabase simpleCacheDatabase,
-                              DstWebConfig dstWebConfig,
-                              SteamOptions steamOptions,
-                              DstVersionService dstVersionService,
-                              DstVersionServiceOptions dstVersionServiceOptions,
-                              DstModsFileServiceOptions dstModsFileServiceOptions,
-                              LobbyServerManager lobbyServerManager,
-                              GeoIPService geoIPService,
-                              DstModsFileService dstModsFileService) : IHostedService
+public class AppHostedService(ILogger<AppHostedService> _logger,
+                              IServiceProvider _serviceProvider,
+                              IConfiguration _configuration,
+                              DstWebConfig _dstWebConfig,
+                              SteamOptions _steamOptions,
+                              DstVersionService _dstVersionService,
+                              DstVersionServiceOptions _dstVersionServiceOptions,
+                              DstModsFileServiceOptions _dstModsFileServiceOptions,
+                              LobbyServerManager _lobbyServerManager,
+                              GeoIPService _geoIPService) : IHostedService
 {
+    private DstModsFileService? _dstModsFileService;
+
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        using var scope = serviceProvider.CreateScope();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<IHostApplicationBuilder>>();
-        logger.LogInformation("IHostApplicationBuilder Start");
+        _dstModsFileService = _serviceProvider.GetService<DstModsFileService>();
+
+        using var scope = _serviceProvider.CreateScope();
+        _logger.LogInformation("IHostApplicationBuilder Start");
+
+        SimpleCacheDatabase simpleCacheDatabase = scope.ServiceProvider.GetRequiredService<SimpleCacheDatabase>();
 
         // 键值对缓存数据库
         simpleCacheDatabase.EnsureInitialize();
@@ -44,44 +47,46 @@ public class AppHostedService(ILogger<AppHostedService> logger,
         {
             dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(100));
             await dbContext.Database.MigrateAsync(cancellationToken); //执行迁移
-            logger.LogInformation("数据库迁移成功");
+            _logger.LogInformation("数据库迁移成功");
         }
         else
         {
             await dbContext.Database.EnsureCreatedAsync(cancellationToken);
-            logger.LogInformation("数据库创建成功");
+            _logger.LogInformation("数据库创建成功");
         }
 
         // 配置GeoIP
-        if (configuration.GetValue<string>("GeoLite2Path") is string geoLite2Path)
+        if (_configuration.GetValue<string>("GeoLite2Path") is string geoLite2Path)
         {
-            geoIPService.Initialize(geoLite2Path);
-            DstConverterHelper.GeoIPService = geoIPService;
+            _geoIPService.Initialize(geoLite2Path);
+            DstConverterHelper.GeoIPService = _geoIPService;
         }
 
         // 启动服务管理器
-        await lobbyServerManager.Start();
+        await _lobbyServerManager.Start();
 
         // 饥荒版本获取服务
-        dstVersionService.DstDownloaderFactory = () =>
+        _dstVersionService.DstDownloaderFactory = () =>
         {
-            return new DstDownloader(Helper.CreateSteamSession(serviceProvider));
+            return new DstDownloader(Helper.CreateSteamSession(_serviceProvider));
         };
-        var defaultVersion = simpleCacheDatabase.Get<long?>("DstVersion") ?? dstVersionServiceOptions.DefaultVersion;
-        _ = dstVersionService.RunAsync(defaultVersion, dstVersionServiceOptions.IsDisabledUpdate);
-        dstVersionService.VersionUpdated += (sender, version) =>
+        var defaultVersion = simpleCacheDatabase.Get<long?>("DstVersion") ?? _dstVersionServiceOptions.DefaultVersion;
+        _ = _dstVersionService.RunAsync(defaultVersion, _dstVersionServiceOptions.IsDisabledUpdate);
+        _dstVersionService.VersionUpdated += (sender, version) =>
         {
+            using var scope = _serviceProvider.CreateScope();
+            using var simpleCacheDatabase = scope.ServiceProvider.GetRequiredService<SimpleCacheDatabase>();
             simpleCacheDatabase["DstVersion"] = version;
         };
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        logger.LogInformation("IHostApplicationBuilder Shutdowning");
+        _logger.LogInformation("IHostApplicationBuilder Shutdowning");
 
-        dstVersionService.Dispose();
-        lobbyServerManager.Dispose();
-        dstModsFileService?.Dispose();
+        _dstVersionService.Dispose();
+        _lobbyServerManager.Dispose();
+        _dstModsFileService?.Dispose();
 
         Serilog.Log.CloseAndFlush();
     }
