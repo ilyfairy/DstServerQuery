@@ -1,13 +1,20 @@
 ﻿using MaxMind.GeoIP2;
 using MaxMind.GeoIP2.Responses;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using System.Net;
 
 namespace DstServerQuery.Services;
 
 public class GeoIPService
 {
+    private readonly ILogger<GeoIPService>? _logger;
+
     public DatabaseReader? GeoIP { get; private set; }
+
+    public GeoIPService(ILogger<GeoIPService>? logger = null)
+    {
+        this._logger = logger;
+    }
 
     public void Initialize(string GeoLite2Path = "GeoLite2-City.mmdb")
     {
@@ -15,9 +22,9 @@ public class GeoIPService
         {
             GeoIP = new DatabaseReader(GeoLite2Path, MaxMind.Db.FileAccessMode.MemoryMapped);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Log.Error("GeoIP初始化异常", e.Message);
+            _logger?.LogError(ex, "GeoIP初始化异常");
         }
     }
 

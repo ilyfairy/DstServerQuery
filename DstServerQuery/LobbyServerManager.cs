@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
-using Serilog;
 using DstServerQuery.Models.Requests;
 using DstServerQuery.Models.Lobby;
+using Microsoft.Extensions.Logging;
 
 namespace DstServerQuery;
 
@@ -12,7 +12,7 @@ namespace DstServerQuery;
 /// </summary>
 public class LobbyServerManager : IDisposable
 {
-    private readonly ILogger _logger = Log.ForContext<LobbyServerManager>();
+    private readonly ILogger? _logger;
     public ConcurrentDictionary<string, LobbyServerDetailed> ServerMap { get; } = new(2, 40000);
     private ICollection<LobbyServerDetailed> serverCache = [];
 
@@ -35,9 +35,10 @@ public class LobbyServerManager : IDisposable
     public bool ModifyEnabled { get; set; } = true;
 
     //参数是依赖注入
-    public LobbyServerManager(DstWebConfig requestConfig, LobbyDownloader lobbyDownloader)
+    public LobbyServerManager(DstWebConfig requestConfig, LobbyDownloader lobbyDownloader, ILogger<LobbyServerManager>? logger = null)
     {
         LobbyDownloader = lobbyDownloader;
+        _logger = logger;
         dstConfig = requestConfig;
     }
 
@@ -61,7 +62,7 @@ public class LobbyServerManager : IDisposable
             }
         }
 
-        _logger.Information("开始DownloadLoop Task");
+        _logger?.LogInformation("开始DownloadLoop Task");
         sw.Restart();
 
         //循环获取新版服务器数据
@@ -74,7 +75,7 @@ public class LobbyServerManager : IDisposable
             catch (Exception e)
             {
                 HttpCancellationToken.Cancel();
-                _logger.Error("DownloadLoopException: {Exception}", e.Message);
+                _logger?.LogError("DownloadLoopException: {Exception}", e.Message);
             }
         });
 
@@ -86,7 +87,7 @@ public class LobbyServerManager : IDisposable
     {
         HttpCancellationToken.Cancel();
         GC.SuppressFinalize(this);
-        _logger.Information("LobbyDetailsManager Dispose");
+        _logger?.LogInformation("LobbyDetailsManager Dispose");
     }
 
     //循环获取数据  
@@ -104,7 +105,7 @@ public class LobbyServerManager : IDisposable
                 newRowIdLst.Clear();
                 CancellationTokenSource cts = new();
                 cts.CancelAfter(TimeSpan.FromMinutes(3));
-                _logger.Information("开始 Download");
+                _logger?.LogInformation("开始 Download");
 
                 await foreach (var item in LobbyDownloader.DownloadAllBriefs(CancellationTokenSource.CreateLinkedTokenSource(cts.Token, HttpCancellationToken.Token).Token))
                 {
@@ -137,10 +138,10 @@ public class LobbyServerManager : IDisposable
             {
                 if (!Running || HttpCancellationToken.IsCancellationRequested)
                 {
-                    _logger.Warning("中断请求,结束");
+                    _logger?.LogWarning("中断请求,结束");
                     break;
                 }
-                _logger.Warning($"请求失败,重新请求\n{e.Message}");
+                _logger?.LogWarning($"请求失败,重新请求\n{e.Message}");
                 continue;
             }
 
@@ -168,7 +169,7 @@ public class LobbyServerManager : IDisposable
                 AddedServers = added,
                 RemovedServers = removed
             });
-            _logger.Information("已获取所有服务器数据  一共{Count}个  更新了{UnchangedCount}个  新增了{AddedCount}个  移除了{RemovedCount}个",
+            _logger?.LogInformation("已获取所有服务器数据  一共{Count}个  更新了{UnchangedCount}个  新增了{AddedCount}个  移除了{RemovedCount}个",
                 newRowIdLst.Count, unchanged?.Count.ToString() ?? "N/A", added?.Count.ToString() ?? "N/A", removed?.Count.ToString() ?? "N/A");
 
             try
@@ -215,7 +216,7 @@ public class LobbyServerManager : IDisposable
                     {
                         lastHistoryUpdateTime = DateTimeOffset.Now;
                         isInsertHistory = true;
-                        _logger.Information("此次更新开始添加到历史记录 {DateTime}", lastHistoryUpdateTime);
+                        _logger?.LogInformation("此次更新开始添加到历史记录 {DateTime}", lastHistoryUpdateTime);
                     }
 
                     //开始更新
@@ -231,13 +232,13 @@ public class LobbyServerManager : IDisposable
                     //    //Updated?.Invoke(this, new DstUpdatedEventArgs(updated, LastUpdate));
                     //}
 
-                    _logger.Information("所有详细信息已更新  在{OriginCount}个中更新了{UpdateCount}  耗时:{ElapsedMilliseconds:0.00}分钟  距离上次更新{LateUpdate:0.00}分钟", totalCount, updatedCount, s.ElapsedMilliseconds / 1000 / 60.0, (DateTimeOffset.Now - lastUpdated).TotalMinutes);
+                    _logger?.LogInformation("所有详细信息已更新  在{OriginCount}个中更新了{UpdateCount}  耗时:{ElapsedMilliseconds:0.00}分钟  距离上次更新{LateUpdate:0.00}分钟", totalCount, updatedCount, s.ElapsedMilliseconds / 1000 / 60.0, (DateTimeOffset.Now - lastUpdated).TotalMinutes);
 
                     s.Stop();
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warning("服务器详细信息更新异常: {Exception}", ex.Message);
+                    _logger?.LogWarning("服务器详细信息更新异常: {Exception}", ex.Message);
                 }
 
                 lastUpdated = DateTimeOffset.Now;
