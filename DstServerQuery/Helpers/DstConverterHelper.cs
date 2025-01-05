@@ -1,8 +1,6 @@
-﻿using DstServerQuery.Helpers;
-using DstServerQuery.Models;
+﻿using DstServerQuery.Models;
 using DstServerQuery.Services;
 using Neo.IronLua;
-using Serilog;
 using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -116,35 +114,29 @@ public static partial class DstConverterHelper
         {
             for (int i = 0; i < mods.Length / 5; i++)
             {
-                try
-                {
-                    var mod = new LobbyModInfo();
-                    //mod.Id = base_mods_info[i * 5 + 0];
-                    var work = mods[i * 5 + 0].ToString()!;
-                    var matchId = WorkshopRegex().Match(work);
-                    if (!matchId.Success) continue;
-                    var idParsed = long.TryParse(matchId.Groups[1].Value, out var id);
+                var mod = new LobbyModInfo();
+                //mod.Id = base_mods_info[i * 5 + 0];
+                var work = mods[i * 5 + 0].ToString()!;
+                var matchId = WorkshopRegex().Match(work);
+                if (!matchId.Success)
+                    continue;
+                var idParsed = long.TryParse(matchId.Groups[1].Value, out var id);
 
-                    mod.Id = id;
-                    mod.Name = mods[i * 5 + 1]?.ToString()!;
-                    mod.NewVersion = mods[i * 5 + 2]?.ToString();
-                    mod.CurrentVersion = mods[i * 5 + 3]?.ToString();
-                    if (mods[i * 5 + 4] is bool isClientDownload)
-                    {
-                        mod.IsClientDownload = isClientDownload;
-                    }
-                    else
-                    {
-                        mod.IsClientDownload = bool.Parse(mods[i * 5 + 4].ToString()!);
-                    }
-                    if (idParsed && mod.Name != null)
-                    {
-                        infos.Add(mod);
-                    }
-                }
-                catch (Exception e)
+                mod.Id = id;
+                mod.Name = mods[i * 5 + 1]?.ToString()!;
+                mod.NewVersion = mods[i * 5 + 2]?.ToString();
+                mod.CurrentVersion = mods[i * 5 + 3]?.ToString();
+                if (mods[i * 5 + 4] is bool isClientDownload)
                 {
-                    Log.Warning("Mod解析失败: {Message}", e.Message);
+                    mod.IsClientDownload = isClientDownload;
+                }
+                else
+                {
+                    mod.IsClientDownload = bool.Parse(mods[i * 5 + 4].ToString()!);
+                }
+                if (idParsed && mod.Name != null)
+                {
+                    infos.Add(mod);
                 }
             }
         }

@@ -1,7 +1,7 @@
 ﻿using DstServerQuery.Models;
 using DstServerQuery.Models.Lobby;
 using DstServerQuery.Models.Requests;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -23,14 +23,15 @@ public class LobbyDownloader
     private readonly HttpClient http;
     private readonly HttpClient httpUpdate;
     private readonly DstWebConfig dstWebConfig;
+    private readonly ILogger? _logger;
 
     //通过区域和平台获取url
     public Dictionary<RegionPlatform, RegionUrl> RegionPlatformMap { get; set; } = new();
 
-    public LobbyDownloader(DstWebConfig dstWebConfig)
+    public LobbyDownloader(DstWebConfig dstWebConfig, ILogger? logger = null)
     {
         this.dstWebConfig = dstWebConfig;
-
+        this._logger = logger;
         static HttpClient Create()
         {
             HttpClientHandler handler = new();
@@ -296,9 +297,7 @@ public class LobbyDownloader
                 }
                 catch (Exception e)
                 {
-                    Log.Error("{Exception}", e);
-                    //var requestJson = JsonSerializer.Serialize(requestList);
-                    //throw;
+                    _logger?.LogError(e, "服务器详细信息下载失败 Url:{Url}", proxyUrl);
                     return;
                 }
                 var dateTime = DateTimeOffset.Now;
