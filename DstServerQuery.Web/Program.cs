@@ -251,8 +251,6 @@ builder.Services.AddApiVersioning(options =>
     options.GroupNameFormat = "'v'V"; // v{版本}
 });
 
-builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
-
 //添加控制器
 builder.Services.AddControllers()
     .AddJsonOptions(opt =>
