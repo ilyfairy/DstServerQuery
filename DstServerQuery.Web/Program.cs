@@ -26,10 +26,7 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
-if (File.Exists("secrets.json"))
-{
-    builder.Configuration.AddJsonFile("secrets.json");
-}
+builder.Configuration.AddJsonFile("secrets.json", true);
 
 bool enabledCommandLine = builder.Configuration.GetSection("EnabledCommandLine").Get<bool?>() is true;
 
@@ -288,8 +285,10 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddSingleton<CommandService>();
+builder.Services.AddHostedService<AppHostedService>();
 
 CultureInfo.CurrentCulture = new CultureInfo("zh-CN");
+
 
 var app = builder.Build();
 
@@ -329,84 +328,6 @@ app.UseSerilogRequestLogging();
 
 //app.UseRateLimiter(); // 速率限制
 app.UseIpRateLimiting(); // IP速率限制
-
-app.Lifetime.ApplicationStarted.Register(async () =>
-{
-    using var scope = app.Services.CreateScope();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<IHostApplicationBuilder>>();
-    logger.LogInformation("IHostApplicationBuilder Start");
-
-    // 键值对缓存数据库
-    var cache = scope.ServiceProvider.GetRequiredService<SimpleCacheDatabase>();
-    cache.EnsureInitialize();
-
-    // 数据库迁移
-    var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
-    bool isMigration = false;
-    try
-    {
-        isMigration = dbContext.Database.GetPendingMigrations().Any();
-    }
-    catch { }
-    if (isMigration)
-    {
-        dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(100));
-        await dbContext.Database.MigrateAsync(); //执行迁移
-        logger.LogInformation("数据库迁移成功");
-    }
-    else
-    {
-        await dbContext.Database.EnsureCreatedAsync();
-        logger.LogInformation("数据库创建成功");
-    }
-
-    var dstWebConfig = app.Services.GetRequiredService<DstWebConfig>();
-    var steamOptions = app.Services.GetRequiredService<SteamOptions>();
-    var dstVersionServiceOptions = app.Services.GetRequiredService<DstVersionServiceOptions>();
-    var dstModsFileServiceOptions = app.Services.GetRequiredService<DstModsFileServiceOptions>();
-
-    // 配置GeoIP
-    if (app.Configuration.GetValue<string>("GeoLite2Path") is string geoLite2Path)
-    {
-        var geoIPService = app.Services.GetRequiredService<GeoIPService>();
-        geoIPService.Initialize(geoLite2Path);
-        DstConverterHelper.GeoIPService = geoIPService;
-    }
-
-    // 启动服务管理器
-    var lobbyServerManager = app.Services.GetRequiredService<LobbyServerManager>();
-    await lobbyServerManager.Start();
-
-    // 饥荒版本获取服务
-    var dstVersionService = app.Services.GetRequiredService<DstVersionService>();
-    dstVersionService.DstDownloaderFactory = () =>
-    {
-        return new DstDownloader(Helper.CreateSteamSession(app.Services));
-    };
-    var defaultVersion = cache.Get<long?>("DstVersion") ?? dstVersionServiceOptions.DefaultVersion;
-    _ = dstVersionService.RunAsync(defaultVersion, dstVersionServiceOptions.IsDisabledUpdate);
-    var dstVersionDatabase = app.Services.CreateScope().ServiceProvider.GetRequiredService<SimpleCacheDatabase>(); // 不销毁
-    dstVersionService.VersionUpdated += (sender, version) =>
-    {
-        dstVersionDatabase["DstVersion"] = version;
-    };
-});
-
-app.Lifetime.ApplicationStopped.Register(() =>
-{
-    using var scope = app.Services.CreateScope();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    logger.LogInformation("IHostApplicationBuilder Shutdowning");
-
-    var lobbyManager = app.Services.GetRequiredService<LobbyServerManager>();
-    var dstVersion = app.Services.GetRequiredService<DstVersionService>()!;
-    var dstModsService = app.Services.GetService<DstModsFileService?>();
-    dstVersion.Dispose();
-    lobbyManager.Dispose();
-    dstModsService?.Dispose();
-
-    Log.CloseAndFlush();
-});
 
 app.UseSwagger(v =>
 {
