@@ -322,6 +322,7 @@ app.MapScalarApiReference(options =>
     }
     options.EndpointPathPrefix = "/doc/{documentName}";
 });
+app.MapGet("/doc", () => Results.Redirect("/doc/v2"));
 
 app.MapControllers();
 
