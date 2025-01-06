@@ -19,7 +19,6 @@
   <Project Path="DstServerQuery.EntityFrameworkCore\DstServerQuery.EntityFrameworkCore.csproj" />
   <Project Path="DstServerQuery.Web\DstServerQuery.Web.csproj" />
   <Project Path="DstServerQuery\DstServerQuery.csproj" />
-  <Project Path="MiniApiTest\MiniApiTest.csproj" />
   <Project Path="PrettyPrompt\src\PrettyPrompt\PrettyPrompt.csproj" />
   <Project Path="Test\Test.csproj" />
 </Solution>
