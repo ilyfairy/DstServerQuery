@@ -239,7 +239,7 @@ builder.Services.AddCors(options =>
 // API版本管理
 builder.Services.AddApiVersioning(options =>
 {
-    options.DefaultApiVersion = new Asp.Versioning.ApiVersion(2, 0); // 默认api版本
+    options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0); // 默认api版本
     options.AssumeDefaultVersionWhenUnspecified = true; // 没有指定版本时, 使用默认版本
     options.ReportApiVersions = true;
 }).AddApiExplorer(options =>
