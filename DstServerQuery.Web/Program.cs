@@ -177,7 +177,6 @@ builder.Services.AddSingleton<DstVersionService>();
 builder.Services.AddSingleton<GeoIPService>();
 builder.Services.AddSingleton<LobbyDownloader>();
 builder.Services.AddHostedService<DstHistoryService>();
-builder.Services.AddHostedService<StringCacheService>();
 builder.Services.AddHistoryCleanupService(builder.Configuration.GetSection("DstConfig").Get<DstWebConfig>()!.HistoryExpiration);
 
 if (dstModsFileServiceOptions.IsEnabled)

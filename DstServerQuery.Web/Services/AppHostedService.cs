@@ -58,7 +58,15 @@ public class AppHostedService(ILogger<AppHostedService> _logger,
         // 配置GeoIP
         if (_configuration.GetValue<string>("GeoLite2Path") is string geoLite2Path)
         {
-            _geoIPService.Initialize(geoLite2Path);
+            try
+            {
+                _geoIPService.Initialize(geoLite2Path);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "GeoIP初始化异常");
+                return;
+            }
             DstConverterHelper.GeoIPService = _geoIPService;
         }
 

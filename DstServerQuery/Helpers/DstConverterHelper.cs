@@ -12,14 +12,11 @@ namespace DstServerQuery.Helpers;
 
 public static partial class DstConverterHelper
 {
-    private static readonly ArrayPool<byte> bytesPool = ArrayPool<byte>.Create();
-    private static readonly ArrayPool<char> charsPool = ArrayPool<char>.Create();
     public static Dictionary<ReadOnlyMemory<char>, string> TagsCache { get; } = new(new MemoryCharEqualityComparer());
-
 
     public static GeoIPService? GeoIPService { get; set; }
 
-    private static IPAddressInfo Localhost = new()
+    private static readonly IPAddressInfo _localhost = new()
     {
         CountryInfo = null,
         IPAddress = IPAddress.Loopback,
@@ -46,13 +43,13 @@ public static partial class DstConverterHelper
 
     public static IPAddressInfo ParseAddress(string ip)
     {
-        if (ip == "127.0.0.1") return Localhost;
+        if (ip == "127.0.0.1") return _localhost;
 
         IPAddressInfo info;
 
         if (IPAddress.TryParse(ip, out IPAddress? ipAddress) is false)
         {
-            return Localhost;
+            return _localhost;
         }
 
         [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_toString")] // NOTE: unsafe
@@ -234,7 +231,7 @@ public static partial class DstConverterHelper
     public static ReadOnlyMemory<char>[]? ParseTagsAsMemory(string? tagsString)
     {
         if (tagsString is null) return null;
-        if (tagsString.Length == 0) return Array.Empty<ReadOnlyMemory<char>>();
+        if (tagsString.Length == 0) return [];
 
         var span = tagsString.AsSpan();
         var tagsMaxCount = Utils.GetCharCount(tagsString, ',') + 1;

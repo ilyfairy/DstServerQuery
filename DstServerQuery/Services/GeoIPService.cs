@@ -7,25 +7,11 @@ namespace DstServerQuery.Services;
 
 public class GeoIPService
 {
-    private readonly ILogger<GeoIPService>? _logger;
-
     public DatabaseReader? GeoIP { get; private set; }
-
-    public GeoIPService(ILogger<GeoIPService>? logger = null)
-    {
-        this._logger = logger;
-    }
 
     public void Initialize(string GeoLite2Path = "GeoLite2-City.mmdb")
     {
-        try
-        {
-            GeoIP = new DatabaseReader(GeoLite2Path, MaxMind.Db.FileAccessMode.MemoryMapped);
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "GeoIP初始化异常");
-        }
+        GeoIP = new DatabaseReader(GeoLite2Path, MaxMind.Db.FileAccessMode.MemoryMapped);
     }
 
     public bool TryCity(string ip, out CityResponse? city)

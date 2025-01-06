@@ -8,14 +8,13 @@ namespace DstServerQuery.Helpers.Converters.Cache;
 
 public class PlayersRawCacheConverter : JsonConverter<string>
 {
-    private static readonly ArrayPool<byte> pool = ArrayPool<byte>.Create();
     public static ConcurrentDictionary<ReadOnlyMemory<byte>, string> Cache { get; } = new(new MemoryByteEqualityComparer());
-    private static ReadOnlySpan<byte> emptyUtf8 => "return {  }"u8;
-    private static readonly string empty = "return {  }";
+    private static ReadOnlySpan<byte> _emptyUtf8 => "return {  }"u8;
+    private static readonly string _empty = "return {  }";
 
     static PlayersRawCacheConverter()
     {
-        string[] caches = [empty];
+        string[] caches = [_empty];
         foreach (var cache in caches)
         {
             Cache.TryAdd(Encoding.UTF8.GetBytes(cache), cache);
@@ -33,29 +32,12 @@ public class PlayersRawCacheConverter : JsonConverter<string>
         if (reader.ValueSpan.Length == 0)
             return string.Empty;
 
-        if (reader.ValueSpan.SequenceEqual(emptyUtf8))
+        if (reader.ValueSpan.SequenceEqual(_emptyUtf8))
         {
-            return empty;
+            return _empty;
         }
 
         return reader.GetString();
-
-        //var temp = pool.Rent(reader.ValueSpan.Length);
-        //var memory = temp.AsMemory(0, reader.ValueSpan.Length);
-        //reader.ValueSpan.CopyTo(temp);
-
-        //if (Cache.TryGetValue(memory, out var str))
-        //{
-        //    pool.Return(temp);
-        //    return str;
-        //}
-        //else
-        //{
-        //    pool.Return(temp);
-        //    str = reader.GetString()!;
-        //    //Cache[reader.ValueSpan.ToArray()] = str;
-        //    return str;
-        //}
     }
 
     public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)

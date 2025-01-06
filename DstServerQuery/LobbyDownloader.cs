@@ -81,7 +81,7 @@ public class LobbyDownloader
     private async Task<List<LobbyServerRaw>> DownloadBriefs(string url, CancellationToken cancellationToken = default)
     {
         var response = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-        var get = await response.Content.ReadFromJsonAsync<GET<LobbyServerRaw>>(cancellationToken).ConfigureAwait(false);
+        var get = await response.Content.ReadFromJsonAsync<LobbyGet<LobbyServerRaw>>(cancellationToken).ConfigureAwait(false);
 
         //var get = await response.Content.ReadFromJsonAsync<GET<LobbyServerDetailed>>(dstJsonOptions.DeserializerOptions, cancellationToken);
 
@@ -178,7 +178,7 @@ public class LobbyDownloader
             }
 
             var r = await _httpUpdate.PostAsync(url, requestBody, cancellationToken);
-            var get = await r.Content.ReadFromJsonAsync<GET<LobbyServerDetailedRaw>>(cancellationToken);
+            var get = await r.Content.ReadFromJsonAsync<LobbyGet<LobbyServerDetailedRaw>>(cancellationToken);
             if (get is null || get.Data is null || get.Data.Count == 0) return false;
 
             var newRaw = get.Data.FirstOrDefault();
@@ -286,12 +286,12 @@ public class LobbyDownloader
                     return;
                 }
 
-                GET<LobbyServerDetailedRaw>? get;
+                LobbyGet<LobbyServerDetailedRaw>? get;
                 try
                 {
                     if (string.Equals(r.Content.Headers.ContentType?.MediaType, MediaTypeNames.Application.Json, StringComparison.OrdinalIgnoreCase))
                     {
-                        get = await r.Content.ReadFromJsonAsync<GET<LobbyServerDetailedRaw>>(ct);
+                        get = await r.Content.ReadFromJsonAsync<LobbyGet<LobbyServerDetailedRaw>>(ct);
                     }
                     else
                     {

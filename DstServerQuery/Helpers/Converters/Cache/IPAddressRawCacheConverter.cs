@@ -8,18 +8,6 @@ namespace DstServerQuery.Helpers.Converters.Cache;
 
 public class IPAddressRawCacheConverter : JsonConverter<string>
 {
-    private static readonly ArrayPool<byte> pool = ArrayPool<byte>.Create();
-    public static ConcurrentDictionary<ReadOnlyMemory<byte>, string> Cache { get; } = new(new MemoryByteEqualityComparer());
-
-    static IPAddressRawCacheConverter()
-    {
-        string[] caches = ["127.0.0.1"];
-        foreach (var cache in caches)
-        {
-            Cache.TryAdd(Encoding.UTF8.GetBytes(cache), cache);
-        }
-    }
-
     public override string? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType == JsonTokenType.Null)
@@ -39,23 +27,6 @@ public class IPAddressRawCacheConverter : JsonConverter<string>
         {
             return reader.GetString();
         }
-
-        //var temp = pool.Rent(reader.ValueSpan.Length);
-        //var memory = temp.AsMemory(0, reader.ValueSpan.Length);
-        //reader.ValueSpan.CopyTo(temp);
-
-        //if (Cache.TryGetValue(memory, out var str))
-        //{
-        //    pool.Return(temp);
-        //    return str;
-        //}
-        //else
-        //{
-        //    pool.Return(temp);
-        //    str = reader.GetString()!;
-        //    //Cache[reader.ValueSpan.ToArray()] = str;
-        //    return str;
-        //}
     }
 
     public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)

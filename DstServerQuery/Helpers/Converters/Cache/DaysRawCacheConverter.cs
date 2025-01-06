@@ -8,7 +8,6 @@ namespace DstServerQuery.Helpers.Converters.Cache;
 
 public class DaysRawCacheConverter : JsonConverter<string>
 {
-    private static readonly ArrayPool<byte> pool = ArrayPool<byte>.Create();
     public static ConcurrentDictionary<ReadOnlyMemory<byte>, string> Cache { get; } = new(new MemoryByteEqualityComparer());
 
     static DaysRawCacheConverter()
@@ -52,21 +51,25 @@ public class DaysRawCacheConverter : JsonConverter<string>
         if (reader.ValueSpan.Length == 0)
             return string.Empty;
 
-        var temp = pool.Rent(reader.ValueSpan.Length);
-        var memory = temp.AsMemory(0, reader.ValueSpan.Length);
-        reader.ValueSpan.CopyTo(temp);
+        var temp = ArrayPool<byte>.Shared.Rent(reader.ValueSpan.Length);
+        try
+        {
+            var memory = temp.AsMemory(0, reader.ValueSpan.Length);
+            reader.ValueSpan.CopyTo(temp);
 
-        if (Cache.TryGetValue(memory, out var str))
-        {
-            pool.Return(temp);
-            return str;
+            if (Cache.TryGetValue(memory, out var str))
+            {
+                return str;
+            }
+            else
+            {
+                str = reader.GetString()!;
+                return str;
+            }
         }
-        else
+        finally
         {
-            pool.Return(temp);
-            str = reader.GetString()!;
-            //Cache[reader.ValueSpan.ToArray()] = str;
-            return str;
+            ArrayPool<byte>.Shared.Return(temp);
         }
     }
 

@@ -169,6 +169,7 @@ public class LobbyServerManager : IDisposable
                 AddedServers = added,
                 RemovedServers = removed
             });
+
             _logger?.LogInformation("已获取所有服务器数据  一共{Count}个  更新了{UnchangedCount}个  新增了{AddedCount}个  移除了{RemovedCount}个",
                 newRowIdLst.Count, unchanged?.Count.ToString() ?? "N/A", added?.Count.ToString() ?? "N/A", removed?.Count.ToString() ?? "N/A");
 
