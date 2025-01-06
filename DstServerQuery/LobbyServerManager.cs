@@ -14,7 +14,10 @@ public class LobbyServerManager : IDisposable
 {
     private readonly ILogger? _logger;
     public ConcurrentDictionary<string, LobbyServerDetailed> ServerMap { get; } = new(2, 40000);
-    private ICollection<LobbyServerDetailed> serverCache = [];
+    private ICollection<LobbyServerDetailed> _serverCache = [];
+
+    private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
+    private readonly DstWebConfig _dstConfig;
 
     public bool Running => !HttpCancellationToken.IsCancellationRequested;
     public LobbyDownloader LobbyDownloader { get; private set; }
@@ -23,9 +26,6 @@ public class LobbyServerManager : IDisposable
     /// 最后更新时间
     /// </summary>
     public DateTimeOffset LastUpdate { get; private set; }
-
-    private readonly Stopwatch sw = Stopwatch.StartNew();
-    private readonly DstWebConfig dstConfig;
 
     public CancellationTokenSource HttpCancellationToken { get; private set; } = new(0); // 初始为取消状态
 
@@ -39,7 +39,7 @@ public class LobbyServerManager : IDisposable
     {
         LobbyDownloader = lobbyDownloader;
         _logger = logger;
-        dstConfig = requestConfig;
+        _dstConfig = requestConfig;
     }
 
 
@@ -63,7 +63,7 @@ public class LobbyServerManager : IDisposable
         }
 
         _logger?.LogInformation("开始DownloadLoop Task");
-        sw.Restart();
+        _stopwatch.Restart();
 
         //循环获取新版服务器数据
         _ = Task.Run(async () =>
@@ -161,9 +161,9 @@ public class LobbyServerManager : IDisposable
                 }
             }
 
-            serverCache = new List<LobbyServerDetailed>(ServerMap.Values);
+            _serverCache = new List<LobbyServerDetailed>(ServerMap.Values);
 
-            ServerUpdated?.Invoke(this, new DstUpdatedEventArgs(serverCache, DateTimeOffset.Now)
+            ServerUpdated?.Invoke(this, new DstUpdatedEventArgs(_serverCache, DateTimeOffset.Now)
             {
                 UnchangedServers = unchanged,
                 AddedServers = added,
@@ -174,7 +174,7 @@ public class LobbyServerManager : IDisposable
 
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(dstConfig.ServerUpdateInterval ?? 60), HttpCancellationToken.Token);
+                await Task.Delay(TimeSpan.FromSeconds(_dstConfig.ServerUpdateInterval ?? 60), HttpCancellationToken.Token);
             }
             catch (Exception)
             {
@@ -185,7 +185,7 @@ public class LobbyServerManager : IDisposable
 
     private async Task UpdatingLoop()
     {
-        if (dstConfig.ServerDetailsUpdateInterval is null) return;
+        if (_dstConfig.ServerDetailsUpdateInterval is null) return;
 
         await Task.Yield();
         await Task.Delay(20000); // 延迟,等待RequestLoop更新完
@@ -196,7 +196,7 @@ public class LobbyServerManager : IDisposable
         while (Running)
         {
             //更新间隔
-            if (DateTimeOffset.Now - lastUpdated < TimeSpan.FromSeconds(dstConfig.ServerDetailsUpdateInterval.Value))
+            if (DateTimeOffset.Now - lastUpdated < TimeSpan.FromSeconds(_dstConfig.ServerDetailsUpdateInterval.Value))
             {
                 await Task.Delay(1000, HttpCancellationToken.Token);
                 continue;
@@ -211,8 +211,8 @@ public class LobbyServerManager : IDisposable
                 {
                     //历史记录更新间隔
                     bool isInsertHistory = false;
-                    if (dstConfig.HistoryDetailsUpdateInterval != null &&
-                        DateTimeOffset.Now - lastHistoryUpdateTime >= TimeSpan.FromSeconds(dstConfig.HistoryDetailsUpdateInterval.Value))
+                    if (_dstConfig.HistoryDetailsUpdateInterval != null &&
+                        DateTimeOffset.Now - lastHistoryUpdateTime >= TimeSpan.FromSeconds(_dstConfig.HistoryDetailsUpdateInterval.Value))
                     {
                         lastHistoryUpdateTime = DateTimeOffset.Now;
                         isInsertHistory = true;
@@ -252,7 +252,7 @@ public class LobbyServerManager : IDisposable
     /// <returns></returns>
     public ICollection<LobbyServerDetailed> GetCurrentServers()
     {
-        var servers = serverCache;
+        var servers = _serverCache;
         return servers;
     }
 

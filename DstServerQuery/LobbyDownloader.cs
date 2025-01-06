@@ -20,17 +20,17 @@ public class LobbyDownloader
 {
     public const string RegionCapabilitiesUrl = "https://lobby-v2-cdn.klei.com/regioncapabilities-v2.json";
 
-    private readonly HttpClient http;
-    private readonly HttpClient httpUpdate;
-    private readonly DstWebConfig dstWebConfig;
+    private readonly HttpClient _http;
+    private readonly HttpClient _httpUpdate;
+    private readonly DstWebConfig _dstWebConfig;
     private readonly ILogger? _logger;
 
     //通过区域和平台获取url
-    public Dictionary<RegionPlatform, RegionUrl> RegionPlatformMap { get; set; } = new();
+    public Dictionary<RegionPlatform, RegionUrl> RegionPlatformMap { get; set; } = [];
 
     public LobbyDownloader(DstWebConfig dstWebConfig, ILogger? logger = null)
     {
-        this.dstWebConfig = dstWebConfig;
+        this._dstWebConfig = dstWebConfig;
         this._logger = logger;
         static HttpClient Create()
         {
@@ -48,19 +48,19 @@ public class LobbyDownloader
             return http;
         }
 
-        http = Create();
-        httpUpdate = Create();
+        _http = Create();
+        _httpUpdate = Create();
     }
 
     public async Task InitializeAsync()
     {
         //获取"区域&平台"的url映射
-        var platforms = new[] { "Steam", "PSN", "Rail", "XBone", "Switch" };
+        string[] platforms = ["Steam", "PSN", "Rail", "XBone", "Switch"];
         async Task<string[]> GetRegions()
         {
-            var stream = await http.GetStreamAsync(RegionCapabilitiesUrl);
+            var stream = await _http.GetStreamAsync(RegionCapabilitiesUrl);
             var obj = JsonNode.Parse(stream);
-            return obj?["LobbyRegions"]?.AsArray().Select(v => v!["Region"]!.GetValue<string>()).ToArray() ?? Array.Empty<string>();
+            return obj?["LobbyRegions"]?.AsArray().Select(v => v!["Region"]!.GetValue<string>()).ToArray() ?? [];
         }
         foreach (var region in await GetRegions())
         {
@@ -68,7 +68,7 @@ public class LobbyDownloader
             {
                 RegionPlatformMap[new(region, Enum.Parse<LobbyPlatform>(platform))] =
                     new(
-                        dstWebConfig.LobbyProxyTemplate.Replace("{region}", region).Replace("{platform}", platform),
+                        _dstWebConfig.LobbyProxyTemplate.Replace("{region}", region).Replace("{platform}", platform),
                         $"https://lobby-v2-{region}.klei.com/lobby/read"
                     );
             }
@@ -80,7 +80,7 @@ public class LobbyDownloader
     //GET请求
     private async Task<List<LobbyServerRaw>> DownloadBriefs(string url, CancellationToken cancellationToken = default)
     {
-        var response = await http.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+        var response = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         var get = await response.Content.ReadFromJsonAsync<GET<LobbyServerRaw>>(cancellationToken).ConfigureAwait(false);
 
         //var get = await response.Content.ReadFromJsonAsync<GET<LobbyServerDetailed>>(dstJsonOptions.DeserializerOptions, cancellationToken);
@@ -151,7 +151,7 @@ public class LobbyDownloader
             if (string.IsNullOrWhiteSpace(url))
             {
                 // https://lobby-v2-cdn.klei.com/{Region}-{Platform}.json.gz
-                if (server.Raw._Region == null) return false;
+                if (server.Raw?._Region == null) return false;
                 if (!RegionPlatformMap.TryGetValue(new(server.Raw._Region, server.Raw._LobbyPlatform), out var regionUrl)) return false;
                 url = regionUrl.DetailsUrl;
                 //var request = new RestRequest(url.details, Method.Post);
@@ -159,7 +159,7 @@ public class LobbyDownloader
                 $$$"""
                 {
                     "__gameId": "DontStarveTogether",
-                    "__token": "{{{dstWebConfig.Token}}}",
+                    "__token": "{{{_dstWebConfig.Token}}}",
                     "query": {
                         "__rowId": "{{{server.RowId}}}"
                     }
@@ -172,12 +172,12 @@ public class LobbyDownloader
                 object[] requestList = [new
                 {
                     server.RowId,
-                    Region = server.Raw._Region,
+                    Region = server.Raw!._Region,
                 }];
                 requestBody = JsonContent.Create(requestList, null, JsonSerializerOptions.Default);
             }
 
-            var r = await httpUpdate.PostAsync(url, requestBody, cancellationToken);
+            var r = await _httpUpdate.PostAsync(url, requestBody, cancellationToken);
             var get = await r.Content.ReadFromJsonAsync<GET<LobbyServerDetailedRaw>>(cancellationToken);
             if (get is null || get.Data is null || get.Data.Count == 0) return false;
 
@@ -215,7 +215,7 @@ public class LobbyDownloader
         }
     }
 
-    private readonly List<LobbyServerDetailed> updatedChunksCache = new(1100);
+    private readonly List<LobbyServerDetailed> _updatedChunksCache = new(1100);
     //POST请求
     public async Task<int> UpdateToDetails(IDictionary<string, LobbyServerDetailed> servers, Action<ICollection<LobbyServerDetailed>>? chunkCallback, CancellationToken cancellationToken = default)
     {
@@ -263,7 +263,7 @@ public class LobbyDownloader
             //并行更新
             ParallelOptions opt = new()
             {
-                MaxDegreeOfParallelism = dstWebConfig.UpdateThreads ?? 6,
+                MaxDegreeOfParallelism = _dstWebConfig.UpdateThreads ?? 6,
                 CancellationToken = cancellationToken
             };
             await Parallel.ForEachAsync(requests.Chunk(50), opt, async (chunk, ct) =>
@@ -275,7 +275,7 @@ public class LobbyDownloader
                 var content = JsonContent.Create(requestList, null, JsonSerializerOptions.Default);
                 try
                 {
-                    r = await httpUpdate.PostAsync(proxyUrl, content, ct);
+                    r = await _httpUpdate.PostAsync(proxyUrl, content, ct);
                 }
                 catch (Exception e)
                 {
@@ -289,7 +289,15 @@ public class LobbyDownloader
                 GET<LobbyServerDetailedRaw>? get;
                 try
                 {
-                    get = await r.Content.ReadFromJsonAsync<GET<LobbyServerDetailedRaw>>(ct);
+                    if (string.Equals(r.Content.Headers.ContentType?.MediaType, MediaTypeNames.Application.Json, StringComparison.OrdinalIgnoreCase))
+                    {
+                        get = await r.Content.ReadFromJsonAsync<GET<LobbyServerDetailedRaw>>(ct);
+                    }
+                    else
+                    {
+                        _logger?.LogError("服务器详细信息下载失败 响应不是Json Url:{Url} 响应:{Body}", proxyUrl, await r.Content.ReadAsStringAsync(default));
+                        return;
+                    }
                 }
                 catch (TaskCanceledException)
                 {
@@ -331,19 +339,19 @@ public class LobbyDownloader
                 {
                     for (int i = 0; i < index; i++)
                     {
-                        updatedChunksCache.Add(serverTemp[i]);
+                        _updatedChunksCache.Add(serverTemp[i]);
                     }
-                    if (updatedChunksCache.Count > 1000)
+                    if (_updatedChunksCache.Count > 1000)
                     {
-                        chunkCallback?.Invoke(updatedChunksCache.ToArray());
-                        updatedChunksCache.Clear();
+                        chunkCallback?.Invoke(_updatedChunksCache.ToArray());
+                        _updatedChunksCache.Clear();
                     }
                 }
             });
-            if (updatedChunksCache.Count != 0)
+            if (_updatedChunksCache.Count != 0)
             {
-                chunkCallback?.Invoke(updatedChunksCache);
-                updatedChunksCache.Clear();
+                chunkCallback?.Invoke(_updatedChunksCache);
+                _updatedChunksCache.Clear();
             }
         }
 
@@ -383,7 +391,7 @@ public class LobbyDownloader
 
     public string? GetProxyUrl()
     {
-        var dstDetailsProxyUrls = dstWebConfig.DstDetailsProxyUrls;
+        var dstDetailsProxyUrls = _dstWebConfig.DstDetailsProxyUrls;
 
         if (dstDetailsProxyUrls is null or { Length: 0 }) return null;
         var rand = Random.Shared.Next() % dstDetailsProxyUrls.Length;
