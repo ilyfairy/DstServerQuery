@@ -2,7 +2,6 @@
 using DstServerQuery;
 using DstServerQuery.EntityFrameworkCore;
 using DstServerQuery.EntityFrameworkCore.Model.Entities;
-using DstServerQuery.Helpers.Converters;
 using DstServerQuery.Models;
 using DstServerQuery.Models.Lobby;
 using DstServerQuery.Models.Lobby.Interfaces.V1;
@@ -26,30 +25,29 @@ public partial class ApiController : ControllerBase
 {
     private readonly ILogger<ApiController> _logger;
 
-    private readonly DstVersionService dstVersion;
-    private readonly LobbyServerManager lobbyDetailsManager;
-    private readonly HistoryCountService historyCountManager;
-    private static readonly JsonSerializerOptions v1JsonOptions = new();
+    private readonly DstVersionService _dstVersion;
+    private readonly LobbyServerManager _lobbyServerManager;
+    private readonly HistoryCountService _historyCountManager;
+    private static readonly JsonSerializerOptions _v1JsonOptions = new();
 
     static ApiController()
     {
-        v1JsonOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver()
+        _v1JsonOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         {
         };
-        v1JsonOptions.PropertyNamingPolicy = null;
-        v1JsonOptions.Converters.Add(new JsonStringEnumConverter());
-        v1JsonOptions.Converters.Add(new ReadOnlyMemoryCharJsonConverter());
-        v1JsonOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
-        v1JsonOptions.MakeReadOnly();
+        _v1JsonOptions.PropertyNamingPolicy = null;
+        _v1JsonOptions.Converters.Add(new JsonStringEnumConverter());
+        _v1JsonOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
+        _v1JsonOptions.MakeReadOnly();
     }
 
     //版本获取, 大厅服务器管理器, 大厅服务器历史房间数量管理器
     public ApiController(ILogger<ApiController> logger, DstVersionService versionGetter, LobbyServerManager lobbyDetailsManager, HistoryCountService historyCountManager)
     {
         _logger = logger;
-        dstVersion = versionGetter;
-        this.lobbyDetailsManager = lobbyDetailsManager;
-        this.historyCountManager = historyCountManager;
+        _dstVersion = versionGetter;
+        this._lobbyServerManager = lobbyDetailsManager;
+        this._historyCountManager = historyCountManager;
     }
 
     /// <summary>
@@ -62,14 +60,14 @@ public partial class ApiController : ControllerBase
     [HttpGet("server/v")]
     public IActionResult GetServerVersion()
     {
-        if (dstVersion.Version == 0)
+        if (_dstVersion.Version == 0)
         {
             return Problem();
         }
         return new JsonResult(new
         {
-            dstVersion.Version,
-        }, v1JsonOptions);
+            _dstVersion.Version,
+        }, _v1JsonOptions);
     }
 
     /// <summary>
@@ -88,7 +86,7 @@ public partial class ApiController : ControllerBase
 
         CancellationTokenSource cts = new();
         cts.CancelAfter(15000);
-        LobbyServerDetailed? info = await lobbyDetailsManager.GetDetailedByRowIdAsync(id, forceUpdate, cts.Token);
+        LobbyServerDetailed? info = await _lobbyServerManager.GetDetailedByRowIdAsync(id, forceUpdate, cts.Token);
 
         if (info == null)
         {
@@ -97,7 +95,7 @@ public partial class ApiController : ControllerBase
         }
         _logger.LogInformation("找到服务器 RowId:{RowId} Name:{Name}", id, info.Name);
 
-        return Content(JsonSerializer.Serialize<ILobbyServerDetailedV1>(info, v1JsonOptions), MediaTypeNames.Application.Json);
+        return Content(JsonSerializer.Serialize<ILobbyServerDetailedV1>(info, _v1JsonOptions), MediaTypeNames.Application.Json);
     }
 
     [HttpPost("details")]
@@ -112,13 +110,13 @@ public partial class ApiController : ControllerBase
     {
         var queryKey = Request.Query.Select(v => new KeyValuePair<string, string>(v.Key, v.Value.FirstOrDefault())).ToList();
 
-        LobbyServerQueryerV1 queryer = new(lobbyDetailsManager.GetCurrentServers(), queryKey, lobbyDetailsManager.LastUpdate);
+        LobbyServerQueryerV1 queryer = new(_lobbyServerManager.GetCurrentServers(), queryKey, _lobbyServerManager.LastUpdate);
         queryer.Query();
 
         string query = string.Join("&", queryKey.Select(v => $"{v.Key}={v.Value}"));
         _logger.LogInformation("查询服务器 Count:{Count} Query:{Query}", queryer.Result.Count, query);
 
-        return Content(queryer.ToJson(v1JsonOptions), "application/json");
+        return Content(queryer.ToJson(_v1JsonOptions), "application/json");
     }
 
 
@@ -136,7 +134,7 @@ public partial class ApiController : ControllerBase
         _logger.LogInformation("获取服务器历史记录个数: Interval:{Interval} Rel:{Rel} Count:{Count}", interval, rel, count);
         if (interval <= 0) interval = 3600;
         DateTimeOffset date = DateTimeOffset.Now.AddSeconds(-rel);
-        var history = historyCountManager.GetServerHistory();
+        var history = _historyCountManager.GetServerHistory();
 
         List<ServerCountInfo> result = new();
         long last = 0;
@@ -170,7 +168,7 @@ public partial class ApiController : ControllerBase
     public async Task<IActionResult> GetModsCount(int topcount = 100)
     {
         _logger.LogInformation("获取Mod个数 TopCount:{TopCount}", topcount);
-        var list = lobbyDetailsManager.GetCurrentServers();
+        var list = _lobbyServerManager.GetCurrentServers();
         var key = new Dictionary<long, ModCountInfo>();
 
         foreach (var item in list)
@@ -195,7 +193,7 @@ public partial class ApiController : ControllerBase
             }
         }
         var result = key.Values.OrderByDescending(v => v.Count);
-        return new JsonResult(result.Take(topcount), v1JsonOptions);
+        return new JsonResult(result.Take(topcount), _v1JsonOptions);
     }
 
     /// <summary>
