@@ -6,7 +6,6 @@ using DstServerQuery;
 using DstServerQuery.EntityFrameworkCore;
 using DstServerQuery.EntityFrameworkCore.Model;
 using DstServerQuery.Helpers;
-using DstServerQuery.Helpers.Converters;
 using DstServerQuery.Models.Requests;
 using DstServerQuery.Services;
 using DstServerQuery.Web;
@@ -20,9 +19,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using System.Diagnostics;
 using System.Globalization;
-using System.Net.Mime;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
@@ -258,7 +255,6 @@ builder.Services.AddControllers()
     opt.JsonSerializerOptions.TypeInfoResolverChain.Add(DstLobbyInfoJsonContext.Default);
 
     opt.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    opt.JsonSerializerOptions.Converters.Add(new ReadOnlyMemoryCharJsonConverter());
     opt.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     opt.JsonSerializerOptions.PropertyNamingPolicy = null;
     opt.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;

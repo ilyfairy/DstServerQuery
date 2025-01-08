@@ -14,11 +14,11 @@
   <Project Path="DstDownloader\SteamDownloader\SteamDownloader\SteamDownloader.csproj" />
   <Project Path="DstDownloader\SteamDownloader\SteamKit\SteamKit2\SteamKit2\SteamKit2.csproj" />
   <Project Path="DstLobbyProxyDownloader\DstLobbyProxyDownloader.csproj" />
-  <Project Path="GeoIP2-dotnet\MaxMind-DB-Reader-dotnet\MaxMind.Db\MaxMind.Db.csproj" />
-  <Project Path="GeoIP2-dotnet\MaxMind.GeoIP2\MaxMind.GeoIP2.csproj" />
   <Project Path="DstServerQuery.EntityFrameworkCore\DstServerQuery.EntityFrameworkCore.csproj" />
   <Project Path="DstServerQuery.Web\DstServerQuery.Web.csproj" />
   <Project Path="DstServerQuery\DstServerQuery.csproj" />
+  <Project Path="GeoIP2-dotnet\MaxMind-DB-Reader-dotnet\MaxMind.Db\MaxMind.Db.csproj" />
+  <Project Path="GeoIP2-dotnet\MaxMind.GeoIP2\MaxMind.GeoIP2.csproj" />
   <Project Path="PrettyPrompt\src\PrettyPrompt\PrettyPrompt.csproj" />
   <Project Path="Test\Test.csproj" />
 </Solution>
