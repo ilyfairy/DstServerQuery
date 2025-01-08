@@ -1,5 +1,6 @@
 ﻿using DstDownloaders;
 using DstDownloaders.Mods;
+using DstServerQuery.EntityFrameworkCore;
 using DstServerQuery.EntityFrameworkCore.Model;
 using DstServerQuery.Helpers;
 using DstServerQuery.Models.Requests;
@@ -18,6 +19,7 @@ public class AppHostedService(ILogger<AppHostedService> _logger,
                               DstVersionService _dstVersionService,
                               DstVersionServiceOptions _dstVersionServiceOptions,
                               DstModsFileServiceOptions _dstModsFileServiceOptions,
+                              HistoryCountService _historyCountService,
                               LobbyServerManager _lobbyServerManager,
                               GeoIPService _geoIPService) : IHostedService
 {
@@ -55,6 +57,16 @@ public class AppHostedService(ILogger<AppHostedService> _logger,
             _logger.LogInformation("数据库创建成功");
         }
 
+        try
+        {
+            await _historyCountService.Initialize();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "HistoryCountManager初始化失败");
+        }
+
+
         // 配置GeoIP
         if (_configuration.GetValue<string>("GeoLite2Path") is string geoLite2Path)
         {
@@ -86,6 +98,7 @@ public class AppHostedService(ILogger<AppHostedService> _logger,
             using var simpleCacheDatabase = scope.ServiceProvider.GetRequiredService<SimpleCacheDatabase>();
             simpleCacheDatabase["DstVersion"] = version;
         };
+
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

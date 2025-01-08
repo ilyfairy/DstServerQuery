@@ -27,26 +27,18 @@ public class HistoryCountService
     {
         _logger = logger;
         this.serviceScopeFactory = serviceScopeFactory;
-        try
-        {
-            Initialize();
-        }
-        catch (Exception e)
-        {
-            _logger.LogError("HistoryCountManager初始化失败 {Exception}", e);
-        }
     }
 
     /// <summary>
     /// 初始化,缓存3天数据
     /// </summary>
-    private void Initialize()
+    public async Task Initialize()
     {
         using var scope = serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
 
         var day3 = DateTimeOffset.Now - TimeSpan.FromDays(3); //三天前
-        var r = dbContext.ServerHistoryCountInfos.Where(v => v.UpdateDate > day3).AsNoTracking().ToArray();
+        var r = await dbContext.ServerHistoryCountInfos.Where(v => v.UpdateDate > day3).AsNoTracking().ToArrayAsync();
         foreach (var item in r)
         {
             cache.Enqueue(item);
