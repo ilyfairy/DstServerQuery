@@ -1,13 +1,13 @@
-﻿namespace DstServerQuery.Models.Lobby.Units;
+﻿namespace DstServerQuery.Models.Lobby;
 
 /// <summary>
 /// 游戏模式
 /// </summary>
-public record struct GameMode
+public record struct LobbyGameMode
 {
     public string? Value { get; set; }
 
-    public GameMode(string? value)
+    public LobbyGameMode(string? value)
     {
         Value = value;
     }
@@ -15,37 +15,37 @@ public record struct GameMode
     /// <summary>
     /// 生存
     /// </summary>
-    public static GameMode Survival => new("survival");
+    public static LobbyGameMode Survival => new("survival");
 
     /// <summary>
     /// 荒野
     /// </summary>
-    public static GameMode Wilderness => new("wilderness");
+    public static LobbyGameMode Wilderness => new("wilderness");
 
     /// <summary>
     /// 无尽
     /// </summary>
-    public static GameMode Endless => new("endless");
+    public static LobbyGameMode Endless => new("endless");
 
     /// <summary>
     /// 熔炉
     /// </summary>
-    public static GameMode Lavaarena => new("lavaarena");
+    public static LobbyGameMode Lavaarena => new("lavaarena");
 
     /// <summary>
     /// 暴食
     /// </summary>
-    public static GameMode Quagmire => new("quagmire");
+    public static LobbyGameMode Quagmire => new("quagmire");
 
     /// <summary>
     /// Starving Floor
     /// </summary>
-    public static GameMode StarvingFloor => new("starving_floor");
+    public static LobbyGameMode StarvingFloor => new("starving_floor");
 
     /// <summary>
     /// 格斗
     /// </summary>
-    public static GameMode Smashup => new("smashup");
+    public static LobbyGameMode Smashup => new("smashup");
 }
 
 

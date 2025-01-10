@@ -9,7 +9,6 @@ public static class Utils
     public static int GetCharCount(ReadOnlySpan<char> input, char targetChar)
     {
         ref ushort r = ref Unsafe.As<char, ushort>(ref Unsafe.AsRef(input.GetPinnableReference()));
-
         int count = 0;
         int length = input.Length;
         Vector<ushort> testVector = new(targetChar);
@@ -27,7 +26,6 @@ public static class Utils
         }
         return count;
     }
-
 
 
     public static int GetHashCodeFast(ReadOnlySpan<char> bytes)

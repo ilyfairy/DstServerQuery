@@ -78,10 +78,10 @@ public class LobbyDownloader
     //public IEnumerable<string> RegionUrls => RegionPlatformMap.Values.Select(v => v.BriefsUrl);
 
     //GET请求
-    private async Task<List<LobbyServerRaw>> DownloadBriefs(string url, CancellationToken cancellationToken = default)
+    private async Task<IReadOnlyList<LobbyServer>> DownloadBriefs(string url, CancellationToken cancellationToken = default)
     {
         var response = await _http.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-        var get = await response.Content.ReadFromJsonAsync<LobbyGet<LobbyServerRaw>>(cancellationToken).ConfigureAwait(false);
+        var get = await response.Content.ReadFromJsonAsync<LobbyGet<LobbyServerDetailed>>(cancellationToken).ConfigureAwait(false);
 
         //var get = await response.Content.ReadFromJsonAsync<GET<LobbyServerDetailed>>(dstJsonOptions.DeserializerOptions, cancellationToken);
 
@@ -151,8 +151,8 @@ public class LobbyDownloader
             if (string.IsNullOrWhiteSpace(url))
             {
                 // https://lobby-v2-cdn.klei.com/{Region}-{Platform}.json.gz
-                if (server.Raw?._Region == null) return false;
-                if (!RegionPlatformMap.TryGetValue(new(server.Raw._Region, server.Raw._LobbyPlatform), out var regionUrl)) return false;
+                if (server._Region == null) return false;
+                if (!RegionPlatformMap.TryGetValue(new(server._Region, server._LobbyPlatform), out var regionUrl)) return false;
                 url = regionUrl.DetailsUrl;
                 //var request = new RestRequest(url.details, Method.Post);
                 string str =
@@ -172,29 +172,29 @@ public class LobbyDownloader
                 object[] requestList = [new
                 {
                     server.RowId,
-                    Region = server.Raw!._Region,
+                    Region = server._Region,
                 }];
                 requestBody = JsonContent.Create(requestList, null, JsonSerializerOptions.Default);
             }
 
             var r = await _httpUpdate.PostAsync(url, requestBody, cancellationToken);
-            var get = await r.Content.ReadFromJsonAsync<LobbyGet<LobbyServerDetailedRaw>>(cancellationToken);
+            var get = await r.Content.ReadFromJsonAsync<LobbyGet<LobbyServerDetailed>>(cancellationToken);
             if (get is null || get.Data is null || get.Data.Count == 0) return false;
 
-            var newRaw = get.Data.FirstOrDefault();
-            if (newRaw is null)
+            var newServer = get.Data.FirstOrDefault();
+            if (newServer is null)
             {
                 return false;
             }
-            newRaw._LastUpdate = DateTimeOffset.Now;
-            newRaw._LobbyPlatform = server.Raw._LobbyPlatform;
-            newRaw._Region = server.Raw._Region;
-            newRaw._IsDetailed = true;
+            newServer._LastUpdate = DateTimeOffset.Now;
+            newServer._LobbyPlatform = server._LobbyPlatform;
+            newServer._Region = server._Region;
+            newServer._IsDetailed = true;
 
             //newServer.CopyTo(server); //更新数据
             //server._IsDetails = true; //变成详细数据
             //server._LastUpdate = DateTimeOffset.Now;
-            server.Raw = newRaw;
+            server.UpdateFrom(newServer);
 
             return true;
         }
@@ -243,9 +243,9 @@ public class LobbyDownloader
             // RegionPlatform, LobbyServerDetailed
             var requests = servers.Values.Select(v =>
             {
-                if (v.Raw is null || v.Raw._Region is null) return null;
+                if (v._Region is null) return null;
 
-                var region = new RegionPlatform(v.Raw._Region, v.Raw._LobbyPlatform);
+                var region = new RegionPlatform(v._Region, v._LobbyPlatform);
                 if (RegionPlatformMap.ContainsKey(region))
                 {
                     //return new
@@ -286,12 +286,12 @@ public class LobbyDownloader
                     return;
                 }
 
-                LobbyGet<LobbyServerDetailedRaw>? get;
+                LobbyGet<LobbyServerDetailed>? get;
                 try
                 {
                     if (string.Equals(r.Content.Headers.ContentType?.MediaType, MediaTypeNames.Application.Json, StringComparison.OrdinalIgnoreCase))
                     {
-                        get = await r.Content.ReadFromJsonAsync<LobbyGet<LobbyServerDetailedRaw>>(ct);
+                        get = await r.Content.ReadFromJsonAsync<LobbyGet<LobbyServerDetailed>>(ct);
                     }
                     else
                     {
@@ -314,17 +314,17 @@ public class LobbyDownloader
 
                 Array50 serverTemp = default;
                 int index = 0;
-                foreach (var newRaw in get.Data)
+                foreach (var newServer in get.Data)
                 {
-                    if (servers.TryGetValue(newRaw.RowId, out var server))
+                    if (servers.TryGetValue(newServer.RowId, out var server))
                     {
-                        newRaw._LastUpdate = dateTime;
-                        newRaw._Region = server.Raw!._Region;
-                        newRaw._LobbyPlatform = server.Raw._LobbyPlatform;
-                        newRaw._IsDetailed = true;
+                        newServer._LastUpdate = dateTime;
+                        newServer._Region = server._Region;
+                        newServer._LobbyPlatform = server._LobbyPlatform;
+                        newServer._IsDetailed = true;
                         //server.Raw = newRaw;
                         //server.Update();
-                        server.UpdateFrom(newRaw);
+                        server.UpdateFrom(newServer);
 
                         //lock (updatedChunks)
                         //{
@@ -358,7 +358,7 @@ public class LobbyDownloader
         return updatedCount;
     }
 
-    public async IAsyncEnumerable<LobbyServerRaw> DownloadAllBriefs([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<LobbyServer> DownloadAllBriefs([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         foreach (var map in RegionPlatformMap)
         {
@@ -405,12 +405,6 @@ public class LobbyDownloader
 file struct Array50
 {
     public LobbyServerDetailed First { get; set; }
-}
-
-[InlineArray(100000)]
-file struct Array100000
-{
-    public object First { get; set; }
 }
 
 file record struct RowIdRegion(string RowId, string Region);

@@ -8,8 +8,6 @@ namespace DstServerQuery.Helpers;
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(int))]
 [JsonSerializable(typeof(object))]
-[JsonSerializable(typeof(LobbyServerRaw))]
-[JsonSerializable(typeof(LobbyServerDetailedRaw))]
 [JsonSerializable(typeof(WorldLevelRawItem))]
 [JsonSourceGenerationOptions(
     NumberHandling = JsonNumberHandling.AllowReadingFromString,

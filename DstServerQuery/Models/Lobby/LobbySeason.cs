@@ -1,41 +1,41 @@
-﻿namespace DstServerQuery.Models.Lobby.Units;
+﻿namespace DstServerQuery.Models.Lobby;
 
 /// <summary>
 /// 季节
 /// </summary>
-public record struct Season(string? Value)
+public record struct LobbySeason(string? Value)
 {
     /// <summary>
     /// 秋
     /// </summary>
-    public static Season Autumn => new("autumn");
+    public static LobbySeason Autumn => new("autumn");
     /// <summary>
     /// 冬
     /// </summary>
-    public static Season Winter => new("winter");
+    public static LobbySeason Winter => new("winter");
     /// <summary>
     /// 春
     /// </summary>
-    public static Season Spring => new("spring");
+    public static LobbySeason Spring => new("spring");
     /// <summary>
     /// 夏
     /// </summary>
-    public static Season Summer => new("summer");
+    public static LobbySeason Summer => new("summer");
 
     //`(*>﹏<*)′=================================== 一条华丽的分割线 ===================================`(*>﹏<*)′//
 
     /// <summary>
     /// 冬季或秋季
     /// </summary>
-    public static Season AutumnOrSpring => new("autumnOrspring");
+    public static LobbySeason AutumnOrSpring => new("autumnOrspring");
     /// <summary>
     /// 冬季或夏季
     /// </summary>
-    public static Season WinterOrSummer => new("winterOrsummer");
+    public static LobbySeason WinterOrSummer => new("winterOrsummer");
     /// <summary>
     /// 随机
     /// </summary>
-    public static Season AutumnOrWinterOrSpringOrSummer => new("autumnOrwinterOrspringOrsummer");
+    public static LobbySeason AutumnOrWinterOrSpringOrSummer => new("autumnOrwinterOrspringOrsummer");
 }
 
 

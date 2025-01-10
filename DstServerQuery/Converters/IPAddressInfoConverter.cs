@@ -1,8 +1,10 @@
-﻿using DstServerQuery.Models;
+﻿using DstServerQuery.Helpers;
+using DstServerQuery.Models;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace DstServerQuery.Helpers.Converters;
+namespace DstServerQuery.Converters;
 
 public class IPAddressStringConverter : JsonConverter<IPAddressInfo>
 {
@@ -13,6 +15,13 @@ public class IPAddressStringConverter : JsonConverter<IPAddressInfo>
 
     public override IPAddressInfo? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        throw new NotSupportedException();
+        Debug.Assert(reader.TokenType != JsonTokenType.Null);
+
+        if (reader.ValueSpan.SequenceEqual("127.0.0.1"u8))
+        {
+            return DstConverterHelper.ParseAddress("127.0.0.1");
+        }
+
+        return DstConverterHelper.ParseAddress(reader.GetString()!);
     }
 }

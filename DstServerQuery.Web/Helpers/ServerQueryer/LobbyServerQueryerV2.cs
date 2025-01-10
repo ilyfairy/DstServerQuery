@@ -666,7 +666,7 @@ public partial class LobbyServerQueryerV2
             return;
 
         current = current
-            .Where(v => queryTags.IsExclude ^ queryTags.Value.Any(queryTag => v.Tags?.Any(v => queryTag is not null && v.Span.Contains(queryTag, StringComparison.OrdinalIgnoreCase)) == true));
+            .Where(v => queryTags.IsExclude ^ queryTags.Value.Any(queryTag => v.Tags?.Any(v => queryTag is not null && v.Contains(queryTag, StringComparison.OrdinalIgnoreCase)) == true));
     }
 
     private void HandleMaxConnection()
@@ -793,7 +793,7 @@ public partial class LobbyServerQueryerV2
         if (ownerNetId.Value is ["string"])
             return;
 
-        current = current.Where(v => ownerNetId.IsExclude ^ ownerNetId.Value.Any(id => id is null ? v.OwnerNetId == null : v.OwnerNetId?.AsSpan().Trim().Equals(id.AsSpan().Trim(), StringComparison.OrdinalIgnoreCase) == true));
+        current = current.Where(v => ownerNetId.IsExclude ^ ownerNetId.Value.Any(id => id is null ? v.OwnerNetId == null : v.OwnerNetId?.Equals(id.AsSpan().Trim(), true) == true));
     }
 
     private void HandleIsAllowNewPlayers()

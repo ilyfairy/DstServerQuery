@@ -98,7 +98,7 @@ public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig c
         using var scope = serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<DstDbContext>();
 
-        ICollection<LobbyServerDetailed> servers = e.Servers.Select(v => v.Clone()).ToArray();
+        ICollection<LobbyServerDetailed> servers = e.Servers.ToArray();
 
         try
         {

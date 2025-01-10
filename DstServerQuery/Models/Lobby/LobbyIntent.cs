@@ -1,14 +1,14 @@
-﻿namespace DstServerQuery.Models.Lobby.Units;
+﻿namespace DstServerQuery.Models.Lobby;
 
 /// <summary>
 /// 游戏风格
 /// </summary>
 
-public record struct IntentionType
+public record struct LobbyIntent
 {
     public string? Value { get; set; }
 
-    public IntentionType(string? value)
+    public LobbyIntent(string? value)
     {
         Value = value;
     }
@@ -16,56 +16,56 @@ public record struct IntentionType
     /// <summary>
     /// 轻松
     /// </summary>
-    public static IntentionType Relaxed => new("relaxed");
+    public static LobbyIntent Relaxed => new("relaxed");
 
     /// <summary>
     /// 无尽
     /// </summary>
-    public static IntentionType Endless => new("endless");
+    public static LobbyIntent Endless => new("endless");
 
     /// <summary>
     /// 生存
     /// </summary>
-    public static IntentionType Survival => new("survival");
+    public static LobbyIntent Survival => new("survival");
 
     /// <summary>
     /// 荒野
     /// </summary>
-    public static IntentionType Wilderness => new("wilderness");
+    public static LobbyIntent Wilderness => new("wilderness");
 
     /// <summary>
     /// 暗无天日
     /// </summary>
-    public static IntentionType Lightsout => new("lightsout");
+    public static LobbyIntent Lightsout => new("lightsout");
 
     //`(*>﹏<*)′=================================== 一条华丽的分割线 ===================================`(*>﹏<*)′//
 
     /// <summary>
     /// 合作
     /// </summary>
-    public static IntentionType Cooperative => new("cooperative");
+    public static LobbyIntent Cooperative => new("cooperative");
 
     /// <summary>
     /// 社交
     /// </summary>
-    public static IntentionType Social => new("social");
+    public static LobbyIntent Social => new("social");
 
     /// <summary>
     /// 疯狂
     /// </summary>
-    public static IntentionType Madness => new("madness");
+    public static LobbyIntent Madness => new("madness");
 
     /// <summary>
     /// 竞争
     /// </summary>
-    public static IntentionType Competitive => new("competitive");
+    public static LobbyIntent Competitive => new("competitive");
 
     //`(*>﹏<*)′=================================== 一条华丽的分割线 ===================================`(*>﹏<*)′//
 
     /// <summary>
     /// 海钓
     /// </summary>
-    public static IntentionType OceanFishing => new("oceanfishing");
+    public static LobbyIntent OceanFishing => new("oceanfishing");
 }
 
 

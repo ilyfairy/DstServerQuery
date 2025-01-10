@@ -1,35 +1,49 @@
-﻿using Neo.IronLua;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
+using MoonSharp.Interpreter;
 
 namespace DstServerQuery.Helpers;
 
 public class LuaTempEnvironment
 {
-    private static readonly Lazy<LuaTempEnvironment> laziedInstance;
-    private readonly Lazy<LuaGlobal> laziedLuaGlobal;
-
-    public static LuaTempEnvironment Instance => laziedInstance.Value;
-
-    private readonly Lua lua = new();
-    private LuaGlobal luaGlobal => laziedLuaGlobal.Value;
-
+    public static LuaTempEnvironment Instance { get; set; }
+    private readonly BlockingCollection<Script> _scripts = new();
 
     static LuaTempEnvironment()
     {
-        laziedInstance = new Lazy<LuaTempEnvironment>(() => new LuaTempEnvironment());
-    }
-    private LuaTempEnvironment()
-    {
-        laziedLuaGlobal = new Lazy<LuaGlobal>(() => lua.CreateEnvironment());
+        Instance = new(5);
     }
 
-
-    public LuaResult DoChunk(string code, string name)
+    private LuaTempEnvironment(int initialSize)
     {
-        lock (this)
+        for (int i = 0; i < initialSize; i++)
         {
-            LuaResult rst = luaGlobal.DoChunk(code, name);
-            luaGlobal.Members.Clear();
-            return rst;
+            _scripts.Add(new Script(CoreModules.None, fastStackSize: 4096)
+            {
+                DebuggerEnabled = false,
+            });
+        }
+    }
+
+    public DynValue DoChunk(ReadOnlyMemory<char> code)
+    {
+        var script = _scripts.Take();
+        try
+        {
+            var result = script.DoStringAndRemoveSource(code, null, string.Empty);
+            script.ClearByteCode();
+            return result;
+        }
+#if DEBUG
+        catch (Exception ex)
+        {
+            Debugger.Break();
+            return null!;
+        }
+#endif
+        finally
+        {
+            _scripts.Add(script);
         }
     }
 }

@@ -1,5 +1,6 @@
-﻿using DstServerQuery.Helpers;
-using DstServerQuery.Helpers.Converters.Cache;
+﻿using DstServerQuery.Converters;
+using DstServerQuery.Helpers;
+using DstServerQuery.Models.Lobby;
 using System.Text.Json.Serialization;
 
 namespace DstServerQuery.Models;
@@ -13,11 +14,11 @@ public class WorldLevelRawItem
     public int Port { get; set; }
 
     [JsonPropertyName("id")]
-    [JsonConverter(typeof(IdRawCacheConverter))]
-    public string Id { get; set; }
+    public LobbyNumberId Id { get; set; }
 
     [JsonPropertyName("steamid")]
-    public string? SteamId { get; set; } // 有前缀
+    [JsonConverter(typeof(LobbySteamIdConverter))]
+    public LobbySteamId? SteamId { get; set; } // 有前缀
 }
 
 public class WorldLevelItem
@@ -26,9 +27,10 @@ public class WorldLevelItem
 
     public int Port { get; set; }
 
-    public string Id { get; set; }
+    public LobbyNumberId Id { get; set; }
 
-    public string? SteamId { get; set; } // 有前缀
+    [JsonConverter(typeof(LobbySteamIdConverter))]
+    public LobbySteamId? SteamId { get; set; } // 有前缀
 
     public static WorldLevelItem FromRaw(WorldLevelRawItem raw)
     {
@@ -36,7 +38,7 @@ public class WorldLevelItem
         item.Address = raw.Address;
         item.Port = raw.Port;
         item.Id = raw.Id;
-        item.SteamId = DstConverterHelper.RemovePrefixColon(raw.SteamId);
+        item.SteamId = raw.SteamId;
         return item;
     }
 }

@@ -1,13 +1,14 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace DstServerQuery.Helpers.Converters.Cache;
+namespace DstServerQuery.Converters;
 
-public class IdRawCacheConverter : JsonConverter<string>
+public class IdCacheConverter : JsonConverter<string>
 {
     public override string? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (reader.TokenType == JsonTokenType.Null) return null;
+        if (reader.TokenType == JsonTokenType.Null)
+            return null;
 
         if (reader.TokenType != JsonTokenType.String)
         {

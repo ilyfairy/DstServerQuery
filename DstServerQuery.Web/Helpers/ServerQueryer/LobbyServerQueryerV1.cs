@@ -1,7 +1,6 @@
 ﻿using DstServerQuery.Models;
 using DstServerQuery.Models.Lobby;
 using DstServerQuery.Models.Lobby.Interfaces.V1;
-using DstServerQuery.Models.Lobby.Units;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -685,7 +684,7 @@ public class LobbyServerQueryerV1
                 {
                     foreach (var item in queryTags)
                     {
-                        if (t.Span.Equals(item)) return true;
+                        if (t.Equals(item)) return true;
                     }
                     return false;
                 }) == true);
@@ -693,7 +692,7 @@ public class LobbyServerQueryerV1
             }
             else
             {
-                var tmp = Result.Where(v => v.Tags?.Any(t => t.Span.SequenceEqual(queryTag)) == true);
+                var tmp = Result.Where(v => v.Tags?.Any(t => t.SequenceEqual(queryTag)) == true);
                 ReAdd(tmp);
             }
         }
@@ -714,31 +713,31 @@ public class LobbyServerQueryerV1
                     //    }
                     //    break;
                     case "1" or "survival": //
-                        if (item.Mode == GameMode.Survival)
+                        if (item.Mode == LobbyGameMode.Survival)
                         {
                             tmp.Add(item);
                         }
                         break;
                     case "2" or "wilderness": //
-                        if (item.Mode == GameMode.Wilderness)
+                        if (item.Mode == LobbyGameMode.Wilderness)
                         {
                             tmp.Add(item);
                         }
                         break;
                     case "3" or "endless": //
-                        if (item.Mode == GameMode.Endless)
+                        if (item.Mode == LobbyGameMode.Endless)
                         {
                             tmp.Add(item);
                         }
                         break;
                     case "4" or "lavaarena": //
-                        if (item.Mode == GameMode.Lavaarena)
+                        if (item.Mode == LobbyGameMode.Lavaarena)
                         {
                             tmp.Add(item);
                         }
                         break;
                     case "5" or "quagmire": //
-                        if (item.Mode == GameMode.Quagmire)
+                        if (item.Mode == LobbyGameMode.Quagmire)
                         {
                             tmp.Add(item);
                         }
@@ -943,7 +942,7 @@ public class LobbyServerQueryerV1
     {
         if (GetQueryValue("season", "季节") is string seasonString)
         {
-            Season? season = null;
+            LobbySeason? season = null;
             //foreach (var item in seasons)
             //{
             //    if (string.Equals(item.ToString(), seasonString, StringComparison.OrdinalIgnoreCase))
@@ -955,10 +954,10 @@ public class LobbyServerQueryerV1
 
             season ??= seasonString switch
             {
-                "春" or "春天" => Season.Spring,
-                "夏" or "夏天" => Season.Summer,
-                "秋" or "秋天" => Season.Autumn,
-                "冬" or "冬天" => Season.Winter,
+                "春" or "春天" => LobbySeason.Spring,
+                "夏" or "夏天" => LobbySeason.Summer,
+                "秋" or "秋天" => LobbySeason.Autumn,
+                "冬" or "冬天" => LobbySeason.Winter,
                 _ => null
             };
 

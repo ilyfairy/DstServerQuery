@@ -2,13 +2,13 @@
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
-namespace DstServerQuery.Helpers.Converters;
+namespace DstServerQuery.Converters;
 
-public class WorldGenConverter : JsonConverter<object>
+public class LobbyWorldGenConverter : JsonConverter<object>
 {
     public override object? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        _ = JsonNode.Parse(ref reader);
+        //_ = JsonNode.Parse(ref reader);
         return null;
     }
 

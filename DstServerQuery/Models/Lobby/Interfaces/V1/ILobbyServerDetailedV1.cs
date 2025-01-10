@@ -1,4 +1,4 @@
-﻿using DstServerQuery.Helpers.Converters;
+﻿using DstServerQuery.Converters;
 using System.Text.Json.Serialization;
 
 namespace DstServerQuery.Models.Lobby.Interfaces.V1;

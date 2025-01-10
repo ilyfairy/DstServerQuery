@@ -19,7 +19,7 @@ public class LobbyServerManager : IDisposable
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
     private readonly DstWebConfig _dstConfig;
 
-    public bool Running => !HttpCancellationToken.IsCancellationRequested;
+    public bool Running => !HttpCancellationTokenSource.IsCancellationRequested;
     public LobbyDownloader LobbyDownloader { get; private set; }
 
     /// <summary>
@@ -27,12 +27,14 @@ public class LobbyServerManager : IDisposable
     /// </summary>
     public DateTimeOffset LastUpdate { get; private set; }
 
-    public CancellationTokenSource HttpCancellationToken { get; private set; } = new(0); // 初始为取消状态
+    public CancellationTokenSource HttpCancellationTokenSource { get; private set; } = new(0); // 初始为取消状态
 
     public event EventHandler<DstUpdatedEventArgs>? ServerUpdated;
     public event EventHandler<DstUpdatedDetailsChunk>? DetailsChunkUpdated;
 
     public bool ModifyEnabled { get; set; } = true;
+
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _updateDetailsLock = new(); // 详细信息更新锁
 
     //参数是依赖注入
     public LobbyServerManager(DstWebConfig requestConfig, LobbyDownloader lobbyDownloader, ILogger<LobbyServerManager>? logger = null)
@@ -45,7 +47,7 @@ public class LobbyServerManager : IDisposable
 
     public async Task Start()
     {
-        HttpCancellationToken = new();
+        HttpCancellationTokenSource = new();
 
         //重试
         for (int i = 1; i <= 3; i++)
@@ -74,7 +76,7 @@ public class LobbyServerManager : IDisposable
             }
             catch (Exception e)
             {
-                HttpCancellationToken.Cancel();
+                HttpCancellationTokenSource.Cancel();
                 _logger?.LogError("DownloadLoopException: {Exception}", e.Message);
             }
         });
@@ -85,7 +87,7 @@ public class LobbyServerManager : IDisposable
 
     public void Dispose()
     {
-        HttpCancellationToken.Cancel();
+        HttpCancellationTokenSource.Cancel();
         GC.SuppressFinalize(this);
         _logger?.LogInformation("LobbyDetailsManager Dispose");
     }
@@ -107,7 +109,7 @@ public class LobbyServerManager : IDisposable
                 cts.CancelAfter(TimeSpan.FromMinutes(3));
                 _logger?.LogInformation("开始 Download");
 
-                await foreach (var item in LobbyDownloader.DownloadAllBriefs(CancellationTokenSource.CreateLinkedTokenSource(cts.Token, HttpCancellationToken.Token).Token))
+                await foreach (var item in LobbyDownloader.DownloadAllBriefs(CancellationTokenSource.CreateLinkedTokenSource(cts.Token, HttpCancellationTokenSource.Token).Token))
                 {
                     newRowIdLst.Add(item.RowId);
 
@@ -122,8 +124,7 @@ public class LobbyServerManager : IDisposable
                     //新增的
                     else
                     {
-                        LobbyServer server = new LobbyServerDetailed();
-                        server.UpdateFrom(item as LobbyServerRaw);
+                        LobbyServer server = item;
                         if (ServerMap.TryAdd(item.RowId, (server as LobbyServerDetailed)!))
                         {
                             if (modifyEnabled)
@@ -134,14 +135,21 @@ public class LobbyServerManager : IDisposable
 
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                if (!Running || HttpCancellationToken.IsCancellationRequested)
+                if (!Running)
                 {
-                    _logger?.LogWarning("中断请求,结束");
+                    _logger?.LogWarning("取消请求, 结束");
                     break;
                 }
-                _logger?.LogWarning($"请求失败,重新请求\n{e.Message}");
+                if (ex is OperationCanceledException)
+                {
+                    _logger?.LogWarning($"请求超时, 重新请求");
+                }
+                else
+                {
+                    _logger?.LogError(ex, $"请求失败, 重新请求");
+                }
                 continue;
             }
 
@@ -154,6 +162,10 @@ public class LobbyServerManager : IDisposable
             List<LobbyServer>? removed = modifyEnabled ? new(1000) : null;
             foreach (var rowId in currentRowIds.Except(newRowIdLst))
             {
+                if (_updateDetailsLock.TryRemove(rowId, out var lck))
+                {
+                    lck.Dispose();
+                }
                 if (ServerMap.TryRemove(rowId, out var rm))
                 {
                     if (modifyEnabled)
@@ -161,7 +173,7 @@ public class LobbyServerManager : IDisposable
                 }
             }
 
-            _serverCache = new List<LobbyServerDetailed>(ServerMap.Values);
+            _serverCache = [.. ServerMap.Values];
 
             ServerUpdated?.Invoke(this, new DstUpdatedEventArgs(_serverCache, DateTimeOffset.Now)
             {
@@ -175,7 +187,7 @@ public class LobbyServerManager : IDisposable
 
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(_dstConfig.ServerUpdateInterval ?? 60), HttpCancellationToken.Token);
+                await Task.Delay(TimeSpan.FromSeconds(_dstConfig.ServerUpdateInterval ?? 60), HttpCancellationTokenSource.Token);
             }
             catch (Exception)
             {
@@ -199,7 +211,7 @@ public class LobbyServerManager : IDisposable
             //更新间隔
             if (DateTimeOffset.Now - lastUpdated < TimeSpan.FromSeconds(_dstConfig.ServerDetailsUpdateInterval.Value))
             {
-                await Task.Delay(1000, HttpCancellationToken.Token);
+                await Task.Delay(1000, HttpCancellationTokenSource.Token);
                 continue;
             }
 
@@ -227,7 +239,7 @@ public class LobbyServerManager : IDisposable
                         {
                             DetailsChunkUpdated?.Invoke(this, new DstUpdatedDetailsChunk(updatedChunk, DateTimeOffset.Now));
                         }
-                    }, HttpCancellationToken.Token);
+                    }, HttpCancellationTokenSource.Token);
                     //if (updatedCount > arr.Count * 0.6f) // 更新数量大于60%
                     //{
                     //    //Updated?.Invoke(this, new DstUpdatedEventArgs(updated, LastUpdate));
@@ -269,22 +281,19 @@ public class LobbyServerManager : IDisposable
         var server = ServerMap.GetValueOrDefault(rowid);
         if (server is null) return null;
 
-        lock (server)
-        {
-            server._Lock ??= new SemaphoreSlim(1);
-        }
-        var token = CancellationTokenSource.CreateLinkedTokenSource(HttpCancellationToken.Token, cancellationToken).Token;
+        var lck = _updateDetailsLock.GetOrAdd(rowid, _ => new(1));
+        cancellationToken = CancellationTokenSource.CreateLinkedTokenSource(HttpCancellationTokenSource.Token, cancellationToken).Token;
         try
         {
-            await server._Lock.WaitAsync(token);
-            if (forceUpdate || !server.Raw!._IsDetailed || DateTimeOffset.Now - server.Raw._LastUpdate > TimeSpan.FromSeconds(20))
+            await lck.WaitAsync(cancellationToken);
+            if (forceUpdate || !server._IsDetailed || DateTimeOffset.Now - server._LastUpdate > TimeSpan.FromSeconds(20))
             {
-                await LobbyDownloader.UpdateToDetails(server, HttpCancellationToken.Token);
+                await LobbyDownloader.UpdateToDetails(server, HttpCancellationTokenSource.Token);
             }
         }
         finally
         {
-            server._Lock.Release();
+            lck.Release();
         }
         return server;
     }

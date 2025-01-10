@@ -1,7 +1,9 @@
 ﻿using DstServerQuery.Models;
 using DstServerQuery.Services;
+using MoonSharp.Interpreter;
 using Neo.IronLua;
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
@@ -12,7 +14,11 @@ namespace DstServerQuery.Helpers;
 
 public static partial class DstConverterHelper
 {
-    public static Dictionary<ReadOnlyMemory<char>, string> TagsCache { get; } = new(new MemoryCharEqualityComparer());
+    private static ConcurrentDictionary<string, string> PlayerColorCache { get; } = new();
+    private static ConcurrentDictionary<string, string>.AlternateLookup<ReadOnlySpan<char>> PlayerColorCacheAlternateLookup { get; }
+    
+    private static ConcurrentDictionary<string, string> PlayerPrefabCache { get; } = new();
+    private static ConcurrentDictionary<string, string>.AlternateLookup<ReadOnlySpan<char>> PlayerPrefabCacheAlternateLookup { get; }
 
     public static GeoIPService? GeoIPService { get; set; }
 
@@ -22,11 +28,26 @@ public static partial class DstConverterHelper
         IPAddress = IPAddress.Loopback,
     };
 
+    static DstConverterHelper()
+    {
+        PlayerColorCacheAlternateLookup = PlayerColorCache.GetAlternateLookup<ReadOnlySpan<char>>();
+        PlayerPrefabCacheAlternateLookup = PlayerPrefabCache.GetAlternateLookup<ReadOnlySpan<char>>();
+    }
 
     [return: NotNullIfNotNull(nameof(str))]
     public static string? RemovePrefixColon(string? str)
     {
         if (str is null) return null;
+        var perfixIndex = str.IndexOf(':');
+        if (perfixIndex != -1)
+        {
+            return str[(perfixIndex + 1)..];
+        }
+        return str;
+    }
+
+    public static ReadOnlySpan<char> RemovePrefixColon(ReadOnlySpan<char> str)
+    {
         var perfixIndex = str.IndexOf(':');
         if (perfixIndex != -1)
         {
@@ -88,143 +109,193 @@ public static partial class DstConverterHelper
         return info;
     }
 
-    public static LobbyDaysInfo? ParseDays(string? luaDayCode)
+    public static LobbyDaysInfo? ParseDays(ReadOnlySpan<char> luaDayCode)
     {
-        if (luaDayCode is null) return null;
+        LobbyDaysInfo info = new();
+        var dayOk = false;
+        var daysElapsedInSeasonOk = false;
+        var daysLeftInSeasonOk = false;
+        foreach (var item in LuaKeyValuePairRegex().EnumerateMatches(luaDayCode))
+        {
+            const string Day = "day";
+            const string DaysElapsedInSeason = "dayselapsedinseason";
+            const string DaysLeftInSeason = "daysleftinseason";
+            var span = luaDayCode.Slice(item.Index, item.Length);
+            Span<Range> range2 = [default, default];
+            var testSplitCount = span.Split(range2, '=');
+            Debug.Assert(testSplitCount == 2);
+            var number = int.Parse(span[range2[1]].Trim());
+            if (span[range2[0]].Trim().SequenceEqual(Day))
+            {
+                dayOk = true;
+                info.Day = number;
+            }
+            else if (span[range2[0]].Trim().SequenceEqual(DaysElapsedInSeason))
+            {
+                daysElapsedInSeasonOk = true;
+                info.DaysElapsedInSeason = number;
+            }
+            else if (span[range2[0]].Trim().SequenceEqual(DaysLeftInSeason))
+            {
+                daysLeftInSeasonOk = true;
+                info.DaysLeftInSeason = number;
+            }
+        }
+        if (dayOk && daysElapsedInSeasonOk && daysLeftInSeasonOk)
+        {
+            return info;
+        }
+        return null;
+    }
 
-        //var match = DayRegex().Match(luaDayCode);
-        LuaTable? table = LuaTempEnvironment.Instance.DoChunk(luaDayCode, "day").Values.FirstOrDefault() as LuaTable;
+    public static LobbyDaysInfo? ParseDays(ReadOnlyMemory<char> luaDayCode)
+    {
+        // fallback
+        LobbyDaysInfo info = new();
+        Table? table = LuaTempEnvironment.Instance.DoChunk(luaDayCode).Table;
         if(table is null) return null;
 
-        LobbyDaysInfo info = new();
-        info.Day = (int)table.GetValue("day");
-        info.DaysElapsedInSeason = (int)table.GetValue("dayselapsedinseason");
-        info.DaysLeftInSeason = (int)table.GetValue("daysleftinseason");
+        info.Day = (int)table.Get("day").Number;
+        info.DaysElapsedInSeason = (int)table.Get("dayselapsedinseason").Number;
+        info.DaysLeftInSeason = (int)table.Get("daysleftinseason").Number;
         return info;
     }
 
-    public static LobbyModInfo[]? ParseMods(object[]? mods)
+    public static LobbyPlayerInfo[]? ParsePlayers(ReadOnlySpan<char> playerLuaCode)
     {
-        if (mods is null) return null;
-        List<LobbyModInfo> infos = new(mods.Length / 5 + 1);
-        if (mods.Count(v => v is "True" or "False" or "true" or "false" or true or false) == mods.Length / 5)
-        {
-            for (int i = 0; i < mods.Length / 5; i++)
-            {
-                var mod = new LobbyModInfo();
-                //mod.Id = base_mods_info[i * 5 + 0];
-                var work = mods[i * 5 + 0].ToString()!;
-                var matchId = WorkshopRegex().Match(work);
-                if (!matchId.Success)
-                    continue;
-                var idParsed = long.TryParse(matchId.Groups[1].Value, out var id);
+        List<LobbyPlayerInfo>? regexPlayers = null;
 
-                mod.Id = id;
-                mod.Name = mods[i * 5 + 1]?.ToString()!;
-                mod.NewVersion = mods[i * 5 + 2]?.ToString();
-                mod.CurrentVersion = mods[i * 5 + 3]?.ToString();
-                if (mods[i * 5 + 4] is bool isClientDownload)
+        Span<Range> ranges = stackalloc Range[8]; // lines
+        Span<Range> kvRange = [default, default];
+        bool isRegexFail = false;
+        foreach (var item in PlayerObjectRegex().EnumerateMatches(playerLuaCode))
+        {
+            var itemSpan = playerLuaCode.Slice(item.Index, item.Length);
+            var lineCount = itemSpan.SplitAny(ranges, ['\r', '\n']);
+            Debug.Assert(lineCount < 8);
+            regexPlayers ??= new();
+            LobbyPlayerInfo player = new();
+            var colorOk = false;
+            var eventLevelOk = false;
+            var nameOk = false;
+            var netIdOk = false;
+            var prefabOk = false;
+            foreach (var range in ranges[..lineCount])
+            {
+                var kvItem = itemSpan[range];
+                if (kvItem.Contains('='))
                 {
-                    mod.IsClientDownload = isClientDownload;
-                }
-                else
-                {
-                    mod.IsClientDownload = bool.Parse(mods[i * 5 + 4].ToString()!);
-                }
-                if (idParsed && mod.Name != null)
-                {
-                    infos.Add(mod);
+                    var testKvSplitLen = kvItem.Split(kvRange, '=');
+                    Debug.Assert(testKvSplitLen == 2);
+                    var k = kvItem[kvRange[0]].Trim();
+                    var v = kvItem[kvRange[1]].Trim().TrimEnd(',');
+                    if (k.SequenceEqual("colour"))
+                    {
+                        var colour = v.Trim('"');
+
+                        if (PlayerColorCacheAlternateLookup.TryGetValue(colour, out var cachedColor))
+                        {
+                            player.Color = cachedColor;
+                        }
+                        else
+                        {
+                            cachedColor = colour.ToString();
+                            player.Color = cachedColor;
+                            PlayerColorCache.TryAdd(cachedColor, cachedColor);
+                        }
+                        colorOk = true;
+                    }
+                    else if (k.SequenceEqual("eventlevel"))
+                    {
+                        var eventlevel = int.Parse(v);
+                        player.EventLevel = eventlevel;
+                        eventLevelOk = true;
+                    }
+                    else if (k.SequenceEqual("name"))
+                    {
+                        var name = v.Trim('"').ToString();
+                        player.Name = name;
+                        nameOk = true;
+                    }
+                    else if (k.SequenceEqual("netid")) // 可能有冒号
+                    {
+                        var netid = DstConverterHelper.RemovePrefixColon(v.Trim('"')).ToString();
+                        player.NetId = netid;
+                        netIdOk = true;
+                    }
+                    else if (k.SequenceEqual("prefab"))
+                    {
+                        var prefab = v.Trim('"');
+                        if (PlayerColorCacheAlternateLookup.TryGetValue(prefab, out var cachedPrefab))
+                        {
+                            player.Color = cachedPrefab;
+                        }
+                        else
+                        {
+                            cachedPrefab = prefab.ToString();
+                            player.Prefab = cachedPrefab;
+                            PlayerColorCache.TryAdd(cachedPrefab, cachedPrefab);
+                        }
+                        prefabOk = true;
+                    }
                 }
             }
+            var isAllOk = colorOk && eventLevelOk && nameOk && netIdOk && prefabOk;
+            Debug.Assert(isAllOk);
+            if (isAllOk)
+            {
+                regexPlayers.Add(player);
+            }
+            else
+            {
+                isRegexFail = true;
+                break;
+            }
         }
-        else
+
+        if (!isRegexFail && regexPlayers != null) // 没有匹配失败 && 有匹配项
         {
-            //Log.Warning("ModItem不是5的倍数");
+            return regexPlayers.ToArray();
         }
-        return infos.ToArray();
+
+        return null;
     }
 
-    public static LobbyPlayerInfo[]? ParsePlayers(string? playerLuaCode)
+    public static LobbyPlayerInfo[]? ParsePlayers(ReadOnlyMemory<char> playerLuaCode)
     {
-        if (playerLuaCode == null) return null;
-
-        if (playerLuaCode is "return {  }") //玩家列表是空的
+        // fallback
+        if (playerLuaCode.Equals("return {  }")) //玩家列表是空的
         {
             return [];
         }
 
         //将lua解析为LuauTable
-        LuaTable? table = null;
-        try
-        {
-            LuaResult r = LuaTempEnvironment.Instance.DoChunk(playerLuaCode, "getplayers");
-            table = r.Values.FirstOrDefault() as LuaTable;
-            if (table == null) return [];
-        }
-        catch
-        {
-            return [];
-        }
+        Table? table = null;
+        table = LuaTempEnvironment.Instance.DoChunk(playerLuaCode)?.Table; // may throw
+        if (table == null)
+            return null;
 
-        List<LobbyPlayerInfo> list = new(table.Length);
-        foreach (var item in table.Select(v => v.Value as LuaTable))
+        var players = new LobbyPlayerInfo[table.Length];
+        int index = 0;
+        foreach (var item in table.Values.Select(v => v.Table))
         {
-            if (item is null) continue;
             LobbyPlayerInfo info = new();
-            info.Color = item.GetOptionalValue("colour", "#000000", true); //玩家文字颜色
-            info.EventLevel = item.GetOptionalValue("eventlevel", -1, true);
-            info.Name = item.GetOptionalValue("name", "", true); //玩家名
+            info.Color = item.Get("colour").String ?? "000000"; //玩家文字颜色
+            info.EventLevel = (int)(item.Get("eventlevel")?.Number ?? -1);
+            info.Name = item.Get("name").String ?? ""; //玩家名
 
-            string? netidtemp = item.GetOptionalValue("netid", default(string), true); //玩家ID
+            string? netidtemp = item.Get("netid").String; //玩家ID
 
             Debug.Assert(netidtemp != null, "玩家ID不明确");
 
             //分割ID只需要后半部分
             info.NetId = RemovePrefixColon(netidtemp);
 
-            info.Prefab = item.GetOptionalValue("prefab", "", true); //玩家选择的角色, 如果没有选择角色则为空字符串
-            list.Add(info);
+            info.Prefab = item.Get("prefab").String ?? ""; //玩家选择的角色, 如果没有选择角色则为空字符串
+            players[index++] = info;
         }
 
-        return list.ToArray();
-    }
-
-    [return: NotNullIfNotNull(nameof(tagsString))]
-    public static string[]? ParseTags(string? tagsString)
-    {
-        if (tagsString is null) return null;
-        if (tagsString.Length == 0) return Array.Empty<string>();
-
-        var span = tagsString.AsSpan();
-        var tagsMaxCount = Utils.GetCharCount(tagsString, ',') + 1;
-        Span<Range> ranges = tagsMaxCount < 512 ? stackalloc Range[tagsMaxCount] : new Range[tagsMaxCount];
-        var tagsCount = span.Split(ranges, ',', StringSplitOptions.RemoveEmptyEntries);
-        string[] tags = new string[tagsCount];
-
-        try
-        {
-            for (int i = 0; i < tagsCount; i++)
-            {
-                var range = ranges[i];
-                var tagMemory = tagsString.AsMemory(range.Start.Value, range.End.Value - range.Start.Value).Trim();
-
-                if (TagsCache.TryGetValue(tagMemory, out var tag))
-                {
-                    tags[i] = tag;
-                }
-                else
-                {
-                    var str = tagMemory.ToString();
-                    TagsCache[str.AsMemory()] = str;
-                    tags[i] = str;
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            throw;
-        }
-        return tags;
+        return players;
     }
 
     [return: NotNullIfNotNull(nameof(tagsString))]
@@ -248,15 +319,15 @@ public static partial class DstConverterHelper
         return tags;
     }
 
-
-
-
-
-
-
-    [GeneratedRegex(@"return\s*\{\s*day=(\d+),\s*dayselapsedinseason=(\d+),\s*daysleftinseason=(\d+)\s*\}")]
+    [GeneratedRegex(@"return\s*\{\s*day\s*=\s*(\d+)\s*,\s*dayselapsedinseason\s*=\s*(\d+)\s*,\s*daysleftinseason\s*=\s*(\d+)\s*\}")]
     private static partial Regex DayRegex();
 
     [GeneratedRegex(@"workshop\-(\d+)")]
     private static partial Regex WorkshopRegex();
+
+    [GeneratedRegex(@"([a-z]+)\s*=\s*(\d+)")]
+    private static partial Regex LuaKeyValuePairRegex();
+
+    [GeneratedRegex("""{[\n\s]*colour="[a-zA-Z0-9]+",[\n\s]*eventlevel=\d+,[\n\s]*name=".+",[\n\s]*netid=".+",[\n\s]*prefab=".+"[\n\s]*}""")]
+    private static partial Regex PlayerObjectRegex();
 }

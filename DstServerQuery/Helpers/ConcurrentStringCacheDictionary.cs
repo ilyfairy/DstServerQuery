@@ -4,14 +4,28 @@ using System.Text;
 
 namespace DstServerQuery.Helpers;
 
-public class ConcurrentUtf8CharCacheDictionary
+public class ConcurrentStringCacheDictionary
 {
     public ConcurrentDictionary<string, string> Dictionary { get; } = new();
     private readonly ConcurrentDictionary<string, string>.AlternateLookup<ReadOnlySpan<char>> _cacheAlternateLookup;
 
-    public ConcurrentUtf8CharCacheDictionary()
+    public ConcurrentStringCacheDictionary()
     {
         _cacheAlternateLookup = Dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
+    }
+
+    public string GetOrAdd(ReadOnlySpan<char> chars)
+    {
+        if (_cacheAlternateLookup.TryGetValue(chars, out var str))
+        {
+            return str;
+        }
+        else
+        {
+            str = chars.ToString();
+            Dictionary.TryAdd(str, str);
+            return str;
+        }
     }
 
     public string GetOrAdd(ReadOnlySpan<byte> bytes)
