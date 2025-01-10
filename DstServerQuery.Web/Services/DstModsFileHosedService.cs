@@ -24,6 +24,7 @@ public class DstModsFileHosedService(IServiceProvider serviceProvider) : IHosted
 
     public async Task Run()
     {
+        _service.IsEnableMultiLanguage = _options.IsEnableMultiLanguage;
         // 饥荒Mods服务
         logger.LogInformation("DstModsFileService Root: {Root}", options.RootPath);
         logger.LogInformation("DstModsFileService FileProxyUrl: {Url}", options.FileUrlProxy);

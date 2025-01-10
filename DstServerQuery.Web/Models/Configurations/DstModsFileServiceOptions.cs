@@ -8,4 +8,5 @@ public class DstModsFileServiceOptions
     /// template: {url}
     /// </summary>
     public string? FileUrlProxy { get; set; }
+    public bool IsEnableMultiLanguage { get; set; }
 }
