@@ -161,6 +161,7 @@ public partial class LobbyServerQueryerV2
 
     private void HandleServerName()
     {
+        current = current.Where(v => v.Name != null);
         if (queryParams.ServerName is null)
             return;
 
