@@ -13,7 +13,7 @@ public class CommandService(
 {
     private readonly CancellationTokenSource cts = new();
     public Prompt? Prompt { get; private set; }
-    public AppcalitionCommand Command { get; private set; } = new();
+    public AppcalitionCommand Command { get; private set; } = new(host.Services);
     public CommandPromptCallbacks? CommandPromptCallbacks { get; set; }
 
     public async Task RunCommandLoopAsync()

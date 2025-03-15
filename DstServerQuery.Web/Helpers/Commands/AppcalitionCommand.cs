@@ -13,11 +13,12 @@ public class AppcalitionCommand : RootCommand
     public Parser? Parser { get; set; }
     public bool IsExit { get; set; }
 
-    public AppcalitionCommand()
+    public AppcalitionCommand(IServiceProvider serviceProvider)
     {
         AddClear();
-        AddExit();
+        AddStop();
         AddCommand(new GCCommand());
+        AddCommand(new DstCommand(serviceProvider));
     }
 
     [MemberNotNull(nameof(Parser))]
@@ -76,9 +77,10 @@ public class AppcalitionCommand : RootCommand
         AddCommand(clearCommand);
     }
 
-    public void AddExit()
+    public void AddStop()
     {
-        var exitCommand = new Command("exit", "退出");
+        var exitCommand = new Command("stop", "退出");
+        exitCommand.AddAlias("exit");
         exitCommand.AddAlias("quit");
         exitCommand.SetHandler(() =>
         {
