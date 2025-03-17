@@ -22,15 +22,7 @@ public class TrafficMonitorStream(IHttpResponseBodyFeature httpResponseBodyFeatu
     public Stream Stream => this;
 
     private PipeWriter? _pipeAdapter;
-
-    public PipeWriter Writer
-    {
-        get
-        {
-            _pipeAdapter ??= PipeWriter.Create(Stream, new StreamPipeWriterOptions(leaveOpen: true));
-            return _pipeAdapter;
-        }
-    }
+    public PipeWriter Writer => _pipeAdapter ??= PipeWriter.Create(Stream, new StreamPipeWriterOptions(leaveOpen: true));
 
     public Task CompleteAsync() => httpResponseBodyFeature.CompleteAsync();
 
@@ -57,10 +49,8 @@ public class TrafficMonitorStream(IHttpResponseBodyFeature httpResponseBodyFeatu
         BaseStream.Write(buffer, offset, count);
     }
 
-
     public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
     {
-        Bytes += count;
         await WriteAsync(buffer.AsMemory(offset, count), cancellationToken);
     }
 
