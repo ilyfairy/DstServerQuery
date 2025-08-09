@@ -1,4 +1,4 @@
-# DstServerQuery
+﻿# DstServerQuery
 服务器查询, 玩家查询, 服务器的历史记录, Mods查询  
 
 从Klei服务器下载所有服务器数据进行查询  
@@ -35,3 +35,20 @@ DstDetailsProxyUrl 是一个批量请求详细数据的代理服务器的Url
 ## 接口
 
 https://dstserverlist.top/api
+
+## 引用
+- Klei 官方服务器 API
+- [NeoLua](https://github.com/neolithos/neolua)
+- [MoonSharp](https://github.com/moonsharp-devs/moonsharp/)
+- [Serilog](https://github.com/serilog/serilog)
+- [Spectre.Console](https://github.com/spectreconsole/spectre.console)
+- [Swashbuckle.AspNetCore](https://github.com/domaindrivendev/Swashbuckle.AspNetCore)
+- [System.CommandLine](https://github.com/dotnet/command-line-api)
+- [EFCore](https://github.com/dotnet/efcore)
+- [EFCore.BulkExtensions](https://github.com/borisdj/EFCore.BulkExtensions)
+- [Npgsql.EntityFrameworkCore.PostgreSQL](https://github.com/npgsql/efcore.pg)
+- [Pomelo.EntityFrameworkCore.MySql](https://github.com/PomeloFoundation/Pomelo.EntityFrameworkCore.MySql)
+- [SteamKit](https://github.com/SteamRE/SteamKit)
+- [MaxMind-DB](https://github.com/maxmind/MaxMind-DB)
+- [PrettyPrompt](https://github.com/waf/PrettyPrompt)
+- [AspNetCoreRateLimit](https://github.com/stefanprodan/AspNetCoreRateLimit)
