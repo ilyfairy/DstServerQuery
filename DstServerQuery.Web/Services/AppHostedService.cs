@@ -73,6 +73,7 @@ public class AppHostedService(ILogger<AppHostedService> _logger,
             try
             {
                 _geoIPService.Initialize(geoLite2Path);
+                _logger?.LogInformation("GeoIP初始化成功");
             }
             catch (Exception ex)
             {
@@ -84,20 +85,28 @@ public class AppHostedService(ILogger<AppHostedService> _logger,
 
         // 启动服务管理器
         await _lobbyServerManager.Start();
+        _logger?.LogInformation("启动LobbyServerManager");
 
-        // 饥荒版本获取服务
-        _dstVersionService.DstDownloaderFactory = () =>
+        try
         {
-            return new DstDownloader(Helper.CreateSteamSession(_serviceProvider));
-        };
-        var defaultVersion = simpleCacheDatabase.Get<long?>("DstVersion") ?? _dstVersionServiceOptions.DefaultVersion;
-        _ = _dstVersionService.RunAsync(defaultVersion, _dstVersionServiceOptions.IsDisabledUpdate);
-        _dstVersionService.VersionUpdated += (sender, version) =>
+            // 饥荒版本获取服务
+            _dstVersionService.DstDownloaderFactory = () =>
+            {
+                return new DstDownloader(Helper.CreateSteamSession(_serviceProvider));
+            };
+            var defaultVersion = simpleCacheDatabase.Get<long?>("DstVersion") ?? _dstVersionServiceOptions.DefaultVersion;
+            _ = _dstVersionService.RunAsync(defaultVersion, _dstVersionServiceOptions.IsDisabledUpdate, _serviceProvider.GetRequiredService<ILogger<DstVersionService>>());
+            _dstVersionService.VersionUpdated += (sender, version) =>
+            {
+                using var scope = _serviceProvider.CreateScope();
+                using var simpleCacheDatabase = scope.ServiceProvider.GetRequiredService<SimpleCacheDatabase>();
+                simpleCacheDatabase["DstVersion"] = version;
+            };
+        }
+        catch (Exception ex)
         {
-            using var scope = _serviceProvider.CreateScope();
-            using var simpleCacheDatabase = scope.ServiceProvider.GetRequiredService<SimpleCacheDatabase>();
-            simpleCacheDatabase["DstVersion"] = version;
-        };
+            _logger?.LogInformation(ex, "饥荒版本服务启动失败");
+        }
 
     }
 
