@@ -78,7 +78,7 @@ public partial class LobbyModsInfoConverter : JsonConverter<LobbyModInfo[]>
                 }
                 else if (i % 5 == 1)
                 {
-                    Debug.Assert(reader.TokenType == JsonTokenType.String);
+                    // Debug.Assert(reader.TokenType == JsonTokenType.String);
                     if (reader.TokenType is JsonTokenType.String)
                     {
                         Debug.Assert(reader.ValueSpan.Length <= buffer.Length);

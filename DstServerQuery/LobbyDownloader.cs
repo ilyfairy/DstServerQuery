@@ -178,6 +178,10 @@ public class LobbyDownloader
             }
 
             var r = await _httpUpdate.PostAsync(url, requestBody, cancellationToken);
+            if (r.StatusCode != HttpStatusCode.OK)
+            {
+                _logger?.LogWarning("请求状态异常: {StatusCode}", r.StatusCode);
+            }
             var get = await r.Content.ReadFromJsonAsync<LobbyGet<LobbyServerDetailed>>(cancellationToken);
             if (get is null || get.Data is null || get.Data.Count == 0) return false;
 

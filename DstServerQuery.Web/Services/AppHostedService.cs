@@ -92,10 +92,13 @@ public class AppHostedService(ILogger<AppHostedService> _logger,
             // 饥荒版本获取服务
             _dstVersionService.DstDownloaderFactory = () =>
             {
-                return new DstDownloader(Helper.CreateSteamSession(_serviceProvider));
+                return new DstDownloader(Helper.CreateSteamSession(_serviceProvider))
+                {
+                    IsCache = false,
+                };
             };
             var defaultVersion = simpleCacheDatabase.Get<long?>("DstVersion") ?? _dstVersionServiceOptions.DefaultVersion;
-            _ = _dstVersionService.RunAsync(defaultVersion, _dstVersionServiceOptions.IsDisabledUpdate, _serviceProvider.GetRequiredService<ILogger<DstVersionService>>());
+            _ = _dstVersionService.RunAsync(defaultVersion, _dstVersionServiceOptions.IsDisabledUpdate);
             _dstVersionService.VersionUpdated += (sender, version) =>
             {
                 using var scope = _serviceProvider.CreateScope();

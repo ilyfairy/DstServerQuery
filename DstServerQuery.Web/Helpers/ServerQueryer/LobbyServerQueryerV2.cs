@@ -1,4 +1,4 @@
-﻿using DstServerQuery.Models;
+using DstServerQuery.Models;
 using DstServerQuery.Models.Lobby;
 using DstServerQuery.Web.Helpers.ServerQueryer.JsonConverter;
 using System.Net;
@@ -478,11 +478,11 @@ public partial class LobbyServerQueryerV2
         if (modName.IsRegex)
         {
             Regex regex = CreateRegex(modName.Value);
-            current = current.Where(v => modName.IsExclude ^ (v.ModsInfo?.Any(m => regex.IsMatch(m.Name)) == true));
+            current = current.Where(v => modName.IsExclude ^ (v.ModsInfo?.Any(m => regex.IsMatch(m.Name ?? string.Empty)) == true));
         }
         else
         {
-            current = current.Where(v => modName.IsExclude ^ (v.ModsInfo?.Any(m => m.Name.Contains(modName.Value, StringComparison)) == true));
+            current = current.Where(v => modName.IsExclude ^ (v.ModsInfo?.Any(m => m.Name?.Contains(modName.Value, StringComparison) is true) == true));
         }
         var test = current.ToArray();
     }

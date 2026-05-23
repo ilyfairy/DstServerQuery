@@ -170,7 +170,7 @@ builder.Services.AddSingleton(builder.Configuration.GetSection("DstVersionServic
 builder.Services.AddSingleton(dstModsFileServiceOptions);
 builder.Services.AddSingleton<HistoryCountService>();
 builder.Services.AddSingleton<LobbyServerManager>();
-builder.Services.AddSingleton<DstVersionService>();
+builder.Services.AddSingleton<DstVersionService>(v => new DstVersionService(v.GetRequiredService<ILogger<DstVersionService>>()));
 builder.Services.AddSingleton<GeoIPService>();
 builder.Services.AddSingleton<LobbyDownloader>();
 builder.Services.AddHostedService<DstHistoryService>();

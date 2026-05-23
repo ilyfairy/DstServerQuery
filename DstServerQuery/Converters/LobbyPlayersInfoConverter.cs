@@ -1,6 +1,7 @@
 ﻿using DstServerQuery.Helpers;
 using DstServerQuery.Models;
 using System.Collections.Frozen;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -73,7 +74,7 @@ public class LobbyPlayersInfoConverter : JsonConverter<LobbyPlayerInfo[]>
     }
 }
 
-public class PlayersInfoWitTranslateConverter : JsonConverter<LobbyPlayerInfo[]>
+public class PlayersInfoWriterTranslateConverter : JsonConverter<LobbyPlayerInfo[]>
 {
     public static readonly FrozenDictionary<string, string> PrefabTranslations = new Dictionary<string, string>
     {
@@ -120,7 +121,7 @@ public class PlayersInfoWitTranslateConverter : JsonConverter<LobbyPlayerInfo[]>
             writer.WriteString("Color", item.Color);
             writer.WriteNumber("EventLevel", item.EventLevel);
             writer.WriteString("NetId", item.NetId);
-            if (PrefabTranslations.TryGetValue(item.Prefab, out var translation))
+            if (item.Prefab != null && PrefabTranslations.TryGetValue(item.Prefab, out var translation))
             {
                 writer.WriteString("Prefab", translation);
             }

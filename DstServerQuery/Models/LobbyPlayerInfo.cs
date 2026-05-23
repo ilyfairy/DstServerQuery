@@ -18,5 +18,5 @@ public class LobbyPlayerInfo
     /// <summary>
     /// 角色
     /// </summary>
-    public string Prefab { get; set; }
+    public string? Prefab { get; set; }
 }

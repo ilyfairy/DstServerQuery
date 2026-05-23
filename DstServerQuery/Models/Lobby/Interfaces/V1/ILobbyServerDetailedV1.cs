@@ -6,7 +6,7 @@ namespace DstServerQuery.Models.Lobby.Interfaces.V1;
 public interface ILobbyServerDetailedV1 : ILobbyServerV1
 {
     [JsonPropertyName("Players")]
-    [JsonConverter(typeof(PlayersInfoWitTranslateConverter))]
+    [JsonConverter(typeof(PlayersInfoWriterTranslateConverter))]
     public LobbyPlayerInfo[]? Players { get; set; } //玩家信息
 
     [JsonPropertyName("LastPing")]

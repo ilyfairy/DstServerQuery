@@ -73,7 +73,7 @@ public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig c
         }
         catch (Exception ex)
         {
-            logger.LogError("UpdateHistoryServerChunk更新异常 {Exception}", ex);
+            logger.LogError(ex, "UpdateHistoryServerChunk更新异常");
         }
         finally
         {
@@ -109,14 +109,9 @@ public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig c
         }
         catch (Exception ex)
         {
-#if DEBUG
-            Console.WriteLine(ex);
-#endif
-            logger.LogError("UpdateHistoryServer失败 Exception:{Exception}", ex);
+            logger.LogError(ex, "UpdateHistoryServer失败");
         }
     }
-
-
 
     private async Task EnsureServersCreated(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers)
     {
@@ -180,7 +175,6 @@ public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig c
             throw;
         }
     }
-
 
 
     private async Task UpdatedLite(DstDbContext dbContext, ICollection<LobbyServerDetailed> servers)
@@ -248,7 +242,7 @@ public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig c
         }
         catch (Exception ex)
         {
-            logger.LogError("History Item更新失败 {Exception}", ex.Message);
+            logger.LogError(ex, "History Item更新失败");
         }
 
         foreach (var item in pairs)
@@ -264,7 +258,7 @@ public class DstHistoryService(ILogger<DstHistoryService> logger, DstWebConfig c
         }
         catch (Exception ex)
         {
-            logger.LogError("History PlayerPair更新失败 {Exception}", ex.Message);
+            logger.LogError(ex, "History PlayerPair更新失败");
         }
 
         //var pairsKvs = pairs.Select(v => new

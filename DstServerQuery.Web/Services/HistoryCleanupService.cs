@@ -4,33 +4,43 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DstServerQuery.Web.Services;
 
-public class HistoryCleanupService(IServiceProvider serviceProvider, TimeSpan? expiration) : IHostedService
+public class HistoryCleanupService(IServiceProvider serviceProvider, TimeSpan? expiration) : IHostedService, IDisposable
 {
-    private readonly CancellationTokenSource cts = new();
+    private readonly ILogger<HistoryCleanupService> _logger = serviceProvider.GetRequiredService<ILogger<HistoryCleanupService>>();
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+    private System.Timers.Timer? _timer;
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
         if (expiration == null)
         {
-            return;
+            return Task.CompletedTask;
         }
         if (expiration.Value < default(TimeSpan))
         {
-            return;
+            return Task.CompletedTask;
         }
 
-        System.Timers.Timer timer = new(TimeSpan.FromHours(1));
-        timer.Elapsed += Timer_Elapsed;
-        timer.Start();
+        _logger.LogInformation("HistoryCleanupService 历史记录清理过期时间: {Expiration}天", expiration.Value.TotalDays);
+        _timer = new(TimeSpan.FromHours(1));
+        _timer.Elapsed += Timer_Elapsed;
+        _timer.Start();
+
+        _ = Task.Run(() => Timer_Elapsed(_timer, new(DateTime.Now)));
+
+        return Task.CompletedTask;
     }
 
     private async void Timer_Elapsed(object? sender, System.Timers.ElapsedEventArgs _)
     {
+        _logger.LogInformation("HistoryCleanupService 准备清理历史记录");
+
         using var scope = serviceProvider.CreateScope();
         using var db = scope.ServiceProvider.GetRequiredService<DstDbContext>();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<HistoryCleanupService>>();
 
         db.Database.SetCommandTimeout(TimeSpan.FromMinutes(10));
+
+        var cancellationToken = _cancellationTokenSource.Token;
 
         try
         {
@@ -38,37 +48,66 @@ public class HistoryCleanupService(IServiceProvider serviceProvider, TimeSpan? e
 
             while (true)
             {
-                var historyServerItem = await db.ServerHistoryItems
-                    .Where(v => v.DateTime < e)
-                    .OrderBy(v => v.Id)
-                    .Take(10000)
-                    .Select(v => new DstServerHistoryItem()
+                await using var transaction = db.Database.BeginTransaction();
+
+                try
+                {
+                    var historyServerItem = await db.ServerHistoryItems
+                        .Where(v => v.DateTime < e)
+                        .OrderBy(v => v.Id)
+                        .Take(10000)
+                        .Select(v => new DstServerHistoryItem()
+                        {
+                            Id = v.Id,
+                            DaysInfoId = v.DaysInfoId
+                        })
+                        .ToArrayAsync(cancellationToken);
+
+                    if (historyServerItem is null or [])
                     {
-                        Id = v.Id,
-                        DaysInfoId = v.DaysInfoId
-                    })
-                    .ToArrayAsync(cts.Token);
+                        await transaction.CommitAsync(cancellationToken);
+                        _logger.LogInformation("HistoryCleanupService 无需清理");
+                        break;
+                    }
 
-                if (historyServerItem is null or [])
-                    break;
+                    await db.HistoryServerItemPlayerPair
+                        .Where(v => historyServerItem.Select(v => v.Id).Contains(v.HistoryServerItemId))
+                        .ExecuteDeleteAsync(cancellationToken);
 
-                await db.HistoryServerItemPlayerPair
-                    .Where(v => historyServerItem.Select(v => v.Id).Contains(v.HistoryServerItemId))
-                    .ExecuteDeleteAsync(cts.Token);
+                    var daysInfoIdsToDelete = historyServerItem
+                        .Where(v => v.DaysInfoId.HasValue)
+                        .Select(v => v.DaysInfoId!.Value)
+                        .ToList();
 
-                db.RemoveRange(historyServerItem);
+                    if (daysInfoIdsToDelete.Count > 0)
+                    {
+                        await db.DaysInfos
+                            .Where(d => daysInfoIdsToDelete.Contains(d.Id))
+                            .ExecuteDeleteAsync(cancellationToken);
+                    }
 
-                await db.SaveChangesAsync(cts.Token);
+                    db.RemoveRange(historyServerItem);
+
+                    await db.SaveChangesAsync(cancellationToken);
+
+                    await transaction.CommitAsync(cancellationToken);
+                    _logger.LogInformation("HistoryCleanupService 清理数量 {Count}", historyServerItem.Length);
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
             }
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            logger.LogError("History清理错误 {Exception}", e.Message);
+            _logger.LogError(ex, "HistoryCleanupService 清理异常");
         }
 
         try
         {
-            await Task.Delay(TimeSpan.FromHours(1), cts.Token);
+            await Task.Delay(TimeSpan.FromHours(1), cancellationToken);
         }
         catch (TaskCanceledException)
         {
@@ -78,8 +117,14 @@ public class HistoryCleanupService(IServiceProvider serviceProvider, TimeSpan? e
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        cts.Cancel();
+        _cancellationTokenSource.Cancel();
         return Task.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        _cancellationTokenSource.Dispose();
+        _timer?.Dispose();
     }
 }
 

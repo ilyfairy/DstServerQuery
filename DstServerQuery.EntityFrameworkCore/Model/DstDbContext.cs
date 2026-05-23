@@ -104,8 +104,7 @@ public abstract class DstDbContext(DbContextOptions options) : DbContext(options
 
     public async Task SetTagColorAsync(string name, string color)
     {
-        var model = await TagColors.AsNoTracking()
-            .FirstOrDefaultAsync(v => v.Name == name);
+        var model = await TagColors.FirstOrDefaultAsync(v => v.Name == name);
 
         if (model == null)
         {

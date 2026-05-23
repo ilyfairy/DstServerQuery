@@ -15,7 +15,7 @@ public class IdCacheConverter : JsonConverter<string>
             throw new JsonException("不是一个string");
         }
 
-        if (reader.ValueSpan.Length == 0)
+        if (reader.ValueSpan.IsEmpty)
             return string.Empty;
 
         if (reader.ValueSpan.Length == 1)
