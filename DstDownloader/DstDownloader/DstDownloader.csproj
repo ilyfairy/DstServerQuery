@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Version>2.0.0</Version>
+    <RootNamespace>DstDownloaders</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\moonsharp\src\MoonSharp.Interpreter.NetCore\MoonSharp.Interpreter.NetCore.csproj" />
+    <ProjectReference Include="..\SteamDownloader\SteamDownloader\SteamDownloader.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -7,3 +7,10 @@
 [submodule "GeoIP2-dotnet"]
 	path = GeoIP2-dotnet
 	url = https://github.com/ilyfairy/GeoIP2-dotnet
+[submodule "DstDownloader/moonsharp"]
+	path = DstDownloader/moonsharp
+	url = https://github.com/ilyfairy/moonsharp
+[submodule "DstDownloader/SteamDownloader/SteamKit"]
+	path = DstDownloader/SteamDownloader/SteamKit
+	url = https://github.com/ilyfairy/SteamDownloader
+	branch = steamkit-master
