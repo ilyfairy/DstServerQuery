@@ -13,4 +13,3 @@
 [submodule "DstDownloader/SteamDownloader/SteamKit"]
 	path = DstDownloader/SteamDownloader/SteamKit
 	url = https://github.com/ilyfairy/SteamKit
-	branch = master
