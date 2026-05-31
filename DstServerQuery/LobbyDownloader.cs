@@ -151,8 +151,8 @@ public class LobbyDownloader
             if (string.IsNullOrWhiteSpace(url))
             {
                 // https://lobby-v2-cdn.klei.com/{Region}-{Platform}.json.gz
-                if (server._Region == null) return false;
-                if (!RegionPlatformMap.TryGetValue(new(server._Region, server._LobbyPlatform), out var regionUrl)) return false;
+                if (server.LobbyRegion == null) return false;
+                if (!RegionPlatformMap.TryGetValue(new(server.LobbyRegion, server.LobbyPlatform), out var regionUrl)) return false;
                 url = regionUrl.DetailsUrl;
                 //var request = new RestRequest(url.details, Method.Post);
                 string str =
@@ -172,7 +172,7 @@ public class LobbyDownloader
                 object[] requestList = [new
                 {
                     server.RowId,
-                    Region = server._Region,
+                    Region = server.LobbyRegion,
                 }];
                 requestBody = JsonContent.Create(requestList, null, JsonSerializerOptions.Default);
             }
@@ -191,8 +191,8 @@ public class LobbyDownloader
                 return false;
             }
             newServer._LastUpdate = DateTimeOffset.Now;
-            newServer._LobbyPlatform = server._LobbyPlatform;
-            newServer._Region = server._Region;
+            newServer.LobbyPlatform = server.LobbyPlatform;
+            newServer.LobbyRegion = server.LobbyRegion;
             newServer._IsDetailed = true;
 
             //newServer.CopyTo(server); //更新数据
@@ -247,9 +247,9 @@ public class LobbyDownloader
             // RegionPlatform, LobbyServerDetailed
             var requests = servers.Values.Select(v =>
             {
-                if (v._Region is null) return null;
+                if (v.LobbyRegion is null) return null;
 
-                var region = new RegionPlatform(v._Region, v._LobbyPlatform);
+                var region = new RegionPlatform(v.LobbyRegion, v.LobbyPlatform);
                 if (RegionPlatformMap.ContainsKey(region))
                 {
                     //return new
@@ -323,8 +323,8 @@ public class LobbyDownloader
                     if (servers.TryGetValue(newServer.RowId, out var server))
                     {
                         newServer._LastUpdate = dateTime;
-                        newServer._Region = server._Region;
-                        newServer._LobbyPlatform = server._LobbyPlatform;
+                        newServer.LobbyRegion = server.LobbyRegion;
+                        newServer.LobbyPlatform = server.LobbyPlatform;
                         newServer._IsDetailed = true;
                         //server.Raw = newRaw;
                         //server.Update();
@@ -371,8 +371,8 @@ public class LobbyDownloader
             foreach (var item in r)
             {
                 item._LastUpdate = DateTimeOffset.Now;
-                item._Region = map.Key.Region;
-                item._LobbyPlatform = map.Key.Platform;
+                item.LobbyRegion = map.Key.Region;
+                item.LobbyPlatform = map.Key.Platform;
                 yield return item;
             }
         }

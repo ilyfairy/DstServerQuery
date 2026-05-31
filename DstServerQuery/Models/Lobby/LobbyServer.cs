@@ -10,10 +10,12 @@ namespace DstServerQuery.Models.Lobby;
 /// </summary>
 public class LobbyServer : ILobbyServerV1, ILobbyServerV2
 {
-    internal string? _Region;
-    internal LobbyPlatform _LobbyPlatform;
     internal DateTimeOffset _LastUpdate;
     internal bool _IsDetailed;
+
+    public string? LobbyRegion { get; set; }
+
+    public LobbyPlatform LobbyPlatform { get; set; }
 
     [JsonPropertyName("name")]
     public string Name { get; set; } //房间名称
@@ -128,6 +130,8 @@ public class LobbyServer : ILobbyServerV1, ILobbyServerV2
 
     public void UpdateFrom(LobbyServer lobbyServer)
     {
+        this.LobbyRegion = lobbyServer.LobbyRegion;
+        this.LobbyPlatform = lobbyServer.LobbyPlatform;
         this.Name = lobbyServer.Name;
         this.Address = lobbyServer.Address;
         this.Port = lobbyServer.Port;

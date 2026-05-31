@@ -6,6 +6,12 @@ namespace DstServerQuery.Models.Lobby.Interfaces.V2;
 
 public interface ILobbyServerV2
 {
+    [JsonPropertyName("LobbyRegion")]
+    public string? LobbyRegion { get; set; }
+
+    [JsonPropertyName("LobbyPlatform")]
+    public LobbyPlatform LobbyPlatform { get; set; }
+
     [JsonPropertyName("Name")]
     public string Name { get; set; } // 房间名称
 
