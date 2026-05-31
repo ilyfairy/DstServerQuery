@@ -1,4 +1,4 @@
-[submodule "DstDownloader"]
+﻿[submodule "DstDownloader"]
 	path = DstDownloader
 	url = https://github.com/ilyfairy/DstDownloader.git
 [submodule "PrettyPrompt"]
@@ -12,5 +12,5 @@
 	url = https://github.com/ilyfairy/moonsharp
 [submodule "DstDownloader/SteamDownloader/SteamKit"]
 	path = DstDownloader/SteamDownloader/SteamKit
-	url = https://github.com/ilyfairy/SteamDownloader
-	branch = steamkit-master
+	url = https://github.com/ilyfairy/SteamKit
+	branch = master
