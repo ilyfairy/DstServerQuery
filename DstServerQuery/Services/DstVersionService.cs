@@ -99,6 +99,7 @@ public class DstVersionService : IDisposable
             CurrentCancellationTokenSource = new();
 
             CurrentCancellationTokenSource.CancelAfter(Timeout);
+            bool isSuccess = false;
             try
             {
                 var version = await _currentDst.GetServerVersionAsync(CurrentCancellationTokenSource.Token).ConfigureAwait(false);
@@ -106,20 +107,31 @@ public class DstVersionService : IDisposable
                 VersionUpdated?.Invoke(this, version);
                 CurrentCancellationTokenSource.Cancel();
                 _logger?.LogInformation("饥荒版本获取成功: {Version}", version);
+                isSuccess = true;
             }
             catch (OperationCanceledException)
             {
-                CurrentCancellationTokenSource.Cancel();
                 _logger?.LogWarning("获取饥荒版本超时");
-                await CreateLoginAsync();
-                continue;
             }
-            catch (Exception e)
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "饥荒版本获取失败");
+            }
+            if (!isSuccess)
             {
                 CurrentCancellationTokenSource.Cancel();
-                _logger?.LogError(e, "饥荒版本获取失败");
-                await CreateLoginAsync();
-                continue;
+                while (!CancellationTokenSource.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await CreateLoginAsync();
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogError(ex, "Steam登录失败");
+                    }
+                }
             }
             await Task.Delay(Interval, CancellationTokenSource.Token).ConfigureAwait(false); //每30秒获取一次
         }
