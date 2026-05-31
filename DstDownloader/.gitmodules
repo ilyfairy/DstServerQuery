@@ -1,6 +1,0 @@
-[submodule "SteamDownloader"]
-	path = SteamDownloader
-	url = https://github.com/ilyfairy/SteamDownloader
-[submodule "moonsharp"]
-	path = moonsharp
-	url = https://github.com/ilyfairy/moonsharp
