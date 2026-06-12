@@ -119,6 +119,7 @@ public class DstVersionService : IDisposable
             }
             if (!isSuccess)
             {
+                _logger?.LogWarning("正在重新登录");
                 CurrentCancellationTokenSource.Cancel();
                 while (!CancellationTokenSource.IsCancellationRequested)
                 {

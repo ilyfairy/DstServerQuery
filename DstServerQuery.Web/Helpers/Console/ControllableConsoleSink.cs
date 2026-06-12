@@ -9,6 +9,8 @@ namespace DstServerQuery.Web.Helpers.Console;
 
 public class ControllableConsoleSink : ILogEventSink
 {
+    public const string DefaultOutputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [PID:{ProcessId} TID:{ThreadId} {TypeName}.{MethodName}] {Message:lj}{NewLine}{Exception}";
+
     private readonly LogEventLevel? _standardErrorFromLevel;
     private readonly ITextFormatter _formatter;
     private readonly object _syncRoot = new();
@@ -71,7 +73,7 @@ public class ControllableConsoleSink : ILogEventSink
     }
 
 
-    public static ControllableConsoleSink Create(string outputTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
+    public static ControllableConsoleSink Create(string outputTemplate = DefaultOutputTemplate,
                                                  IFormatProvider? formatProvider = null,
                                                  LogEventLevel? standardErrorFromLevel = null)
     {

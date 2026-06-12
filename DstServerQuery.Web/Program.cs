@@ -11,6 +11,7 @@ using DstServerQuery.Services;
 using DstServerQuery.Web;
 using DstServerQuery.Web.Helpers;
 using DstServerQuery.Web.Helpers.Console;
+using DstServerQuery.Web.Helpers.Logging;
 using DstServerQuery.Web.Models.Configurations;
 using DstServerQuery.Web.Services;
 using DstServerQuery.Web.Services.TrafficRateLimiter;
@@ -35,6 +36,7 @@ bool enabledCommandLine = builder.Configuration.GetSection("EnabledCommandLine")
     builder.Services.AddSingleton(consoleSink);
 
     Log.Logger = new LoggerConfiguration()
+        .Enrich.With(new RuntimeLogContextEnricher())
         .WriteTo.Sink(consoleSink)
         .CreateBootstrapLogger(); // Run之前生效
 }
@@ -50,6 +52,7 @@ builder.Services.AddSerilog((service, loggerConfiguration) =>
         v.Sink(service.GetRequiredService<ControllableConsoleSink>());
     });
     loggerConfiguration.Enrich.FromLogContext();
+    loggerConfiguration.Enrich.With(new RuntimeLogContextEnricher());
 
     if (builder.Environment.IsDevelopment())
     {
@@ -58,7 +61,7 @@ builder.Services.AddSerilog((service, loggerConfiguration) =>
     else
     {
         loggerConfiguration.WriteTo.Async(v =>
-            v.File("Logs/log.log", rollingInterval: RollingInterval.Day)
+            v.File("Logs/log.log", rollingInterval: RollingInterval.Day, outputTemplate: ControllableConsoleSink.DefaultOutputTemplate)
         );
         loggerConfiguration.MinimumLevel.Information();
         loggerConfiguration.MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Information);
