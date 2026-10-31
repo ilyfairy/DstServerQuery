@@ -226,15 +226,15 @@ public static partial class DstConverterHelper
                     else if (k.SequenceEqual("prefab"))
                     {
                         var prefab = v.Trim('"');
-                        if (PlayerColorCacheAlternateLookup.TryGetValue(prefab, out var cachedPrefab))
+                        if (PlayerPrefabCacheAlternateLookup.TryGetValue(prefab, out var cachedPrefab))
                         {
-                            player.Color = cachedPrefab;
+                            player.Prefab = cachedPrefab;
                         }
                         else
                         {
                             cachedPrefab = prefab.ToString();
                             player.Prefab = cachedPrefab;
-                            PlayerColorCache.TryAdd(cachedPrefab, cachedPrefab);
+                            PlayerPrefabCache.TryAdd(cachedPrefab, cachedPrefab);
                         }
                         prefabOk = true;
                     }
