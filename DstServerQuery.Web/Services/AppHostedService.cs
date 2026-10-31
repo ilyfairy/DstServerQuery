@@ -24,6 +24,7 @@ public class AppHostedService(ILogger<AppHostedService> _logger,
                               GeoIPService _geoIPService) : IHostedService
 {
     private DstModsFileService? _dstModsFileService;
+    private Task? _dstVersionServiceTask;
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -89,26 +90,37 @@ public class AppHostedService(ILogger<AppHostedService> _logger,
 
         try
         {
-            // 饥荒版本获取服务
-            _dstVersionService.DstDownloaderFactory = () =>
+            if (_dstVersionServiceOptions.IsEnabled)
             {
-                return new DstDownloader(Helper.CreateSteamSession(_serviceProvider))
+                // 饥荒版本获取服务
+                _dstVersionService.DstDownloaderFactory = () =>
                 {
-                    IsCache = false,
+                    return new DstDownloader(Helper.CreateSteamSession(_serviceProvider))
+                    {
+                        IsCache = false,
+                    };
                 };
-            };
-            var defaultVersion = simpleCacheDatabase.Get<long?>("DstVersion") ?? _dstVersionServiceOptions.DefaultVersion;
-            _ = _dstVersionService.RunAsync(defaultVersion, _dstVersionServiceOptions.IsDisabledUpdate);
-            _dstVersionService.VersionUpdated += (sender, version) =>
+                var defaultVersion = simpleCacheDatabase.Get<long?>("DstVersion") ?? _dstVersionServiceOptions.DefaultVersion;
+                _dstVersionService.VersionUpdated += (sender, version) =>
+                {
+                    using var scope = _serviceProvider.CreateScope();
+                    using var simpleCacheDatabase = scope.ServiceProvider.GetRequiredService<SimpleCacheDatabase>();
+                    simpleCacheDatabase["DstVersion"] = version;
+                };
+                _dstVersionServiceTask = _dstVersionService.RunAsync(defaultVersion, _dstVersionServiceOptions.IsDisabledUpdate);
+                _ = _dstVersionServiceTask.ContinueWith(task =>
+                {
+                    _logger!.LogError(task.Exception, "饥荒版本服务异常退出");
+                }, TaskContinuationOptions.OnlyOnFaulted);
+            }
+            else
             {
-                using var scope = _serviceProvider.CreateScope();
-                using var simpleCacheDatabase = scope.ServiceProvider.GetRequiredService<SimpleCacheDatabase>();
-                simpleCacheDatabase["DstVersion"] = version;
-            };
+                _logger!.LogInformation("饥荒版本服务未启用");
+            }
         }
         catch (Exception ex)
         {
-            _logger?.LogInformation(ex, "饥荒版本服务启动失败");
+            _logger!.LogError(ex, "饥荒版本服务启动失败");
         }
 
     }
@@ -118,6 +130,24 @@ public class AppHostedService(ILogger<AppHostedService> _logger,
         _logger.LogInformation("IHostApplicationBuilder Shutdowning");
 
         _dstVersionService.Dispose();
+        if (_dstVersionServiceTask is not null)
+        {
+            try
+            {
+                await _dstVersionServiceTask.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+            }
+            catch (TimeoutException)
+            {
+                _logger.LogWarning("等待饥荒版本服务停止超时");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "饥荒版本服务停止异常");
+            }
+        }
         _lobbyServerManager.Dispose();
         _dstModsFileService?.Dispose();
 

@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using DstDownloaders;
+﻿using DstDownloaders;
 using Microsoft.Extensions.Logging;
 using SteamDownloader.Helpers;
 
@@ -16,8 +15,8 @@ public class DstVersionService : IDisposable
     public List<SteamContentServer> ContentServers { get; set; } = new();
 
     public event EventHandler<long>? VersionUpdated;
-    public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
-    public TimeSpan Interval { get; set; } = TimeSpan.FromSeconds(30);
+    public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(60);
+    public TimeSpan Interval { get; set; } = TimeSpan.FromSeconds(60);
 
     public Func<DstDownloader> DstDownloaderFactory { get; set; } = () => new();
 
@@ -26,22 +25,93 @@ public class DstVersionService : IDisposable
         this._logger = _logger;
     }
 
-    private async Task CreateLoginAsync()
+    private async Task CreateLoginAsync(CancellationToken cancellationToken)
     {
         for (int i = 1; i <= 3; i++)
         {
+            DstDownloader? dst = null;
             try
             {
-                _currentDst = DstDownloaderFactory();
-                await _currentDst.LoginAsync();
-                break;
+                cancellationToken.ThrowIfCancellationRequested();
+
+                dst = DstDownloaderFactory();
+                using var timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                timeoutTokenSource.CancelAfter(Timeout);
+
+                await dst.LoginAsync(timeoutTokenSource.Token).ConfigureAwait(false);
+                if (ContentServers.Count > 0)
+                {
+                    dst.Steam.ContentServers = ContentServers.ToList();
+                }
+
+                var oldDst = _currentDst;
+                _currentDst = dst;
+                oldDst?.Dispose();
+                return;
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                dst?.Dispose();
+                if (i == 3)
+                    throw new TimeoutException($"Steam匿名登录超过 {Timeout.TotalSeconds:0.##} 秒");
             }
             catch (Exception)
             {
+                dst?.Dispose();
                 if (i == 3)
                     throw;
             }
         }
+    }
+
+    private async Task RefreshContentServersAsync(CancellationToken cancellationToken)
+    {
+        if (_currentDst is null)
+            throw new InvalidOperationException("DstDownloader未初始化");
+
+        _logger?.LogInformation("Steam登录成功, 开始获取稳定的CDN服务器");
+
+        using var timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutTokenSource.CancelAfter(Timeout);
+        var timeoutToken = timeoutTokenSource.Token;
+
+        IEnumerable<SteamContentServer> tempServers = await _currentDst.Steam.GetCdnServersAsync(cancellationToken: timeoutToken).ConfigureAwait(false);
+
+        foreach (var cellId in new uint[] { 1, 100, 150, 200 })
+        {
+            try
+            {
+                tempServers = tempServers.Concat(await _currentDst.Steam.GetCdnServersAsync(cellId, cancellationToken: timeoutToken).ConfigureAwait(false));
+            }
+            catch
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    throw;
+            }
+        }
+
+        var servers = tempServers.DistinctBy(v => v.SourceId).ToArray();
+        if (servers.Length == 0)
+            throw new InvalidOperationException("未获取到Steam CDN服务器");
+
+        var stableServers = await SteamHelper.TestContentServerConnectionAsync(_currentDst.Steam.HttpClient, servers, TimeSpan.FromSeconds(5), timeoutToken).ConfigureAwait(false);
+        if (stableServers.Length == 0)
+            throw new InvalidOperationException($"Steam CDN服务器全部不可用 ({servers.Length})");
+
+        ContentServers = stableServers.ToList();
+        _currentDst.Steam.ContentServers = ContentServers.ToList();
+        _logger?.LogInformation("Steam稳定服务器 ({StableCount}/{AllCount})", stableServers.Length, servers.Length);
+    }
+
+    private async Task ResetSteamSessionAsync(CancellationToken cancellationToken)
+    {
+        _logger?.LogWarning("正在重新登录Steam并刷新CDN服务器");
+
+        _currentDst?.Dispose();
+        _currentDst = null;
+
+        await CreateLoginAsync(cancellationToken).ConfigureAwait(false);
+        await RefreshContentServersAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task RunAsync(long? defaultVersion = null, bool disableUpdate = false)
@@ -50,92 +120,83 @@ public class DstVersionService : IDisposable
         _logger?.LogInformation("饥荒初始版本为 {DefaultVersion}", defaultVersion);
 
         if (disableUpdate)
+        {
+            _logger?.LogInformation("饥荒版本获取服务已禁用");
             return;
-
-        while (!CancellationTokenSource.Token.IsCancellationRequested)
-        {
-            try
-            {
-                _logger?.LogInformation("正在登录匿名Steam...");
-                await CreateLoginAsync().ConfigureAwait(false);
-                break;
-            }
-            catch (Exception)
-            {
-                _logger?.LogInformation("Steam登录失败, 正在重新登录...");
-            }
         }
 
-        if (_currentDst is null)
-            throw new Exception("DstDownloader初始化失败");
-
-        _logger?.LogInformation("Steam登录成功, 开始获取稳定的CDN服务器");
+        var cancellationToken = CancellationTokenSource.Token;
+        while (!cancellationToken.IsCancellationRequested)
         {
-            IEnumerable<SteamContentServer> tempServers = await _currentDst.Steam.GetCdnServersAsync().ConfigureAwait(false);
-            try
-            { tempServers = tempServers.Concat(await _currentDst.Steam.GetCdnServersAsync(1, cancellationToken: CancellationTokenSource.Token).ConfigureAwait(false)); }
-            catch { }
-            try
-            { tempServers = tempServers.Concat(await _currentDst.Steam.GetCdnServersAsync(100, cancellationToken: CancellationTokenSource.Token).ConfigureAwait(false)); }
-            catch { }
-            try
-            { tempServers = tempServers.Concat(await _currentDst.Steam.GetCdnServersAsync(150, cancellationToken: CancellationTokenSource.Token).ConfigureAwait(false)); }
-            catch { }
-            try
-            { tempServers = tempServers.Concat(await _currentDst.Steam.GetCdnServersAsync(200, cancellationToken: CancellationTokenSource.Token).ConfigureAwait(false)); }
-            catch { }
-            var servers = tempServers.DistinctBy(v => v.SourceId).ToArray();
-
-            await _currentDst.Steam.HttpClient.GetAsync(servers.First().Url, HttpCompletionOption.ResponseHeadersRead, CancellationTokenSource.Token); // 预热
-
-            var stableServers = await SteamHelper.TestContentServerConnectionAsync(_currentDst.Steam.HttpClient, servers, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
-            ContentServers = stableServers.ToList();
-            _currentDst.Steam.ContentServers = ContentServers;
-            _logger?.LogInformation("Steam稳定服务器 ({StableCount}/{AllCount})", stableServers.Length, servers.Length);
-        }
-
-        while (!CancellationTokenSource.IsCancellationRequested)
-        {
-            CurrentCancellationTokenSource = new();
-
-            CurrentCancellationTokenSource.CancelAfter(Timeout);
-            bool isSuccess = false;
             try
             {
-                var version = await _currentDst.GetServerVersionAsync(CurrentCancellationTokenSource.Token).ConfigureAwait(false);
-                Version = version;
-                VersionUpdated?.Invoke(this, version);
-                CurrentCancellationTokenSource.Cancel();
-                _logger?.LogInformation("饥荒版本获取成功: {Version}", version);
-                isSuccess = true;
-            }
-            catch (OperationCanceledException)
-            {
-                _logger?.LogWarning("获取饥荒版本超时");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "饥荒版本获取失败");
-            }
-            if (!isSuccess)
-            {
-                _logger?.LogWarning("正在重新登录");
-                CurrentCancellationTokenSource.Cancel();
-                while (!CancellationTokenSource.IsCancellationRequested)
+                if (_currentDst is null)
                 {
+                    await ResetSteamSessionAsync(cancellationToken).ConfigureAwait(false);
+                }
+
+                using var timeoutTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                CurrentCancellationTokenSource = timeoutTokenSource;
+                timeoutTokenSource.CancelAfter(Timeout);
+
+                bool isSuccess = false;
+                try
+                {
+                    var version = await _currentDst!.GetServerVersionAsync(timeoutTokenSource.Token).ConfigureAwait(false);
+                    Version = version;
+                    _logger?.LogInformation("饥荒版本获取成功: {Version}", version);
+                    isSuccess = true;
+
                     try
                     {
-                        await CreateLoginAsync();
-                        break;
+                        VersionUpdated?.Invoke(this, version);
                     }
                     catch (Exception ex)
                     {
-                        _logger?.LogError(ex, "Steam登录失败");
+                        _logger?.LogError(ex, "饥荒版本更新事件处理失败");
                     }
                 }
+                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    _logger?.LogWarning("获取饥荒版本超时");
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "饥荒版本获取失败");
+                }
+                finally
+                {
+                    if (ReferenceEquals(CurrentCancellationTokenSource, timeoutTokenSource))
+                        CurrentCancellationTokenSource = null;
+                }
+
+                if (!isSuccess)
+                {
+                    await ResetSteamSessionAsync(cancellationToken).ConfigureAwait(false);
+                }
             }
-            await Task.Delay(Interval, CancellationTokenSource.Token).ConfigureAwait(false); //每30秒获取一次
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "饥荒版本获取服务循环异常, 将继续重试");
+                _currentDst?.Dispose();
+                _currentDst = null;
+            }
+
+
+            try
+            {
+                await Task.Delay(Interval, cancellationToken).ConfigureAwait(false); // 默认每1分钟获取一次
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+            }
         }
+
+        _logger?.LogInformation("饥荒版本获取服务已停止");
     }
 
     public void Dispose()
