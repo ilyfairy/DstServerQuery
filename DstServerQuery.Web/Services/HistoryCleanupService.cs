@@ -70,8 +70,15 @@ public class HistoryCleanupService(IServiceProvider serviceProvider, TimeSpan? e
                         break;
                     }
 
+                    var historyServerItemIds = historyServerItem.Select(v => v.Id).ToList();
+
                     await db.HistoryServerItemPlayerPair
-                        .Where(v => historyServerItem.Select(v => v.Id).Contains(v.HistoryServerItemId))
+                        .Where(v => historyServerItemIds.Contains(v.HistoryServerItemId))
+                        .ExecuteDeleteAsync(cancellationToken);
+
+                    // ServerHistoryItems 引用 DaysInfos, 必须先删 ServerHistoryItems 再删 DaysInfos
+                    await db.ServerHistoryItems
+                        .Where(v => historyServerItemIds.Contains(v.Id))
                         .ExecuteDeleteAsync(cancellationToken);
 
                     var daysInfoIdsToDelete = historyServerItem
@@ -85,10 +92,6 @@ public class HistoryCleanupService(IServiceProvider serviceProvider, TimeSpan? e
                             .Where(d => daysInfoIdsToDelete.Contains(d.Id))
                             .ExecuteDeleteAsync(cancellationToken);
                     }
-
-                    db.RemoveRange(historyServerItem);
-
-                    await db.SaveChangesAsync(cancellationToken);
 
                     await transaction.CommitAsync(cancellationToken);
                     _logger.LogInformation("HistoryCleanupService 清理数量 {Count}", historyServerItem.Length);
