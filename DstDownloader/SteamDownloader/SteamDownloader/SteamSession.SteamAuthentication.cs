@@ -45,26 +45,31 @@ public partial class SteamSession
         /// </summary>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task LoginAnonymousAsync()
+        public async Task LoginAnonymousAsync(CancellationToken cancellationToken = default)
         {
             if (steam.SteamClient.IsConnected is false)
             {
-                await steam.ConnectAsync();
+                await steam.ConnectAsync(cancellationToken);
             }
 
             if (steam._steamUser.SteamID is not null)
                 return;
 
+            var lockTaken = false;
             try
             {
-                steam._loginLock.Wait();
+                await steam._loginLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                lockTaken = true;
 
                 steam._connectionLoginResult = EResult.Invalid;
                 AccessToken = null;
                 steam._steamUser.LogOnAnonymous();
 
-                //steam.EnsureRunAllCallbacks();
-                steam.CallbackManager.RunWaitCallbacks();
+                while (steam._connectionLoginResult is EResult.Invalid)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    steam.CallbackManager.RunWaitAllCallbacks(TimeSpan.FromSeconds(1));
+                }
 
                 if (steam._connectionLoginResult is EResult.OK)
                 {
@@ -81,7 +86,8 @@ public partial class SteamSession
             }
             finally
             {
-                steam._loginLock.Release();
+                if (lockTaken)
+                    steam._loginLock.Release();
             }
         }
 
@@ -96,15 +102,17 @@ public partial class SteamSession
         {
             if (!steam.SteamClient.IsConnected)
             {
-                await steam.ConnectAsync();
+                await steam.ConnectAsync(cancellationToken);
             }
 
             if (steam._steamUser.SteamID is not null)
                 return;
 
+            var lockTaken = false;
             try
             {
-                steam._loginLock.Wait();
+                await steam._loginLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                lockTaken = true;
 
                 var authSession = await steam.SteamClient.Authentication.BeginAuthSessionViaCredentialsAsync(new AuthSessionDetails()
                 {
@@ -133,7 +141,7 @@ public partial class SteamSession
 
                 while (true)
                 {
-                    steam.CallbackManager.RunWaitAllCallbacks(Timeout.InfiniteTimeSpan);
+                    steam.RunWaitAllCallbacks(cancellationToken);
                     if (steam._connectionLoginResult is EResult.OK)
                     {
                         break;
@@ -145,23 +153,26 @@ public partial class SteamSession
             }
             finally
             {
-                steam._loginLock.Release();
+                if (lockTaken)
+                    steam._loginLock.Release();
             }
         }
 
-        public async Task LoginFromAccessTokenAsync(string username, string accessToken)
+        public async Task LoginFromAccessTokenAsync(string username, string accessToken, CancellationToken cancellationToken = default)
         {
             if (!steam.SteamClient.IsConnected)
             {
-                await steam.ConnectAsync().ConfigureAwait(false);
+                await steam.ConnectAsync(cancellationToken).ConfigureAwait(false);
             }
 
             if (steam._steamUser.SteamID is not null)
                 return;
 
+            var lockTaken = false;
             try
             {
-                await steam._loginLock.WaitAsync();
+                await steam._loginLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                lockTaken = true;
 
                 using var loggedOnCallbackDisposable = steam.CallbackManager.Subscribe<SteamUser.LoggedOnCallback>(v =>
                 {
@@ -180,7 +191,7 @@ public partial class SteamSession
 
                 while (true)
                 {
-                    steam.CallbackManager.RunWaitAllCallbacks(Timeout.InfiniteTimeSpan);
+                    steam.RunWaitAllCallbacks(cancellationToken);
                     if (steam._connectionLoginResult is EResult.OK)
                     {
                         AccessToken = accessToken;
@@ -189,31 +200,32 @@ public partial class SteamSession
                     }
                     if (steam._connectionLoginResult is EResult.NoConnection)
                         throw new ConnectionException("登录失败");
-                    await Task.Delay(50).ConfigureAwait(false);
+                    await Task.Delay(50, cancellationToken).ConfigureAwait(false);
                 }
 
             }
             finally
             {
-                steam._loginLock.Release();
+                if (lockTaken)
+                    steam._loginLock.Release();
             }
         }
 
-        public async Task EnsureLoginAsync()
+        public async Task EnsureLoginAsync(CancellationToken cancellationToken = default)
         {
             if (Logged)
                 return;
 
             if (isAnonymous)
             {
-                await LoginAnonymousAsync().ConfigureAwait(false);
+                await LoginAnonymousAsync(cancellationToken).ConfigureAwait(false);
             }
             else
             {
                 if (username is null || AccessToken is null)
                     throw new ConnectionException("请先登录");
 
-                await LoginFromAccessTokenAsync(username, AccessToken).ConfigureAwait(false);
+                await LoginFromAccessTokenAsync(username, AccessToken, cancellationToken).ConfigureAwait(false);
             }
         }
     }

@@ -2,17 +2,16 @@
 
 public static class SteamHelper
 {
-    public static async Task<SteamContentServer[]> TestContentServerConnectionAsync(HttpClient httpClient, IEnumerable<SteamContentServer> servers, TimeSpan timeout)
+    public static async Task<SteamContentServer[]> TestContentServerConnectionAsync(HttpClient httpClient, IEnumerable<SteamContentServer> servers, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         List<SteamContentServer> success = new();
-        await Parallel.ForEachAsync(servers, new ParallelOptions() { MaxDegreeOfParallelism = 8 }, async (s, _) =>
+        await Parallel.ForEachAsync(servers, new ParallelOptions() { MaxDegreeOfParallelism = 8, CancellationToken = cancellationToken }, async (s, token) =>
         {
-            CancellationTokenSource cts = new();
+            using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(token);
             cts.CancelAfter(timeout);
-            Uri url = new UriBuilder("https", s.Host).Uri;
             try
             {
-                var response = await httpClient.GetAsync(url, cts.Token);
+                using var response = await httpClient.GetAsync(s.Url, HttpCompletionOption.ResponseHeadersRead, cts.Token);
                 response.EnsureSuccessStatusCode();
             }
             catch (Exception)

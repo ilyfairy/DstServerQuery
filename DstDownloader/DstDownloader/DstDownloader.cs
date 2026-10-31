@@ -41,9 +41,9 @@ public class DstDownloader : IDisposable
     /// 匿名登录
     /// </summary>
     /// <returns></returns>
-    public Task LoginAsync()
+    public Task LoginAsync(CancellationToken cancellationToken = default)
     {
-        return Steam.Authentication.LoginAnonymousAsync();
+        return Steam.Authentication.LoginAnonymousAsync(cancellationToken);
     }
 
     /// <summary>
@@ -64,9 +64,9 @@ public class DstDownloader : IDisposable
     /// <param name="username">用户名</param>
     /// <param name="accessToken">AccessToken</param>
     /// <returns></returns>
-    public Task LoginAsync(string username, string accessToken)
+    public Task LoginAsync(string username, string accessToken, CancellationToken cancellationToken = default)
     {
-        return Steam.Authentication.LoginFromAccessTokenAsync(username, accessToken);
+        return Steam.Authentication.LoginFromAccessTokenAsync(username, accessToken, cancellationToken);
     }
 
 
@@ -77,10 +77,10 @@ public class DstDownloader : IDisposable
 
     public async Task<long> GetServerVersionAsync(CancellationToken cancellationToken = default)
     {
-        var appInfo = await Steam.GetProductInfoAsync(ServerAppId).ConfigureAwait(false);
+        var appInfo = await Steam.GetProductInfoAsync(ServerAppId, cancellationToken).ConfigureAwait(false);
         var depotsContent = appInfo.GetProductInfoDepotsSection();
         var windst = depotsContent.DepotsInfo[ServerWindowsDepotId];
-        var key = await Steam.GetDepotKeyAsync(appInfo.ID, windst.DepotId).ConfigureAwait(false);
+        var key = await Steam.GetDepotKeyAsync(appInfo.ID, windst.DepotId, cancellationToken).ConfigureAwait(false);
         var manifest = await Steam.GetDepotManifestAsync(ServerAppId, windst.DepotId, windst.Manifests["public"].ManifestId, key, "public", cancellationToken).ConfigureAwait(false);
         var file = manifest.Files!.First(v => v.FileName is "version.txt");
 
